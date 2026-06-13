@@ -422,7 +422,7 @@ Mind 的输出（`AnalysisResult` JSON）通过引擎的写入工具执行。引
 关键交付：
 
 - `sihankor` CLI 二进制：子命令（validate/index/search/status）
-- 配置文件 `.sihankor/config.yml`
+- 配置文件 `.sih/config.yml`
 - `cargo install` 可安装
 - 版本管理：遵循语义化版本，0.x 阶段承认不完备（道四）
 

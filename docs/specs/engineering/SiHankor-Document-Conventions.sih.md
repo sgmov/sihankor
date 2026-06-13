@@ -97,7 +97,7 @@ let now = Local::now();
 
 ### 3.2 目录自定义
 
-五类文档的语义边界（追问、stage 范围、type、upstream 语义）是法层定义：新增或删除一个类别意味着治理模型的变更，需走法层修正流程。目录名是术层约定：在 `.sihankor/config.yml` 中声明映射即可。
+五类文档的语义边界（追问、stage 范围、type、upstream 语义）是法层定义：新增或删除一个类别意味着治理模型的变更，需走法层修正流程。目录名是术层约定：在 `.sih/config.yml` 中声明映射即可。
 
 目录映射的存在理由：引擎通过 frontmatter 的 `type` 字段识别文档类别，不依赖目录名。目录仅是人类的浏览路径。当团队已有根深蒂固的目录命名惯例（如用 `design/` 而非 `specs/`、用 `rfcs/` 而非 `proposals/`），映射使司衡治理可以适配现有目录结构，无需强制重命名。
 
@@ -186,10 +186,10 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 ### 4.5 事件记录格式
 
-引擎自动触发的操作不生成 ADR，但生成事件记录。存储于 `.sihankor/events/{doc-id}.yml`，每文档一个文件，append-only。事件类型包括 stage 变更、检测标记、晋升建议、停滞告警等。
+引擎自动触发的操作不生成 ADR，但生成事件记录。存储于 `.sih/events/{doc-id}.yml`，每文档一个文件，append-only。事件类型包括 stage 变更、检测标记、晋升建议、停滞告警等。
 
 ```yaml
-# .sihankor/events/240610-1030-on-sihankor-canon.yml
+# .sih/events/240610-1030-on-sihankor-canon.yml
 - event: stage-change
   stage: 1/3→2/3
   rule: Canon$6.5
@@ -513,7 +513,7 @@ flowchart TD
 
 ### 8.9 中英文混合
 
-推荐同一段落或标签内不混合中英文（如 `engine 建议`、`context（背景）`）。引擎检测到混合时标记提醒，不阻断。标记可通过 `.sihankor/config.yml` 中的 `style.mix_lang_ignore` 设置为全局忽略。
+推荐同一段落或标签内不混合中英文（如 `engine 建议`、`context（背景）`）。引擎检测到混合时标记提醒，不阻断。标记可通过 `.sih/config.yml` 中的 `style.mix_lang_ignore` 设置为全局忽略。
 
 ### 8.10 可读性约定
 

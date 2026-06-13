@@ -50,13 +50,13 @@ cargo run
 
 ## 技术栈
 
-| 组件 | 选型 |
-| :--- | :--- |
-| 语言 | Rust 2024 edition |
-| 运行时 | Tokio（异步运行时） |
-| MCP 框架 | rmcp 1.7.0 |
-| 序列化 | serde / serde_json |
-| 存储 | SQLite（默认）/ PostgreSQL |
+| 组件     | 选型                       |
+| :------- | :------------------------- |
+| 语言     | Rust 2024 edition          |
+| 运行时   | Tokio（异步运行时）        |
+| MCP 框架 | rmcp 1.7.0                 |
+| 序列化   | serde / serde_json         |
+| 存储     | SQLite（默认）/ PostgreSQL |
 
 ## 项目结构
 
