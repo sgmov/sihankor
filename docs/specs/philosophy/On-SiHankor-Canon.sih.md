@@ -714,12 +714,12 @@ decided-by: ai-assist
 
 ### SEE-ALSO
 
-- 2406101500-sihankor-document-conventions
+- 240610-1500-sihankor-document-conventions
   - 术层文档：stage 编码、id 格式、目录结构、glossary 文件格式等约定
   - [司衡文档约定](../../engineering/SiHankor-Document-Conventions.sih.md)
-- sihankor-onomastic-philosophy
+- 260613-1728-sihankor-onomastic-philosophy
   - 命名中英代号对照
   - [命名哲思](../../reference/SiHankor-Onomastic-Philosophy.sih.md)
-- sihankor-philosophy-compendium
+- 260613-1728-sihankor-philosophy-compendium
   - 生命周期状态定义的术层概述
   - [哲学纲要](../../reference/SiHankor-Philosophy-Compendium.sih.md)

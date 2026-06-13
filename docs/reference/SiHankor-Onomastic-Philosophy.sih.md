@@ -1,5 +1,5 @@
 ---
-id: sihankor-onomastic-philosophy
+id: 260613-1728-sihankor-onomastic-philosophy
 type: compendium
 stage: 2/3
 ---

@@ -2,7 +2,7 @@
 id: 260613-2000-sihankor-legacy-migration-governance
 type: treatise
 stage: 3/3
-upstream: sihankor-philosophy-compendium
+upstream: 260613-1728-sihankor-philosophy-compendium
 ---
 
 # 司衡 Legacy 迁移治理记录

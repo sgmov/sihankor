@@ -1,5 +1,5 @@
 ---
-id: 2406110100-sihankor-philosophy-restructure
+id: 240611-0100-sihankor-philosophy-restructure
 type: treatise
 stage: 1/3
 ---

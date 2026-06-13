@@ -1,5 +1,5 @@
 ---
-id: 2406101500-sihankor-document-conventions
+id: 240610-1500-sihankor-document-conventions
 type: treatise
 stage: 2/3
 upstream: 240610-1030-on-sihankor-canon
@@ -246,7 +246,7 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 ```yaml
 ---
-id: 2406101500-auth-edge
+id: 240610-1500-auth-edge
 type: note
 stage: 1/3
 ---

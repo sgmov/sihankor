@@ -2,7 +2,7 @@
 id: 260613-2000-sihankor-external-validation
 type: treatise
 stage: 2/3
-upstream: sihankor-philosophy-compendium
+upstream: 260613-1728-sihankor-philosophy-compendium
 participants: [sihankor-builder, external-validator, sihankor-ai-instance]
 ---
 

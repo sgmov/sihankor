@@ -1,5 +1,5 @@
 ---
-id: sihankor-philosophy-arguments
+id: 260613-1728-sihankor-philosophy-arguments
 type: treatise
 stage: 1/3
 ---

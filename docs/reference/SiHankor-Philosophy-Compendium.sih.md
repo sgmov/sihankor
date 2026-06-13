@@ -1,5 +1,5 @@
 ---
-id: sihankor-philosophy-compendium
+id: 260613-1728-sihankor-philosophy-compendium
 type: compendium
 stage: 1/3
 ---

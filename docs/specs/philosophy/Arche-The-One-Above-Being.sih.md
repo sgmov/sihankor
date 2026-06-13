@@ -1,5 +1,5 @@
 ---
-id: arche-the-one-above-being
+id: 260613-1728-arche-the-one-above-being
 type: treatise
 stage: 3/3
 upstream: 240602-0900-on-sihankor
@@ -417,6 +417,6 @@ decided-by: ai-assist
 - 240610-1030-on-sihankor-canon
   - 法从道生，元三为生命周期修正机制提供元层依据
   - [司衡法论](./On-SiHankor-Canon.sih.md)
-- sihankor-philosophy-compendium
+- 260613-1728-sihankor-philosophy-compendium
   - 术语速查：四元与公理体系的定义
   - [司衡哲学纲要](../../reference/SiHankor-Philosophy-Compendium.sih.md)
