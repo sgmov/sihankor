@@ -8,7 +8,7 @@ upstream: 240602-0900-on-sihankor
 # 司衡引擎下一步方向与任务计划
 
 > 基于当前 docs/ 全部文档与 src/ 代码库的全面审查，生成于 2026-06-13。
-> 前置计划：[SiHankor-Legacy-Migration-Plan](./SiHankor-Legacy-Migration-Plan.sih.md)（已完成）。
+> 前置计划：[SiHankor-Legacy-Migration-Governance](../decisions/SiHankor-Legacy-Migration-Governance.sih.md)（已完成）。
 
 ## 一、当前状态总览
 
