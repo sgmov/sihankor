@@ -1,0 +1,95 @@
+# 工程通用语。概念定义以 zh.yml 为权威源。
+# 仅提供本语言中的精确映射（mapping）、被拒词及理由（rejected）、消歧规则（disambiguation）。
+
+道:
+  mapping: Tao
+  rejected:
+    Way: "过于日常化，丢失因果必然性"
+    Path: "暗示选择余地，道是唯一的因果链"
+    Principle: "混淆法与道"
+  disambiguation: "Tao as causal inevitability in code engineering, not Taoism as religion"
+  verified: 240610
+
+法:
+  mapping: Canon
+  rejected:
+    Law: "暗示立法起源，法是被推导的而非被制定的"
+    Rule: "暗示机械遵守，法需要合道性判断"
+    Method: "偏术层，术回答具体怎么操作"
+  disambiguation: "Canon as canonical rules derived from Tao, not cannon (weapon)"
+  verified: 240610
+
+术:
+  mapping: Techne
+  rejected:
+    Technique: "暗示机械化的技巧组合，术包含判断和选择"
+    Method: "暗示唯一路径，同一法可生出多种术"
+    Practice: "过于宽泛，丢失工程化操作的精确性"
+  disambiguation: "Techne as in Aristotelian systematized know-how for making"
+  verified: 240610
+
+鉴:
+  mapping: Assay
+  rejected:
+    Test: "过于通用，丢失可证伪检验的方法论含义"
+    Verification: "暗示确认而非挑战，鉴的核心是'试图证伪'"
+    Audit: "暗示事后审查，鉴嵌入在认知过程之中"
+  disambiguation: "Assay as in testing the purity of a proposition, not chemical assay"
+  verified: 240610
+
+元:
+  mapping: Arche
+  rejected:
+    Meta: "过于宽泛，暗示层级关系而非构成性条件"
+    Foundation: "暗示建筑隐喻，元不是地基而是使地基得以可能的地面"
+    Axiom: "暗示任意约定，元是被发现的构成性条件不是被设定的公理"
+  disambiguation: "Arche as in the constitutive condition that makes Tao possible, not arche- as prefix"
+  verified: 240610
+
+顺因:
+  mapping: Conformity
+  rejected:
+    Follow: "过于被动，顺因是主动的因果方向维护"
+    Obey: "暗示服从权威，道不是权威而是因果必然性"
+  disambiguation: "Conformity to causal direction: intent before spec before code"
+  verified: 240610
+
+有度:
+  mapping: Moderation
+  rejected:
+    Balance: "暗示对称对等，有度是在过度与不足之间找到恰好的点"
+    Sufficiency: "暗示下限思维，有度同时约束上限和下限"
+  disambiguation: "Moderation as in neither excessive nor insufficient governance"
+  verified: 240610
+
+知止:
+  mapping: Restraint
+  rejected:
+    Stop: "过于绝对，知止是知道边界而非停止一切"
+    Limit: "暗示外部强制，知止是主动承认治理边界"
+  disambiguation: "Restraint as in knowing what not to govern"
+  verified: 240610
+
+损补:
+  mapping: Rectification
+  rejected:
+    Fix: "暗示一次性修复，损补是持续的定向调节"
+    Optimize: "暗示最大化，损补是减冗余补缺失而非优化"
+  disambiguation: "Rectification as in reducing excess and filling gaps directionally"
+  verified: 240610
+
+顺势:
+  mapping: Adaptation
+  rejected:
+    Adjust: "暗示被动响应，顺势是主动的力度适配"
+    Flex: "暗示可随意变通，顺势有方向性：早松晚紧"
+  disambiguation: "Adaptation of governance intensity to project stage and conditions"
+  verified: 240610
+
+司衡:
+  mapping: SiHankor
+  rejected:
+    Governor: "暗示控制者角色，司衡是收敛引擎而非统治者"
+    Manager: "过于通用，丢失哲学根基"
+  disambiguation: "SiHankor: a convergence engine for code engineering that admits its own incompleteness"
+  verified: 240610

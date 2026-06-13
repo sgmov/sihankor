@@ -1,0 +1,15 @@
+terms:
+  - id: tao
+    layer: 道
+    attributes:
+      nature: discovery
+    relations:
+      synonyms: [自然之道]
+      antonyms: []
+      contains: [发散, 收敛]
+      contained_by: [六层脉络]
+    code_concepts:
+      - concept: Invariants
+        mapping: direct
+      - concept: First Principles
+        mapping: direct
