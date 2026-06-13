@@ -1,3 +1,10 @@
+---
+id: 260611-0000-sihankor-engine-design-summary
+type: mapping
+stage: 2/3
+upstream: 240610-1030-on-sihankor-canon
+---
+
 # 司衡引擎设计摘要
 
 > 供外部协作者审阅。归纳自项目源码、哲学文档、对话历史。
@@ -70,11 +77,120 @@ note: 1/3 → 2/3(自动) → 3/3(晋升) → 0/decayed(衰减)
 
 ### 2.4 存储方案
 
-- **默认**：SQLite（文件 `.sihankor/index.db`）
-- **可切换**：PostgreSQL（通过 trait 抽象）
-- **全文搜索**：初始不引入 FTS5，使用 LIKE；预留 `search_content` 接口
+#### 2.4.1 概述
 
-> 来源：对话中已讨论（数据库选型）、设计文档已定义（文档约定、法论）
+- **默认**：SQLite（文件 `.sih/index.db`），驱动库 rusqlite
+- **可切换**：PostgreSQL、图数据库、向量数据库、Redis、MongoDB 等均通过 `SihDatabase` trait 独立实现，各后端自选最合适的驱动库
+- **全文搜索**：SQLite FTS5 原生支持；初始使用 LIKE，为 FTS5 预留迁移路径
+- **道四提醒**：LIKE 有固有召回率限制，搜索准确性不是 100%
+
+#### 2.4.2 SihDatabase trait
+
+```rust
+#[async_trait]
+pub trait SihDatabase: Send + Sync {
+    async fn upsert_document(&self, doc: Document) -> Result<()>;
+    async fn get_document(&self, id: &str) -> Result<Option<Document>>;
+    async fn search_by_type(&self, doc_type: &str) -> Result<Vec<Document>>;
+    async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>>;
+    async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>>;
+}
+```
+
+**设计依据（顺因→有度→知止）**
+
+- trait 标记 `async`：契约定义"做什么"，不泄漏"怎么做"。SQLite 的 `spawn_blocking` 是 `SqliteBackend` 的私有实现细节，不是契约的一部分。未来 Redis/MongoDB 原生 async 后端可直接实现，无需反向 `block_on`
+- trait 方法稳定性顺序：`upsert_document`（写）→ `get_document`（单读）→ `search_*`（多读）→ `resolve_chain`（关系查询），按依赖和复杂度递增
+- `resolve_chain` 的 `depth` 参数防止递归爆炸（知止：不假装可以无限追溯）
+
+#### 2.4.3 Document：核心实体
+
+```rust
+pub struct Document {
+    pub id: String,
+    pub r#type: DocType,
+    pub stage: Stage,
+    pub title: String,
+    pub upstream: Option<String>,
+    pub frontmatter: Frontmatter,
+    pub content: String,
+    pub status: DocStatus,
+    pub indexed_at: chrono::DateTime<chrono::Utc>,
+}
+```
+
+**字段设计依据**
+
+| 字段          | 设计决策                                     | 道法依据                                               |
+| ------------- | -------------------------------------------- | ------------------------------------------------------ |
+| `content`     | 解析后正文，不含 frontmatter 和 `---` 分隔符 | 损补（从博返约）；知止（数据库是约层，Git 是形迹层）   |
+| `frontmatter` | 展开为结构体，非 blob                        | 顺因（parser 产出被下游直接使用，不重复解析）          |
+| `status`      | 带解析/验证状态                              | 道四（引擎承认不完备，解析失败的文档也需被记录和看见） |
+
+#### 2.4.4 Frontmatter：结构化 + 兜底
+
+```rust
+pub struct Frontmatter {
+    pub id: String,
+    pub r#type: DocType,
+    pub stage: Stage,
+    pub upstream: Option<String>,
+    pub decided_by: Option<String>,
+    pub extra: serde_json::Value,
+}
+```
+
+**设计依据（有度→知止→道四）**
+
+- 只展开引擎需要查询、索引、验证的字段（有度：恰好够用）
+- `extra: serde_json::Value` 兜底未定义字段，不丢失数据（道四：结构体定义不完备，未来可能新增字段；Document-Conventions 仍在 2/3）
+- 不用 `serde_json::Value` 存全部 frontmatter（知止：那等于没定义 schema）
+
+#### 2.4.5 DocStatus：三级解析/验证状态
+
+```rust
+pub enum DocStatus {
+    Ok,      // 解析和验证均通过
+    Warning, // 有违规但不阻断，可继续治理
+    Error,   // 解析失败或严重违规，阻塞治理
+}
+```
+
+**设计依据（道四→道三→损补）**
+
+- 道四核心：引擎承认不完备。只存"验证通过"的文档等于假装引擎不会出错
+- 道三：解析失败的文档是"代码自晦"的实例，应存下来标记状态，供未来改进的 parser 照亮
+- 损补：记录失败状态是"补缺失"——让断裂的文档在治理体系中有一个位置
+- 知止：三个状态够用，不建微状态机
+
+#### 2.4.6 文档表 SQL Schema
+
+```sql
+CREATE TABLE documents (
+    id          TEXT PRIMARY KEY,
+    type        TEXT NOT NULL,
+    stage       TEXT NOT NULL,
+    title       TEXT NOT NULL,
+    upstream    TEXT,
+    frontmatter_json TEXT NOT NULL,  -- Frontmatter 序列化
+    content     TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'Ok',
+    indexed_at  TEXT NOT NULL
+);
+
+CREATE INDEX idx_documents_type ON documents(type);
+CREATE INDEX idx_documents_stage ON documents(stage);
+CREATE INDEX idx_documents_upstream ON documents(upstream);
+CREATE INDEX idx_documents_status ON documents(status);
+```
+
+**设计要点**
+
+- `frontmatter` 在 Rust 侧是强类型结构体，SQL 侧存 JSON：类型安全在应用层，存储弹性在数据库层
+- `upstream` 可 NULL：note 类型无上游；根级文档用全大写域标识（如 `PHILOSOPHY`），不存为 NULL
+- `stage` 存字符串（如 `1/3`、`2/3`、`3/3`、`0/`、`X`），非枚举：stage 编码是法层定义，可能扩展（有度：不过度规约）
+
+> 来源：对话中已讨论（数据库选型、SihDatabase trait 设计）、设计文档已定义（文档约定、法论）
 
 ---
 
@@ -144,20 +260,9 @@ pub trait DataService: Send + Sync + 'static {
 
 ### 4.2 已规划的 trait（对话中讨论，尚未实现）
 
-**`SihDatabase` trait**（数据库抽象）：
+**`SihDatabase` trait**（数据库抽象）：完整定义见 [$2.4.2、SihDatabase trait](#242-sihdatabase-trait)。
 
-```rust
-#[async_trait]
-pub trait SihDatabase: Send + Sync {
-    async fn upsert_document(&self, doc: Document) -> Result<()>;
-    async fn search_by_type(&self, type_: &str) -> Result<Vec<Document>>;
-    async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>>;
-    async fn get_document(&self, id: &str) -> Result<Option<Document>>;
-    async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>>; // 默认 LIKE
-}
-```
-
-实现：`SqliteBackend`（默认）、`PostgresBackend`（可切换）。
+实现：`SqliteBackend`（默认，rusqlite）、`PostgresBackend`（可切换，sqlx 或 diesel）。未来可扩展图数据库（Neo4j）、向量数据库（Qdrant）、Redis、MongoDB 等后端——各后端独立实现 trait，自选最优驱动库，不借 SQL 统一抽象层。
 
 > 来源：源码已实现（DataService）、对话中已讨论（SihDatabase）
 

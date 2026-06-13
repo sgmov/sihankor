@@ -36,7 +36,7 @@ flowchart LR
     end
 
     subgraph Engineering["工程层"]
-        E1["Engine-Design-Summary<br/>3/3 等效"]
+        E1["Engine-Design-Summary<br/>2/3"]
         E2["Engineering-Mapping<br/>1/3"]
         E3["Mind-Design<br/>1/3"]
         E4["Document-Conventions<br/>2/3"]
@@ -179,7 +179,7 @@ flowchart TD
 
 #### T1.1 数据库抽象层（约 3-5 天）
 
-目标：实现 `SihDatabase` trait 与 SQLite 后端。
+目标：实现 `SihDatabase` trait 与 SQLite 后端（rusqlite）。
 
 ```rust
 #[async_trait]
@@ -194,10 +194,13 @@ pub trait SihDatabase: Send + Sync {
 
 关键交付：
 
-- `SihDatabase` trait 定义
-- `SqliteBackend` 实现（rusqlite 或 sqlx）
-- 文档表 schema：id, type, stage, title, upstream, content, frontmatter_json, indexed_at
+- `SihDatabase` trait 定义（async trait：契约不泄漏实现细节）
+- `SqliteBackend` 实现（rusqlite + spawn_blocking）
+- `Document` 结构体：含 `Frontmatter`（展开 + `extra` 兜底）、`DocStatus`（Ok/Warning/Error 三级）、解析后正文
+- 文档表 schema：id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at
 - `search_content` 初始使用 LIKE（为 FTS5 预留接口）
+
+设计详情见 [Engine-Design-Summary $2.4](../specs/engineering/SiHankor-Engine-Design-Summary.sih.md#24-存储方案)。
 
 道四提醒：SQLite 后端的搜索准确性不是 100%——LIKE 有固有的召回率限制。预留 FTS5 迁移路径。
 
@@ -277,7 +280,7 @@ pub trait SihDatabase: Send + Sync {
 - `resolve_chain` 使用 SQLite recursive CTE
 - `project_status` 输出按 type/stage 的分布统计
 
-对应设计文档：[Engine-Design-Summary](../specs/engineering/SiHankor-Engine-Design-Summary.md) $五（治理引擎 MCP）。
+对应设计文档：[Engine-Design-Summary](../specs/engineering/SiHankor-Engine-Design-Summary.sih.md) $五（治理引擎 MCP）。
 
 ### 3.3 第一阶段退出标准
 
@@ -391,7 +394,7 @@ Mind 的输出（`AnalysisResult` JSON）通过引擎的写入工具执行。引
 | Document-Conventions  | 2/3        | 3/3        | 引擎的 validator 完整覆盖所有格式规则   |
 | Compendium            | 2/3        | 3/3        | 所有概念定义在引擎 glossary 引用中无误  |
 | Arguments             | 2/3        | 3/3        | 论证案例的在引擎 resolve_chain 中可追溯 |
-| Engine-Design-Summary | 等效 3/3   | 3/3        | 与引擎实际实现同步更新                  |
+| Engine-Design-Summary | 2/3        | 3/3        | 与引擎实际实现同步更新                  |
 
 推进原则：ratify（3/3）意味着"此规范已被实践证明合道"。因此 2/3→3/3 必须在对应的引擎实现完成并通过验证之后。实现 → 验证 → ratify，顺因之法的因果方向。
 
