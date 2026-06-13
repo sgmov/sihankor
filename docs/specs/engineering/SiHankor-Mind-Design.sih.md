@@ -180,18 +180,27 @@ Mind 不执行写入操作——文件修改由下游引擎执行。决策 JSON 
 
 ## 六、与现有引擎的边界
 
-```text
-┌────────────────────────────┐      ┌──────────────────────────────┐
-│  sihankor-mind（思维核心）  │      │  sihankor 引擎（执行层）      │
-│                            │      │                              │
-│  几层：三机流转             │ JSON │  形迹层：文件操作             │
-│  术层：四步分析法           │ ───→ │  parse → validate → modify   │
-│  约层：结构化输出           │      │                              │
-│                            │      │                              │
-│  不可跨边界：               │      │  不可跨边界：                 │
-│  Mind 不写文件              │      │  引擎不做推导                 │
-│  Mind 不代替人类决策        │      │  引擎不修改 Mind 的决策逻辑   │
-└────────────────────────────┘      └──────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Mind[\"sihankor-mind（思维核心）\"]
+        M1[\"几层：三机流转\"]
+        M2[\"术层：四步分析法\"]
+        M3[\"约层：结构化输出\"]
+    end
+    subgraph Engine[\"sihankor 引擎（执行层）\"]
+        E1[\"形迹层：文件操作\"]
+        E2[\"parse → validate → modify\"]
+    end
+    Mind -->|\"JSON\"| Engine
+
+    subgraph MindBound[\"Mind 不可跨边界\"]
+        MB1[\"Mind 不写文件\"]
+        MB2[\"Mind 不代替人类决策\"]
+    end
+    subgraph EngineBound[\"引擎不可跨边界\"]
+        EB1[\"引擎不做推导\"]
+        EB2[\"引擎不修改 Mind 的决策逻辑\"]
+    end
 ```
 
 Mind 的职责在输出 JSON 时结束。引擎接收 JSON 后执行 `affected_documents` 中描述的操作。引擎不自行判断是否执行——如果 `verification.overall` 为 fail，引擎应拒绝执行并标记为 human_review。
