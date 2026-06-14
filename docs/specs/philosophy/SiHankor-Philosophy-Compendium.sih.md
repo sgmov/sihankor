@@ -2,6 +2,7 @@
 id: 260613-1728-sihankor-philosophy-compendium
 type: compendium
 stage: 1/3
+upstream: PHILOSOPHY
 ---
 # 司衡哲学纲要
 

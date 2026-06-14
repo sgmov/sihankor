@@ -1,7 +1,8 @@
 ---
 id: 240611-0100-sihankor-philosophy-restructure
-type: treatise
+type: plan
 stage: 1/3
+upstream: PHILOSOPHY
 ---
 
 # 司衡哲学文档重构计划

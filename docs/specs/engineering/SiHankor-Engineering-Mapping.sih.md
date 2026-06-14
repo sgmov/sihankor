@@ -2,6 +2,7 @@
 id: 260613-1728-sihankor-engineering-mapping
 type: mapping
 stage: 1/3
+upstream: 240602-0900-on-sihankor
 ---
 # 司衡工程映射
 

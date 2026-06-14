@@ -31,8 +31,6 @@ upstream: 240610-1030-on-sihankor-canon
 - **只建议不决定**：Mind 的输出是建议而非指令——最终决定权在人类。知止之法：机器知道自己的边界，不越权。
 - **只自知不假装**：Mind 必须声明分析不确定性和认知盲区——不假装全知。道四：治理工具自身也受道的约束。
 
----
-
 ## 二、道法约束
 
 每条道和法在 Mind 中的工程约束。不重新定义道和法——引用 Tao 和 Canon 的对应条款，标注"因此 Mind 必须做到什么"。
@@ -49,7 +47,6 @@ upstream: 240610-1030-on-sihankor-canon
 | 损补  | [《法论》$2.4](../philosophy/On-SiHankor-Canon.sih.md#24-损补损有余补不足)         | 分析输出区分减损建议（合并重复/归档过时）和补充建议（补全引用链/补全 limitations），不输出笼统的"问题"标记 |
 | 顺势  | [《法论》$2.5](../philosophy/On-SiHankor-Canon.sih.md#25-顺势力度适配场景)         | archive/ 中的文档不生成修改建议。propose 阶段建议以"可能"措辞，ratify 阶段以"应"措辞                       |
 
----
 
 ## 三、四步分析法（术层）
 
@@ -79,7 +76,6 @@ upstream: 240610-1030-on-sihankor-canon
 
 ④ 的输出可以触发新一轮 ①——例如发现某个文档的意图定位需要人类确认后，用确认结果重新分析。
 
----
 
 ## 四、三机流转与输出 Schema（几层+约层）
 
@@ -155,7 +151,6 @@ struct Verification {
 - 每个 `Divergence` 项必有 `confidence`（道四要求）
 - `five_law_check` 的 5 条法必须逐条检验，不可省略
 
----
 
 ## 五、MCP 工具定义（形迹层）
 
@@ -176,7 +171,6 @@ Mind 不执行写入操作——文件修改由下游引擎执行。决策 JSON 
 2. **最小影响面**：`affected_documents` 只列直接下游，不推测间接影响
 3. **可回退**：每个写入建议附回退操作描述
 
----
 
 ## 六、与现有引擎的边界
 
@@ -205,7 +199,6 @@ flowchart LR
 
 Mind 的职责在输出 JSON 时结束。引擎接收 JSON 后执行 `affected_documents` 中描述的操作。引擎不自行判断是否执行——如果 `verification.overall` 为 fail，引擎应拒绝执行并标记为 human_review。
 
----
 
 ## 七、与约系的关系
 
@@ -220,7 +213,6 @@ Mind 的约层（结构化输出 Schema）与引擎约系（`.sih/index/` 中的
 
 Mind 依赖引擎约系获取分析数据，但 Mind 自身的约层服务于认知透明度——两者是消费关系，不是重叠关系。
 
----
 
 ## 八、自我质疑
 

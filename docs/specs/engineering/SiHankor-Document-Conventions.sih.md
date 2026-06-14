@@ -141,7 +141,7 @@ let now = Local::now();
 
 ### 4.3 文档类型
 
-四种 type，回答"文档的写作意图是什么"：不是文档的内容层级（道/法/术），而是写作意图的形态。
+七种 type，回答"文档的写作意图是什么"：不是文档的内容层级（道/法/术），而是写作意图的形态。
 
 | type       | 中文对 | 英文对     | 定义                                   |
 | ---------- | ------ | ---------- | -------------------------------------- |
@@ -149,8 +149,11 @@ let now = Local::now();
 | compendium | 纲     | Compendium | 参照标准：定义术语、建立对照、供查阅   |
 | mapping    | 映     | Mapping    | 工程映射：哲学概念到工程实践的投射     |
 | note       | 记     | Note       | 经验沉淀：工作过程中产生的洞察         |
+| plan       | 策     | Plan       | 规划文档：目标分解、任务拆解、路线图   |
+| decision   | 决     | Decision   | 架构决策：权衡利弊、选定方案、记录理由 |
+| proposal   | 议     | Proposal   | 方向提案：论证提案、评估影响、请求确认 |
 
-四种 type 的法层定义（追问、stage 范围、上游语义、与目录的关系）见[《司衡法论》$3.2、type定义](../philosophy/On-SiHankor-Canon.sih.md#type-定义)。五类不可增删：新增 type 意味着治理模型的变更，需走法层修正流程。
+七种 type 的法层定义（追问、stage 范围、上游语义、与目录的关系）见[《司衡法论》$3.2、type定义](../philosophy/On-SiHankor-Canon.sih.md#type-定义)。七类不可增删：新增 type 意味着治理模型的变更，需走法层修正流程。
 
 ### 4.4 ADR 签认
 
@@ -245,11 +248,9 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 #### frontmatter
 
 ```yaml
----
 id: 240610-1500-auth-edge
 type: note
 stage: 1/3
----
 ```
 
 notes 与受治文档共享同一套 frontmatter schema（id + type + stage），差异仅在 type 值和 stage 语义。

@@ -1,9 +1,10 @@
 ---
 id: 260613-2000-sihankor-external-validation
-type: treatise
+type: decision
 stage: 2/3
 upstream: 260613-1728-sihankor-philosophy-compendium
 participants: [sihankor-builder, external-validator, sihankor-ai-instance]
+decided-by: ai-assist
 ---
 
 # 司衡外部验证与元治理对话

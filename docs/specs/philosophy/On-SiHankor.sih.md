@@ -3,6 +3,7 @@ id: 240602-0900-on-sihankor
 type: treatise
 stage: 3/3
 upstream: PHILOSOPHY
+decided-by: ai-assist
 ---
 
 # 司衡论

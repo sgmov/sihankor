@@ -1,8 +1,9 @@
 ---
 id: 260613-2000-sihankor-legacy-migration-governance
-type: treatise
+type: decision
 stage: 3/3
 upstream: 260613-1728-sihankor-philosophy-compendium
+decided-by: ai-assist
 ---
 
 # 司衡 Legacy 迁移治理记录
@@ -144,4 +145,6 @@ upstream: 260613-1728-sihankor-philosophy-compendium
 - **cc-plan.md**（2026-06-12，DeepSeek）：对 21 个 legacy 文件的逐文件处置建议。增量决策点（Q1-Q5）已决议后纳入 $二。
 - **glm-plan.md**（2026-06-12，GLM）：对 docs 工程层缺口的系统性识别。增量决策点（D1-D10）已决议后纳入 $二。
 
-两份审阅均以 docs/ 为单一权威源独立产出。原始版本保留在 `legacy/plan/` 中作为历史记录。
+两份审阅均以 docs/ 为单一权威源独立产出。原始版本保留在 `legacy/plan/` 中作为历史记录。[^import-message]
+
+[^import-message]: 作为历史遗存，在司衡引擎文档重构阶段，`legacy`目录下的所有文件已完成其历史使命，未纳入本项目的`git logs`，并在本文档中永久移除。保留本文并非为了考古研究，旨在阐明司衡引擎的起源历经多轮推导与决策。

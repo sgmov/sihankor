@@ -2,6 +2,7 @@
 id: 240610-1030-on-sihankor-canon
 type: treatise
 stage: 3/3
+upstream: PHILOSOPHY
 ---
 
 # 司衡法论
