@@ -1,4 +1,6 @@
 target/
-target/*
+target/
 .vscode/
 .DS_Store
+.sih/index.db
+.trae/
