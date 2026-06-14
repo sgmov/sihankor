@@ -1,0 +1,41 @@
+use std::path::Path;
+
+use super::database::SihDatabase;
+use super::indexer::{self, IndexReport};
+use super::validator::ValidationConfig;
+
+/// 管道配置
+#[derive(Debug, Clone)]
+pub struct PipelineConfig {
+    pub docs_dir: String,
+    pub db_path: String,
+    pub validation: ValidationConfig,
+}
+
+impl Default for PipelineConfig {
+    fn default() -> Self {
+        Self {
+            docs_dir: "docs/".to_string(),
+            db_path: ".sih/index.db".to_string(),
+            validation: ValidationConfig::default(),
+        }
+    }
+}
+
+/// 管道执行报告
+#[derive(Debug, Clone)]
+pub struct PipelineReport {
+    pub index: IndexReport,
+}
+
+/// 执行完整管道：discover → parse → validate → index
+pub async fn run_pipeline(
+    db: &dyn SihDatabase,
+    docs_dir: &Path,
+    config: &ValidationConfig,
+) -> PipelineReport {
+    let index_report = indexer::rebuild_index(db, docs_dir, config).await;
+    PipelineReport {
+        index: index_report,
+    }
+}
