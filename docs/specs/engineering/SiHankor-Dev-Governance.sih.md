@@ -1,6 +1,6 @@
 ---
 id: 260616-1200-sihankor-dev-governance
-stage: 1/3
+stage: 2/3
 upstream: 240610-1030-on-sihankor-canon
 ---
 
@@ -8,25 +8,26 @@ upstream: 240610-1030-on-sihankor-canon
 
 > 司衡引擎的开发遵循司衡自身的治理流程。本文是引擎开发流程的权威参照。
 
-## 一、道四声明：引导悖论
+## 一、道四声明：引导悖论（更新于 2026-06-16）
 
-本文描述的完整链包含 engine 自动验证环节。engine 尚未实现——当前处于**引导阶段**。
+本文描述的完整链包含 engine 自动验证环节。engine **第一阶段已完成**（parser + validator(13规则) + indexer + 6 MCP 工具 + SQLite，~1800 LOC），MVP 基线已超越。
 
-**引导阶段规则**：
+**当前状态**：
 
-- 链的前三步（drafts → proposal → decision → spec）可立即运行，只需人类的纪律和文档约定
-- 链的后两步（自动验证 + semantic.yml 填充）待 engine 达到 MVP 基线后启动
+- 链的前三步（drafts → proposal → decision → spec）已运行多轮，产出 6 个 3/3 decision 和 9 个 proposal
+- 链的后两步（自动验证 + semantic.yml 填充）已可启用——engine 可对自己的 docs/ 执行 `validate_sihmd`
+- semantic.yml 填充待 Mind Phase (iCL) 实现后自动化
 
-**MVP 基线**：engine 能够解析 .sih.md 的 frontmatter（id, stage, upstream），能读取 docs/ 目录结构并做基本校验。
+**MVP 基线**（已达成）：engine 能够解析 .sih.md 的 frontmatter（id, stage, upstream），能读取 docs/ 目录结构并做基本校验。
 
 ## 二、治理链
 
-```
+```text
 knowledge/drafts/  →  proposals/  →  decisions/  →  specs/engineering/  →  src/  →  .sih/semantic.yml
 
   模糊意图             提案           决议             规约修订              代码        映射验证
   brainstorming        1/3→2/3→3/3    ADR              设计更新              Rust        fidelity检测
-  (非.sih.md)          stage 3/3     stage 3/3         stage 2/3→3/3                    gap标记
+  (非.sih.md)          stage 3/3     stage 3/3         stage 1/3→2/3→3/3                 gap标记
 ```
 
 ### 第一阶段：意图孵化
@@ -59,14 +60,16 @@ proposal 标准结构：
 - 验收标准（可验证、可量化）
 
 1/3 → 2/3：提案结构化完成，进入审查。
-2/3 → 3/3：经过鉴的检验，决议通过。决议者是人类。
+2/3 → 3/3：经过鉴的检验，决议通过。**决议者必须是与提案作者不同的人**；在单人项目中，AI 可充任审查者（识别 gap、对比方案），但不充任决议者——最终采用/否决的决策仍由人做出。
+
+proposal 3/3 后，对应 decision 文档的 frontmatter 须声明 `decided-by`，记录决策者身份。decision 文档 2/3+ stage 须含 `decided-by`（参见 G-09）；非 decisions/ 目录下的文档不得含 `decided-by`（参见 F-07）。
 
 ### 第三阶段：决策落地
 
 proposal 3/3 后执行两件事：
 
-1. **决策记录**：在 `docs/decisions/` 中建立 ADR，记录选择方案的理由
-2. **规约更新**：若提案涉及设计变更，对应 `docs/specs/engineering/` 文档走 Reopen 流程更新
+1. **决策记录**：在 `docs/decisions/` 中建立 ADR，记录选择方案的理由，声明 `decided-by`
+2. **规约更新**：若提案涉及设计变更，对应 `docs/specs/engineering/` 文档走 Reopen 流程更新（Reopen 规范待 Canon 完善——当前按勘误/轻量修订/设计变更/法层修正四级分别处理，参见 §三）
 
 ### 第四阶段：代码实现
 
@@ -75,34 +78,50 @@ proposal 3/3 后执行两件事：
 
 ### 第五阶段：闭合验证
 
-engine 达到 MVP 基线后执行：
+在 `.sih/semantic.yml` 中注册代码↔规约映射。engine 已可执行自指验证（`validate_sihmd` 对自身 docs/ 运行），fidelity 检测结果记录在 semantic.yml 中。
 
-1. 在 `.sih/semantic.yml` 中注册代码↔规约映射
-2. engine 对自身 docs/ 执行验证（自指）
-3. fidelity 检测结果记录在 semantic.yml 中
-4. gap 状态变更
+待 Mind Phase (iCL) 实现后，gap 状态变更自动化。
 
 ## 三、变更分级
 
-| 级别     | 流程                      | 判定标准                 | 示例                       |
-| -------- | ------------------------- | ------------------------ | -------------------------- |
-| 勘误     | 直接修改 + commit message | 不改变下游行为预期       | typo、路径、格式修正       |
-| 轻量修订 | proposal → decision       | 改变实现细节，不改变契约 | 修改验证规则、增加工具参数 |
-| 设计变更 | 完整五阶段链              | 改变接口契约或架构       | 新增模块、改变流转模型     |
-| 法层修正 | Canon Reopen              | 改变法层定义             | 修改 stage 语义、增减法条  |
+| 级别 | 流程与判定 | 示例 |
+|------|-----------|------|
+| **勘误** | 直接修改 + commit message。判定：不改变下游行为预期 | typo、路径、事实同步 |
+| **轻量修订** | proposal → decision。判定：改变实现细节，不改变契约 | 修改验证规则、增加工具参数 |
+| **设计变更** | 完整五阶段链。判定：改变接口契约或架构 | 新增模块、改变流转模型 |
+| **法层修正** | Canon Reopen。判定：改变法层定义 | 修改 stage 语义、增减法条 |
 
 ## 四、gap 引用约定
 
 gap 实体尚未正式定义（待独立 proposal）。过渡期间使用占位格式：
 
 ```markdown
-[GAP: 引擎核心模块未实现 — 阻塞文档解析和 frontmatter 校验]
+[GAP: 此处简述缺口 — 阻塞了什么]
+```
+
+实际示例（已关闭）：
+
+```markdown
+[GAP: 引擎核心模块未实现 — 阻塞文档解析和 frontmatter 校验]  —— 已于 2026-06-16 关闭
 ```
 
 待 gap 实体定义完成后，批量替换为 `@gap: <id>` 正式格式。
 
 ## 五、与司衡治理体系的关系
 
-- Canon（法层）：定义了 stage 语义、生命周期规则、目录即身份——引擎开发链遵循全部法层规则
-- Document-Conventions（术层）：定义了 frontmatter 格式、事件记录——引擎开发中 proposal 和 decision 文档遵循 Conventions
-- Engineering-Mapping（映射）：定义了哲学→工程的映射——引擎每个模块的哲学溯源参照此文档
+| 文档 | 层 | 与本文的关系 |
+|------|-----|-------------|
+| Canon | 法 | 定义 stage 语义、生命周期规则、目录即身份——引擎开发链遵循全部法层规则 |
+| Document-Conventions | 术 | 定义 frontmatter 格式、文档风格约束——proposal 和 decision 文档遵循 Conventions |
+| Engineering-Mapping | 术 | 定义哲学→工程的映射——引擎每个模块的哲学溯源参照此文档 |
+| Engine-Design-Summary | 术 | 定义引擎架构设计——代码实现以此为准 |
+| Mind-Design | 术 | 定义三机流转和 MCP 工具——第二阶段实现参照 |
+| Engine-Roadmap | 术 | 定义引擎工程路线图——本文开发链的宏观方向参照 |
+
+## 六、decided-by 治理约束
+
+治理链中 `decided-by` 的规则由 validator 的 F-07 和 G-09 执行：
+
+- **F-07（戒）**：非 `decisions/` 目录下的文档，frontmatter 不得含 `decided-by`。违反 → Fatal。
+- **G-09（规）**：`decisions/` 下 stage 为 2/3 或 3/3 的文档，frontmatter 应含 `decided-by`。缺失 → Guideline。
+- **决议者约束**（本文 §二.2）：proposal→decision 的决议者须为作者之外的人。此约束目前无法被 engine 机械验证，标记为 `[human-review]`。
