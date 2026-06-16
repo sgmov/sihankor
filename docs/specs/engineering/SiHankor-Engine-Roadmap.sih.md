@@ -22,7 +22,7 @@ upstream: 240602-0900-on-sihankor
 | 工程映射           | 道→法→术→几完整映射 + 三域边界 + 道家调和                          | 3/3，stable |
 | 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 3/3，validator 全覆盖 |
 | 引擎设计概要       | 引擎架构设计 + 模块职责 + 数据流                                    | 3/3，已实现 |
-| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 2/3（open GAP） |
+| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 3/3（Canon Reopen 已就位） |
 | 治理链决策         | 全栈治理链决议完成                                                 | 3/3               |
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
@@ -168,9 +168,9 @@ flowchart TB
         B4["T2.4 Mind 工具整合 ✅"]
     end
 
-    subgraph Phase3["第三阶段：体系收敛（ratify）⚠ 当前"]
-        C1["工程文档 2/3→3/3 ⚡"]
-        C2["参照文档 2/3→3/3 ⚡"]
+    subgraph Phase3["第三阶段：体系收敛（ratify）✅"]
+        C1["工程文档 2/3→3/3 ✅"]
+        C2["参照文档 2/3→3/3 ✅"]
         C3["测试 + CI + 发布"]
     end
 
@@ -421,11 +421,17 @@ gantt
 
 ## 八、当前第一步（2026-06-16 更新）
 
-Phase 3 体系收敛：9 docs advanced to 3/3 (4 proposals + 4 notes + 1 decision)，所有 decisions/ 已达 3/3。
+Phase 3 体系收敛完成。35/38 docs at 3/3。
 
-待完成：
-1. **Dev-Governance Reopen 规范**：Canon 层定义 Reopen 流程（法层修正），然后 Dev-Governance 可推进至 3/3
-2. **CI/CD 增强**：release build + clippy lint 纳入 CI workflow
+仅剩 3 个非 3/3：
+- Engine-Roadmap 2/3（living plan，随系统演化更新）
+- 1 个 archived decision（0/...）
+- 1 个 philosophy doc（特殊状态）
+
+下一步：
+1. **CI/CD 增强**：release build + clippy lint 纳入 CI workflow
+2. **semantic.yml 填充**：代码↔规约 fidelity 映射（待 Mind 成熟后自动化）
+3. **外部发布**：crates.io publish + 文档站
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 
