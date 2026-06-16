@@ -1,6 +1,6 @@
 ---
 id: 260616-1900-format-lint-proposal
-stage: 2/3
+stage: 3/3
 upstream: 240610-1500-sihankor-document-conventions
 ---
 # format-lint：文档格式约束引擎化
@@ -124,7 +124,7 @@ file:line:col: C08 warning: mixed Chinese/English in token "engine 建议"
 
 ## ADR
 
-推进至 2/3（人类确认）。实现后晋升 3/3。决策记录见 [format-lint 设计决策](../decisions/260616-1930-format-lint-decision.sih.md)。
+推进至 3/3（实现完成）。实现见 `src/fmt/` + `src/bin/sihankor-fmt.rs`，决策记录见 [format-lint 设计决策](../decisions/260616-1930-format-lint-decision.sih.md)。
 
 ### 审阅修正记录（1/3 审阅）
 

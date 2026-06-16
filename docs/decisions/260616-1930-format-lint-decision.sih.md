@@ -1,6 +1,6 @@
 ---
 id: 260616-1930-format-lint-decision
-stage: 2/3
+stage: 3/3
 upstream: 240610-1500-sihankor-document-conventions
 ---
 # format-lint 设计决策
