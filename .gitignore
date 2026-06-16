@@ -4,3 +4,5 @@ target/
 .DS_Store
 .sih/index.db
 .trae/
+.codegraph/
+reasonix.toml
