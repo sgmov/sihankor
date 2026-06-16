@@ -13,24 +13,24 @@ upstream: 240602-0900-on-sihankor
 
 ### 1.1 已完成
 
-| 领域               | 内容                                                               | 状态              |
-| ------------------ | ------------------------------------------------------------------ | ----------------- |
-| 哲学五论           | 总纲/道论/鉴论/法论/元：全部 3/3                                   | 定稿，不可逆      |
-| Legacy 迁移        | 21 个 legacy 文件已审计、迁移、删除                                | 完成              |
-| 第一阶段：引擎核心 | parser + validator（13 规则）+ indexer + orchestrator + 6 MCP 工具 | 已完成，~1800 LOC |
-| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 3/3，已实现 |
-| 工程映射           | 道->法->术->几完整映射 + 三域边界 + 道家调和                          | 3/3，stable |
-| 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 3/3，validator 全覆盖 |
-| 引擎设计概要       | 引擎架构设计 + 模块职责 + 数据流                                    | 3/3，已实现 |
+| 领域               | 内容                                                               | 状态                       |
+| ------------------ | ------------------------------------------------------------------ | -------------------------- |
+| 哲学五论           | 总纲/道论/鉴论/法论/元：全部 3/3                                   | 定稿，不可逆               |
+| Legacy 迁移        | 21 个 legacy 文件已审计、迁移、删除                                | 完成                       |
+| 第一阶段：引擎核心 | parser + validator（13 规则）+ indexer + orchestrator + 6 MCP 工具 | 已完成，~1800 LOC          |
+| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 3/3，已实现                |
+| 工程映射           | 道->法->术->几完整映射 + 三域边界 + 道家调和                       | 3/3，stable                |
+| 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 3/3，validator 全覆盖      |
+| 引擎设计概要       | 引擎架构设计 + 模块职责 + 数据流                                   | 3/3，已实现                |
 | 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 3/3（Canon Reopen 已就位） |
-| 治理链决策         | 全栈治理链决议完成                                                 | 3/3               |
-| decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
-| 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
-| plan 语义拆分      | roadmap -> specs/engineering/，plan 拆为 proposal+spec              | 完成              |
-| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，53 tests    |
-| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，53 tests    |
-| T2.3 iCT 方圆机    | 五法检验 + verify_decision + full_analysis MCP 工具                  | 完成，53 tests    |
-| T2.4 Mind 工具整合 | 4 MCP 工具 panorama + limitations/self_question 填充 + 集成测试      | 完成，53 tests    |
+| 治理链决策         | 全栈治理链决议完成                                                 | 3/3                        |
+| decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成                       |
+| 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成                       |
+| plan 语义拆分      | roadmap -> specs/engineering/，plan 拆为 proposal+spec             | 完成                       |
+| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，53 tests             |
+| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具           | 完成，53 tests             |
+| T2.3 iCT 方圆机    | 五法检验 + verify_decision + full_analysis MCP 工具                | 完成，53 tests             |
+| T2.4 Mind 工具整合 | 4 MCP 工具 panorama + limitations/self_question 填充 + 集成测试    | 完成，53 tests             |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -107,7 +107,7 @@ E4（原 plan 的"实现先于文档 ratify"）将 1/3->2/3（resolve）和 2/3-
 | -------------------- | ---- | ---- | --------------------------------------- |
 | Compendium           | 2/3  | 3/3  | 概念定义与五论一致，交叉引用完整        |
 | Arguments            | 2/3  | 3/3  | 论证案例与 Tao/Assay/Canon 章节对应完整 |
-| Onomastic-Philosophy | 3/3  | ：    | 已完成                                  |
+| Onomastic-Philosophy | 3/3  | ：   | 已完成                                  |
 
 **类别二：应作为设计上游先行推进（顺因之法要求）**
 
@@ -190,12 +190,12 @@ flowchart TB
 
 | 任务                 | 原估 | 实现 | 产出                                                                                       |
 | -------------------- | ---- | ---- | ------------------------------------------------------------------------------------------ |
-| T1.1 数据库抽象层    | 3-5d | [OK]    | `SihDatabase` trait + `SqliteBackend`（rusqlite），含 `resolve_chain` 递归 CTE             |
-| T1.2 Markdown 解析器 | 2-3d | [OK]    | `parse_file` + `parse_content`，frontmatter YAML（serde_yaml），id/stage/upstream 必填校验 |
-| T1.3 文档验证器      | 3-5d | [OK]    | 13 条规则覆盖 frontmatter/structure/content/reference/lifecycle/governance 六域            |
-| T1.4 文档索引器      | 2-3d | [OK]    | `discover_documents` -> `index_document` -> `rebuild_index` 三管道                           |
-| T1.5 管道编排器      | 1-2d | [OK]    | `PipelineConfig` + `PipelineReport` + `run_pipeline`                                       |
-| T1.6 治理 MCP 工具   | 3-5d | [OK]    | 6 工具全部实现：validate/search/get/resolve_chain/project_status/index_rebuild             |
+| T1.1 数据库抽象层    | 3-5d | [OK] | `SihDatabase` trait + `SqliteBackend`（rusqlite），含 `resolve_chain` 递归 CTE             |
+| T1.2 Markdown 解析器 | 2-3d | [OK] | `parse_file` + `parse_content`，frontmatter YAML（serde_yaml），id/stage/upstream 必填校验 |
+| T1.3 文档验证器      | 3-5d | [OK] | 13 条规则覆盖 frontmatter/structure/content/reference/lifecycle/governance 六域            |
+| T1.4 文档索引器      | 2-3d | [OK] | `discover_documents` -> `index_document` -> `rebuild_index` 三管道                         |
+| T1.5 管道编排器      | 1-2d | [OK] | `PipelineConfig` + `PipelineReport` + `run_pipeline`                                       |
+| T1.6 治理 MCP 工具   | 3-5d | [OK] | 6 工具全部实现：validate/search/get/resolve_chain/project_status/index_rebuild             |
 
 **代码量**：14 个 Rust 源文件，~1800 LOC。`cargo check` 通过。
 
@@ -210,14 +210,14 @@ flowchart TB
 | F-06 | governance  | Fatal     | 禁止 `decided-by: ai-auto`          |
 | F-07 | governance  | Fatal     | 非 decisions/ 文档禁止 `decided-by` |
 | G-02 | structure   | Guideline | 目录在可识别目录下                  |
-| G-03 | structure   | Guideline | 路径深度 <=3                         |
-| G-04 | content     | Guideline | 表格列数 <=3                         |
+| G-03 | structure   | Guideline | 路径深度 <=3                        |
+| G-04 | content     | Guideline | 表格列数 <=3                        |
 | G-05 | content     | Guideline | 代码块须声明语言标签                |
 | G-06 | content     | Guideline | 无 emoji 字符                       |
 | G-08 | lifecycle   | Guideline | Stage X 文档标记                    |
 | G-09 | governance  | Guideline | decisions/ 2/3+ 应有 `decided-by`   |
 | G-10 | governance  | (silent)  | 根文档自指向合法                    |
-| J-01 | content     | Judgment  | 列表嵌套 <=2 层                      |
+| J-01 | content     | Judgment  | 列表嵌套 <=2 层                     |
 
 > 已移除：F-02（type 字段废除）。已预留但未实现：G-07（1/3 文档被引用检查，需跨文档 DB 查询）。
 
@@ -310,11 +310,11 @@ let nature = infer_nature(&doc.file_path.unwrap_or_default());
 
 目标：实现 4 个 Mind MCP 工具。
 
-| 工具               | 流转阶段    | 用途                     |
-| ------------------ | ----------- | ------------------------ |
-| `analyze_document` | iCL         | 单文档治理定位和关系     |
-| `propose_decision` | iCL->iWW     | 在认知基础上生成决策建议 |
-| `verify_decision`  | iCT         | 单独验证已有决策是否合道 |
+| 工具               | 流转阶段      | 用途                     |
+| ------------------ | ------------- | ------------------------ |
+| `analyze_document` | iCL           | 单文档治理定位和关系     |
+| `propose_decision` | iCL->iWW      | 在认知基础上生成决策建议 |
+| `verify_decision`  | iCT           | 单独验证已有决策是否合道 |
 | `full_analysis`    | iCL->iWW->iCT | 完整三机流转分析         |
 
 关键约束：
@@ -424,11 +424,13 @@ gantt
 Phase 3 体系收敛完成。35/38 docs at 3/3。
 
 仅剩 3 个非 3/3：
+
 - Engine-Roadmap 2/3（living plan，随系统演化更新）
 - 1 个 archived decision（0/...）
 - 1 个 philosophy doc（特殊状态）
 
 下一步：
+
 1. **CI/CD 增强**：release build + clippy lint 纳入 CI workflow
 2. **semantic.yml 填充**：代码<->规约 fidelity 映射（待 Mind 成熟后自动化）
 3. **外部发布**：crates.io publish + 文档站
@@ -437,20 +439,20 @@ Phase 3 体系收敛完成。35/38 docs at 3/3。
 
 ### 9.1 治理变迁清单
 
-| 时间       | 变迁                                          | 决议依据                               |
-| ---------- | --------------------------------------------- | -------------------------------------- |
-| 2026-06-13 | type 字段废除，nature 由目录推断              | SiHankor-Type-Extension -> superseded   |
-| 2026-06-15 | docs/ 结构重排 v2                             | restructure-v2 proposal 3/3            |
-| 2026-06-15 | decided-by 放置到 decisions/ 附录             | decided-by-placement 3/3               |
-| 2026-06-16 | id 格式强制连字符 `YYMMDD-HHMM`               | id-format-hyphen-drift note -> 漂移纠正 |
-| 2026-06-16 | note 文档有 stage                             | Canon $3.1 修正                        |
-| 2026-06-16 | decided-by 仅 decisions/ 合法                 | F-07 反向校验                          |
-| 2026-06-16 | po/ 废除                                      | Legacy-Migration D-05                  |
-| 2026-06-16 | External-Validation -> notes/                  | 决策晋级迁移                           |
-| 2026-06-16 | Dev-Governance 新建                           | engine-dev-governance-chain 3/3        |
-| 2026-06-16 | plan 语义拆分（roadmap -> specs/engineering/） | 260616-1800-plan-semantic-split        |
-| 2026-06-16 | 第一-A 修复合道完成（nature 列/测试/README）  | Engine-Roadmap Phase 1a                |
-| 2026-06-16 | Dev-Governance 1/3->2/3                        | 事实同步 + 合道修复                    |
+| 时间       | 变迁                                           | 决议依据                                |
+| ---------- | ---------------------------------------------- | --------------------------------------- |
+| 2026-06-13 | type 字段废除，nature 由目录推断               | SiHankor-Type-Extension -> superseded   |
+| 2026-06-15 | docs/ 结构重排 v2                              | restructure-v2 proposal 3/3             |
+| 2026-06-15 | decided-by 放置到 decisions/ 附录              | decided-by-placement 3/3                |
+| 2026-06-16 | id 格式强制连字符 `YYMMDD-HHMM`                | id-format-hyphen-drift note -> 漂移纠正 |
+| 2026-06-16 | note 文档有 stage                              | Canon $3.1 修正                         |
+| 2026-06-16 | decided-by 仅 decisions/ 合法                  | F-07 反向校验                           |
+| 2026-06-16 | po/ 废除                                       | Legacy-Migration D-05                   |
+| 2026-06-16 | External-Validation -> notes/                  | 决策晋级迁移                            |
+| 2026-06-16 | Dev-Governance 新建                            | engine-dev-governance-chain 3/3         |
+| 2026-06-16 | plan 语义拆分（roadmap -> specs/engineering/） | 260616-1800-plan-semantic-split         |
+| 2026-06-16 | 第一-A 修复合道完成（nature 列/测试/README）   | Engine-Roadmap Phase 1a                 |
+| 2026-06-16 | Dev-Governance 1/3->2/3                        | 事实同步 + 合道修复                     |
 
 ### 9.2 盲区
 
@@ -481,8 +483,8 @@ Phase 3 体系收敛完成。35/38 docs at 3/3。
 | E1  | 引擎实现优先级     | 先核心（术/约/形迹）后 Mind（几）               | 顺因之法：先有执行基础，再有认知节点 |
 | E2  | 数据库选型         | SQLite + `SihDatabase` trait                    | 已实现                               |
 | E3  | Mind MVP 范围      | 先 `analyze_document`（iCL only），再补 iWW/iCT | 知止                                 |
-| E4a | 文档 1/3->2/3 策略  | 按类型区分                                      | 顺因之法                             |
-| E4b | 文档 2/3->3/3 策略  | 实现验证后 ratify                               | ratify = "已被实践证明合道"          |
+| E4a | 文档 1/3->2/3 策略 | 按类型区分                                      | 顺因之法                             |
+| E4b | 文档 2/3->3/3 策略 | 实现验证后 ratify                               | ratify = "已被实践证明合道"          |
 | E5  | 测试策略           | 每模块完成后立即写测试                          | 损补之法                             |
 | E6  | 旧版 Python 引擎   | 不迁移                                          | 知止                                 |
 | E7  | F/G/J 法则归属     | Engineering-Mapping 承载                        | glm-D1                               |
