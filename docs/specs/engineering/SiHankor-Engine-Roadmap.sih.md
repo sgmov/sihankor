@@ -21,9 +21,11 @@ upstream: 240602-0900-on-sihankor
 | Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 1/3，术层设计完成 |
 | 工程映射           | 道→法→术→几完整映射 + 三域边界 + 道家调和                          | 1/3，映射框架完成 |
 | 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 2/3，规则体系完整 |
-| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 1/3               |
+| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 2/3               |
 | 治理链决策         | 全栈治理链决议完成                                                 | 3/3               |
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
+| 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
+| plan 语义拆分      | roadmap → specs/engineering/，plan 拆为 proposal+spec              | 完成              |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -389,9 +391,9 @@ gantt
     T1.5 管道编排器              :done, a5, 2026-06-16, 1d
     T1.6 治理 MCP 工具           :done, a6, 2026-06-16, 2d
     section 第一-A：修复合道
-    nature 列修复                :a7, 2026-06-17, 1d
-    测试 + CI                    :a8, after a7, 2d
-    Core README                  :a9, after a8, 1d
+    nature 列修复                :done, a7, 2026-06-17, 0d
+    测试 + CI                    :done, a8, 2026-06-17, 0d
+    Core README                  :done, a9, 2026-06-17, 0d
     section 第二阶段：思维核心
     T2.1 iCL 明晰机              :b1, after a9, 7d
     T2.2 iWW 消息机              :b2, after b1, 5d
@@ -406,43 +408,49 @@ gantt
 | -------- | ------ | ------ | ------ |
 | 第零阶段 | 4-7d   | 0      | 4-7d   |
 | 第一阶段 | 14-18d | 0      | 18-25d |
-| 第一-A   | 0      | 3-5d   | 21-30d |
+| 第一-A   | 3-5d   | 0      | 21-30d |
 | 第二阶段 | 0      | 15-20d | 36-50d |
 | 第三阶段 | 0      | 10-15d | 46-65d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
-## 八、当前第一步（2026-06-16）
+## 八、当前第一步（2026-06-16 更新）
 
-第一-A 阶段三个并行任务：
+第一-A 阶段已完成。当前进入第二阶段：思维核心（Mind）。
 
-1. **nature 列修复**：`SqliteBackend::upsert_document` 中填入 `infer_nature` 结果，预计 1d
-2. **测试基础**：validator 单元测试 + `.github/workflows/test.yml`，预计 2d
-3. **Core README**：项目根 README 添加概念引导路径，预计 0.5d
+按 E3（Mind MVP 范围）和风险应对，建议先实现 `analyze_document`（iCL only）：
+
+1. **T2.1 iCL 明晰机**：四步分析法前三步（意图定位/关系照见/发散诊断），预估 5-7d
+2. **Mind MCP 工具**：`analyze_document` 作为首发工具，`propose_decision` + `verify_decision` + `full_analysis` 后续补全
+
+前置条件已满足：第一-A 完成（nature 列/测试/README），Dev-Governance 2/3。
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 
 ### 9.1 治理变迁清单
 
-| 时间       | 变迁                              | 决议依据                               |
-| ---------- | --------------------------------- | -------------------------------------- |
-| 2026-06-13 | type 字段废除，nature 由目录推断  | SiHankor-Type-Extension → superseded   |
-| 2026-06-15 | docs/ 结构重排 v2                 | restructure-v2 proposal 3/3            |
-| 2026-06-15 | decided-by 放置到 decisions/ 附录 | decided-by-placement 3/3               |
-| 2026-06-16 | id 格式强制连字符 `YYMMDD-HHMM`   | id-format-hyphen-drift note → 漂移纠正 |
-| 2026-06-16 | note 文档有 stage                 | Canon §3.1 修正                        |
-| 2026-06-16 | decided-by 仅 decisions/ 合法     | F-07 反向校验                          |
-| 2026-06-16 | po/ 废除                          | Legacy-Migration D-05                  |
-| 2026-06-16 | External-Validation → notes/      | 决策晋级迁移                           |
-| 2026-06-16 | Dev-Governance 新建               | engine-dev-governance-chain 3/3        |
+| 时间       | 变迁                                          | 决议依据                               |
+| ---------- | --------------------------------------------- | -------------------------------------- |
+| 2026-06-13 | type 字段废除，nature 由目录推断              | SiHankor-Type-Extension → superseded   |
+| 2026-06-15 | docs/ 结构重排 v2                             | restructure-v2 proposal 3/3            |
+| 2026-06-15 | decided-by 放置到 decisions/ 附录             | decided-by-placement 3/3               |
+| 2026-06-16 | id 格式强制连字符 `YYMMDD-HHMM`               | id-format-hyphen-drift note → 漂移纠正 |
+| 2026-06-16 | note 文档有 stage                             | Canon §3.1 修正                        |
+| 2026-06-16 | decided-by 仅 decisions/ 合法                 | F-07 反向校验                          |
+| 2026-06-16 | po/ 废除                                      | Legacy-Migration D-05                  |
+| 2026-06-16 | External-Validation → notes/                  | 决策晋级迁移                           |
+| 2026-06-16 | Dev-Governance 新建                           | engine-dev-governance-chain 3/3        |
+| 2026-06-16 | plan 语义拆分（roadmap → specs/engineering/） | 260616-1800-plan-semantic-split        |
+| 2026-06-16 | 第一-A 修复合道完成（nature 列/测试/README）  | Engine-Roadmap Phase 1a                |
+| 2026-06-16 | Dev-Governance 1/3→2/3                        | 事实同步 + 合道修复                    |
 
 ### 9.2 盲区
 
-| #   | 盲区                                               | 风险         | 建议                           |
-| --- | -------------------------------------------------- | ------------ | ------------------------------ |
-| U1  | 无 CI 管线                                         | 手动验证遗漏 | 第一-A 建立                    |
-| U2  | 引擎文档与代码不一致（nature 空值）                | 模型偏离     | 第一-A 修复                    |
-| U3  | Mind 设计中 type 引用已替换为 nature，但未全文校验 | 残留引用     | 引擎 `search_content` 后全扫描 |
+| #   | 盲区                                           | 风险         | 建议                                                    |
+| --- | ---------------------------------------------- | ------------ | ------------------------------------------------------- |
+| U1  | 无 CI 管线                                     | 手动验证遗漏 | 已建立：`.github/workflows/test.yml`（test+clippy+fmt） |
+| U2  | 引擎文档与代码不一致（nature 空值）            | 模型偏离     | 已修复：Document.nature 字段 + infer_nature 全链路      |
+| U3  | Mind 设计中 type 引用已替换为 nature，全文校验 | 残留引用     | 已扫描：无残留                                          |
 
 ### 9.3 当前文档 stage 全表（36 份文档）
 
