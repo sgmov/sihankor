@@ -23,6 +23,8 @@ fn main() {
     let mut all_violations: Vec<sihankor::fmt::Violation> = Vec::new();
     let mut files_scanned = 0u64;
 
+    let config = sihankor::fmt::FormatConfig::load();
+
     // Walk the directory tree
     for entry in walkdir::WalkDir::new(&root)
         .into_iter()
@@ -51,7 +53,7 @@ fn main() {
             .display()
             .to_string();
 
-        let violations = sihankor::fmt::lint_document(&rel_path, &content);
+        let violations = sihankor::fmt::lint_document(&rel_path, &content, &config);
         files_scanned += 1;
         all_violations.extend(violations);
     }

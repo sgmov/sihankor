@@ -4,6 +4,67 @@
 //! Character rules (C-01..C-04) skip fenced code blocks.
 //! Structure rules (C-05..C-10) apply to all lines.
 
+use serde::Deserialize;
+
+/// Format lint configuration, loaded from .sih/config.yml.
+#[derive(Debug, Clone, Deserialize)]
+pub struct FormatConfig {
+    #[serde(default)]
+    pub format: FormatSection,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct FormatSection {
+    #[serde(default = "default_pre_commit")]
+    pub pre_commit: bool,
+    #[serde(default)]
+    pub style: StyleSection,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct StyleSection {
+    #[serde(default)]
+    pub mix_lang_ignore: bool,
+}
+
+fn default_pre_commit() -> bool {
+    true
+}
+
+impl Default for FormatConfig {
+    fn default() -> Self {
+        FormatConfig {
+            format: FormatSection {
+                pre_commit: true,
+                style: StyleSection {
+                    mix_lang_ignore: false,
+                },
+            },
+        }
+    }
+}
+
+impl FormatConfig {
+    /// Load config from .sih/config.yml if present, otherwise return defaults.
+    pub fn load() -> Self {
+        let path = std::path::Path::new(".sih/config.yml");
+        if path.exists() {
+            match std::fs::read_to_string(path) {
+                Ok(content) => {
+                    match serde_yaml::from_str(&content) {
+                        Ok(config) => return config,
+                        Err(e) => {
+                            eprintln!("sihankor-fmt: warning: failed to parse .sih/config.yml: {}. Using defaults.", e);
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+        FormatConfig::default()
+    }
+}
+
 /// Format violation level.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Level {
@@ -449,7 +510,7 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
 }
 
 /// Lint a single document, returning all violations.
-pub fn lint_document(file: &str, content: &str) -> Vec<Violation> {
+pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Violation> {
     let lines: Vec<&str> = content.lines().collect();
 
     // Find frontmatter boundaries and track code blocks
@@ -501,7 +562,9 @@ pub fn lint_document(file: &str, content: &str) -> Vec<Violation> {
     violations.extend(check_c05(&lines, file, fm_end));
     violations.extend(check_c06(&lines, file, &codeblock_lines));
     violations.extend(check_c07(&lines, file, &codeblock_lines));
-    violations.extend(check_c08(&lines, file, &codeblock_lines));
+    if !config.format.style.mix_lang_ignore {
+        violations.extend(check_c08(&lines, file, &codeblock_lines));
+    }
     violations.extend(check_c09(&lines, file));
     violations.extend(check_c10(&lines, file));
 
@@ -726,14 +789,14 @@ mod tests {
     #[test]
     fn test_lint_clean_document() {
         let content = "---\nid: test\nstage: 1/3\n---\n## heading\ntext here";
-        let v = lint_document("test.sih.md", content);
+        let v = lint_document("test.sih.md", content, &FormatConfig::default());
         assert!(v.is_empty());
     }
 
     #[test]
     fn test_lint_document_with_emoji() {
         let content = "---\nid: test\nstage: 1/3\n---\n## heading\nf🔥";
-        let v = lint_document("test.sih.md", content);
+        let v = lint_document("test.sih.md", content, &FormatConfig::default());
         assert!(!v.is_empty());
         assert_eq!(v[0].code, "C01");
     }
@@ -742,14 +805,14 @@ mod tests {
     fn test_lint_skips_frontmatter() {
         // emoji in frontmatter should NOT be flagged (frontmatter is not body)
         let content = "---\nid: test\nstage: 1/3\n---\nclean text";
-        let v = lint_document("test.sih.md", content);
+        let v = lint_document("test.sih.md", content, &FormatConfig::default());
         assert!(v.is_empty(), "all rules should skip frontmatter lines");
     }
 
     #[test]
     fn test_lint_skips_code_blocks() {
         let content = "---\nid: test\nstage: 1/3\n---\n## heading\n```text\nemoji here: 🔥\n```";
-        let v = lint_document("test.sih.md", content);
+        let v = lint_document("test.sih.md", content, &FormatConfig::default());
         // Code block contents should be skipped by character rules
         // But C-09 checks the opening fence tag — "text" is valid
         assert!(v.is_empty());

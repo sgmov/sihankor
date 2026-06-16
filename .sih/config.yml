@@ -1,0 +1,4 @@
+format:
+  pre_commit: true
+  style:
+    mix_lang_ignore: true
