@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let service = SihankorService::new(Arc::new(db));
 
-    println!("sihankor engine starting, db at {}", db_path.display());
+    eprintln!("sihankor engine starting, db at {}", db_path.display());
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
     rmcp::serve_server(service, io).await?;
