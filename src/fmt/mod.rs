@@ -566,7 +566,22 @@ pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Vi
         violations.extend(check_c08(&lines, file, &codeblock_lines));
     }
     violations.extend(check_c09(&lines, file));
-    violations.extend(check_c10(&lines, file));
+    {
+        let mut c10_violations = check_c10(&lines, file);
+        // C-10 按 nature 分级：spec/decision 文档宽表为 Warning，其余 Error
+        // 法依据：有度——spec/decision 的多维映射表服务于结构呈现，非叙事可读性
+        let path = std::path::Path::new(file);
+        let nature = crate::core::validator::infer_nature(path).unwrap_or("unknown");
+        if nature == "spec" || nature == "decision" {
+            for v in &mut c10_violations {
+                v.level = Level::Warning;
+                v.message = format!(
+                    "table has >3 columns (spec/decision docs: warning only; split if narrative purpose)",
+                );
+            }
+        }
+        violations.extend(c10_violations);
+    }
 
     violations
 }
