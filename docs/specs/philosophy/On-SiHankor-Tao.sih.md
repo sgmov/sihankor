@@ -1,7 +1,7 @@
 ---
-id: 240602-0930-on-sihankor-tao
+id: 2406020930-on-sihankor-tao
 stage: 3/3
-upstream: PHILOSOPHY
+upstream: 2406020900-on-sihankor
 ---
 
 # 司衡道论
@@ -55,14 +55,14 @@ flowchart TB
 
 道层共四条。前三条描述被治理对象的因果必然性，第四条将同一套必然性递归应用于治理者自身：
 
-- 道一：发散自然，收敛必为： 为什么代码工程需要治理？
+- 道一：发散自-然，收敛必-为： 为什么代码工程需要治理？
 - 道二：意图先于代码： 代码从哪里来？
 - 道三：代码自晦，意图必复： 为什么维护代码这么难？
 - 道四：规约与实现必有间隙： 为什么治理者也会出错？
 
 ## 二、道一
 
-> 发散自然，收敛必为
+> 发散自-然，收敛必-为
 
 ### 2.1 定义
 
@@ -369,7 +369,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    D1["道一：发散自然，收敛必为<br/><small>多认知源意图发散</small>"]
+    D1["道一：发散自-然，收敛必-为<br/><small>多认知源意图发散</small>"]
     D2["道二：意图先于代码<br/><small>意图有损编码为代码</small>"]
     D3["道三：代码自晦，意图必复<br/><small>意图恢复后继续发散</small>"]
     D4["道四：规约与实现必有间隙<br/><small>治理引擎的自我指涉</small>"]
@@ -491,15 +491,15 @@ decided-by: ai-assist
 
 ### DEPS
 
-- 240602-0900-on-sihankor
+- 2406020900-on-sihankor
   - 总纲：六层脉络定位
   - [司衡论](./On-SiHankor.sih.md)
-- 240602-1000-on-sihankor-assay
+- 2406021000-on-sihankor-assay
   - 鉴论：道层主张的反推检验
   - [司衡鉴论](./On-SiHankor-Assay.sih.md)
 
 ### SEE-ALSO
 
-- 240610-1030-on-sihankor-canon
+- 2406101030-on-sihankor-canon
   - 法论，法从道生
   - [司衡法论](./On-SiHankor-Canon.sih.md)

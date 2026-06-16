@@ -1,7 +1,7 @@
 ---
-id: 260613-1728-sihankor-philosophy-arguments
+id: 2606131728-sihankor-philosophy-arguments
 stage: 2/3
-upstream: 240602-0900-on-sihankor
+upstream: 2406020900-on-sihankor
 ---
 # 司衡哲学论证集
 

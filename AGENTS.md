@@ -30,7 +30,32 @@
 
 ## Frontmatter
 
-Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory fields: `id`, `type`, `stage`. The `---` delimiters for frontmatter are the only permitted horizontal rules across all documents.
+Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory fields: `id`, `stage`. The `---` delimiters for frontmatter are the only permitted horizontal rules across all documents.
+
+### Field Definitions
+
+| Field | Required | Format | Description |
+|-------|----------|--------|-------------|
+| `id` | all | `YYMMDDHHMM[-NNN]-语义短名` | Unique document identifier. Date and time (YYMMDDHHMM) without separator, followed by a semantic short name. Example: `2406020900-on-sihankor` |
+| `stage` | spec/proposal/decision/reference | `1/3`, `2/3`, `3/3`, `0/<successor-id>`, `X` | Document lifecycle stage. Notes have no stage. |
+| `upstream` | spec/proposal/decision/reference | document id | Governance authorization source. Notes: optional. |
+| `verified` | note only | `YYMMDD` | Date the note's insight was last confirmed as valid. |
+
+`type` field is abolished. Document identity (nature) is determined by directory: `specs/` → spec, `proposals/` → proposal, `decisions/` → decision, `reference/` → reference, `knowledge/notes/` → note.
+
+### Directory Structure
+
+| Directory | Nature | Stage | Description |
+|-----------|--------|-------|-------------|
+| `specs/` | spec | 1/3→2/3→3/3 | System definitions: what the system is |
+| `proposals/` | proposal | 1/3→2/3→3/3 | Change proposals: what we propose to change |
+| `decisions/` | decision | 2/3→3/3 | Decision records (ADR): why we chose this |
+| `reference/` | reference | typically 3/3 | Reference standards: what terms mean |
+| `knowledge/notes/` | note | none (verified only) | Practice insights: what we learned |
+| `knowledge/drafts/` | — | none | Idea fragments, not .sih.md |
+| `archive/` | — | X or 0 | Deprecated documents |
+
+Full governance rules: see `docs/specs/philosophy/On-SiHankor-Canon.sih.md`
 
 ## Mermaid Diagrams
 

@@ -1,7 +1,7 @@
 ---
-id: 240602-1000-on-sihankor-assay
+id: 2406021000-on-sihankor-assay
 stage: 3/3
-upstream: PHILOSOPHY
+upstream: 2406020900-on-sihankor
 ---
 
 # 司衡鉴论
@@ -810,15 +810,15 @@ decided-by: ai-assist
 
 ### DEPS
 
-- 240602-0900-on-sihankor
+- 2406020900-on-sihankor
   - 总纲：鉴在六层脉络中的定位
   - [司衡论](./On-SiHankor.sih.md)
-- 240602-0930-on-sihankor-tao
+- 2406020930-on-sihankor-tao
   - 道论：鉴检验的对象
   - [司衡道论](./On-SiHankor-Tao.sih.md)
 
 ### SEE-ALSO
 
-- 240610-1030-on-sihankor-canon
+- 2406101030-on-sihankor-canon
   - 法论，方法论与鉴的边界
   - [司衡法论](./On-SiHankor-Canon.sih.md)

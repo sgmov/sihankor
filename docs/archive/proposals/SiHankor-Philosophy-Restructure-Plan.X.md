@@ -1,7 +1,7 @@
 ---
-id: 240611-0100-sihankor-philosophy-restructure
+id: 2406110100-sihankor-philosophy-restructure
 stage: X
-upstream: PHILOSOPHY
+upstream: 2406020900-on-sihankor
 ---
 
 # 司衡哲学文档重构计划
