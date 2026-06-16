@@ -6,3 +6,4 @@ target/
 .trae/
 .codegraph/
 reasonix.toml
+.reasonix/
