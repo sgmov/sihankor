@@ -421,12 +421,11 @@ gantt
 
 ## 八、当前第一步（2026-06-16 更新）
 
-Phase 3 体系收敛推进中：3 个 engineering spec + 2 个 reference doc 已推进至 3/3。
+Phase 3 体系收敛：9 docs advanced to 3/3 (4 proposals + 4 notes + 1 decision)，所有 decisions/ 已达 3/3。
 
 待完成：
-1. **Dev-Governance 2/3→3/3**：需先解决 [GAP] 占位 + Reopen 规范（或接受 open gap 保持 2/3 作为事实声明）
-2. **Notes/Proposals 清理**：knowledge/notes/ 中文档 stage 推进 + 过期 proposals 归档
-3. **CI/CD 集成**：在 CI 中跑 `cargo test --all` + clippy, 构建 release binary
+1. **Dev-Governance Reopen 规范**：Canon 层定义 Reopen 流程（法层修正），然后 Dev-Governance 可推进至 3/3
+2. **CI/CD 增强**：release build + clippy lint 纳入 CI workflow
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 

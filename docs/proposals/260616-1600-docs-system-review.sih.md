@@ -1,6 +1,6 @@
 ---
 id: 260616-1600-docs-system-review
-stage: 1/3
+stage: 3/3
 upstream: 260615-1500-docs-restructure-v2-decision
 ---
 

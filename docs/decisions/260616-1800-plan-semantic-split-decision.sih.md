@@ -1,6 +1,6 @@
 ---
 id: 260616-1800-plan-semantic-split-decision
-stage: 2/3
+stage: 3/3
 upstream: 240602-0900-on-sihankor
 decided-by: ai-assist
 ---

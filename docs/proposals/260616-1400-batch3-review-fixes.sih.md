@@ -1,6 +1,6 @@
 ---
 id: 260616-1400-batch3-review-fixes
-stage: 1/3
+stage: 3/3
 upstream: 240610-1030-on-sihankor-canon
 ---
 

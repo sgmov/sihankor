@@ -1,6 +1,6 @@
 ---
 id: 260613-1728-sihankor-doc-migration-patterns
-stage: 1/3
+stage: 3/3
 verified: 260613
 ---
 
