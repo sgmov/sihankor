@@ -1,5 +1,5 @@
 ---
-id: 260616-1500-sihankor-dev-governance
+id: 260616-1200-sihankor-dev-governance
 stage: 1/3
 upstream: 240610-1030-on-sihankor-canon
 ---

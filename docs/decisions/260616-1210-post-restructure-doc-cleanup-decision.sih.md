@@ -1,7 +1,7 @@
 ---
-id: 260616-1530-post-restructure-doc-cleanup-decision
+id: 260616-1210-post-restructure-doc-cleanup-decision
 stage: 3/3
-upstream: 260616-1530-post-restructure-doc-cleanup
+upstream: 260616-1210-post-restructure-doc-cleanup
 decided-by: ai-assist
 ---
 
@@ -13,7 +13,7 @@ decided-by: ai-assist
 
 ## 决策
 
-采纳轻量修订提案 260616-1530-post-restructure-doc-cleanup：
+采纳轻量修订提案 260616-1210-post-restructure-doc-cleanup：
 
 **Engineering-Mapping**：
 - 删除 `idea 类型` 引用（第 20、262 行）

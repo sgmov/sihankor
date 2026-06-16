@@ -1,5 +1,5 @@
 ---
-id: 260616-1530-post-restructure-doc-cleanup
+id: 260616-1210-post-restructure-doc-cleanup
 stage: 3/3
 upstream: 240610-1030-on-sihankor-canon
 ---
