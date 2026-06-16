@@ -30,12 +30,12 @@ upstream: 240610-1030-on-sihankor-canon
 
 **变更**：
 
-| 文件                                      | 当前 upstream | 修正后 upstream        | 理由                   |
-| ----------------------------------------- | ------------- | ---------------------- | ---------------------- |
-| On-SiHankor.sih.md                        | PHILOSOPHY    | 240602-0900-on-sihankor | 哲学体系根文档，自指向 |
-| On-SiHankor-Tao.sih.md                    | PHILOSOPHY    | 240602-0900-on-sihankor | 道论从总纲出           |
-| On-SiHankor-Canon.sih.md                  | PHILOSOPHY    | 240602-0900-on-sihankor | 法论从总纲出           |
-| On-SiHankor-Assay.sih.md                  | PHILOSOPHY    | 240602-0900-on-sihankor | 鉴论从总纲出           |
+| 文件                                                             | 当前 upstream | 修正后 upstream         | 理由                   |
+| ---------------------------------------------------------------- | ------------- | ----------------------- | ---------------------- |
+| On-SiHankor.sih.md                                               | PHILOSOPHY    | 240602-0900-on-sihankor | 哲学体系根文档，自指向 |
+| On-SiHankor-Tao.sih.md                                           | PHILOSOPHY    | 240602-0900-on-sihankor | 道论从总纲出           |
+| On-SiHankor-Canon.sih.md                                         | PHILOSOPHY    | 240602-0900-on-sihankor | 法论从总纲出           |
+| On-SiHankor-Assay.sih.md                                         | PHILOSOPHY    | 240602-0900-on-sihankor | 鉴论从总纲出           |
 | docs/archive/proposals/SiHankor-Philosophy-Restructure-Plan.X.md | PHILOSOPHY    | 240602-0900-on-sihankor | archive 文档不例外     |
 
 **额外**：同样检查 `upstream:` 为空的文档（proposals/ 中有 3 处空 upstream），为空与 PHILOSOPHY 不同，属于尚未填写，不在此次修改范围。
@@ -156,21 +156,21 @@ Canon §6.2 当前写 "stage X 的文档迁移至 `docs/archive/{原目录}/{nam
 
 所有变更已执行并验证通过：
 
-| 编号 | 状态 | 验证方式 |
-|------|------|----------|
-| B-02 | 完成 | 全项目 grep：零旧格式 id 残留 |
-| B-01 | 完成 | 全项目 grep：零 PHILOSOPHY upstream 残留，5 文件已修正 |
-| B-04 | 完成 | AGENTS.md frontmatter 字段表已删除 type |
+| 编号 | 状态 | 验证方式                                                                                     |
+| ---- | ---- | -------------------------------------------------------------------------------------------- |
+| B-02 | 完成 | 全项目 grep：零旧格式 id 残留                                                                |
+| B-01 | 完成 | 全项目 grep：零 PHILOSOPHY upstream 残留，5 文件已修正                                       |
+| B-04 | 完成 | AGENTS.md frontmatter 字段表已删除 type                                                      |
 | B-03 | 完成 | Canon §3.2 + §6.2 重写，Document-Conventions §4.6 同步，3 个 note frontmatter stage→verified |
-| D-01 | 完成 | Canon §2.1 upstream/resolve_ref 已拆分 |
-| D-02 | 完成 | On-SiHankor §7 已重写为 glossary 三层模型 + Reopen/Supersede |
-| D-04 | 完成 | glossary/ 已移至项目根级，所有路径引用已更新 |
-| D-06 | 完成 | Canon §6.4 已追加 zh→en 权威方向声明 |
-| S-01 | 完成 | "metadata 文件夹" → `docs/specs/philosophy/` |
-| S-02 | 完成 | 全部 6 处 "发散自然，收敛必为" → "发散自-然，收敛必-为" |
-| S-03 | 完成 | AGENTS.md 已追加字段定义和目录结构一览 |
-| S-04 | 完成 | Canon §6.2 archive 段已追加 id 不变声明 |
-| S-05 | 完成 | 随 B-03 自然消除 |
+| D-01 | 完成 | Canon §2.1 upstream/resolve_ref 已拆分                                                       |
+| D-02 | 完成 | On-SiHankor §7 已重写为 glossary 三层模型 + Reopen/Supersede                                 |
+| D-04 | 完成 | glossary/ 已移至项目根级，所有路径引用已更新                                                 |
+| D-06 | 完成 | Canon §6.4 已追加 zh→en 权威方向声明                                                         |
+| S-01 | 完成 | "metadata 文件夹" → `docs/specs/philosophy/`                                                 |
+| S-02 | 完成 | 全部 6 处 "发散自然，收敛必为" → "发散自-然，收敛必-为"                                      |
+| S-03 | 完成 | AGENTS.md 已追加字段定义和目录结构一览                                                       |
+| S-04 | 完成 | Canon §6.2 archive 段已追加 id 不变声明                                                      |
+| S-05 | 完成 | 随 B-03 自然消除                                                                             |
 
 变更量：约 33 个文件，约 150+ 处修改。
 

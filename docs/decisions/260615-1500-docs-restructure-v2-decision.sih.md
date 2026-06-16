@@ -37,4 +37,3 @@ decided-by: ai-assist
 - 正向：glossary 与 semantic 的问题域分离，维护节奏分离，消费者分离
 - 风险：交叉引用更新可能存在遗漏，后续使用中发现断裂需补充修正
 - 风险：semantic.yml 的完整 schema 和 engine 索引实现尚未定义，此为道四声明的已知间隙
-

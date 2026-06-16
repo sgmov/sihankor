@@ -479,19 +479,19 @@ upstream:
 
 ### 按决策维度
 
-| 决策                        | B 级 | D 级 | 说明                                                                                                                         |
-| --------------------------- | ---- | ---- | ---------------------------------------------------------------------------------------------------------------------------- |
-| #1 目录即身份/type 废除     | 0    | 1    | D-13 Mind-Design type 残留                                                                                                   |
-| #3 note 有 stage            | 1    | 2    | B-04 AGENTS.md 矛盾；D-02 3 文档称"note 无 stage"；D-08 note 缺 stage                                                        |
-| #4 frontmatter 精简         | 0    | 1    | D-12 AGENTS.md 缺 decided-by/successor 定义                                                                                |
-| #5 upstream 自指向          | 0    | 1    | D-11 validator 缺自指向检查                                                                                                  |
-| #6 decided-by 限 decisions/ | 3    | 0    | B-01 specs/ 清理；B-02 proposals/ 清理；B-07/B-08 代码模型                                                                   |
-| #8 glossary 项目根          | 1    | 0    | B-06 README 位置错误                                                                                                         |
-| #10 po/ 废除                | 1    | 1    | B-05 Roadmap；D-05 Legacy-Migration 历史引用                                                                                 |
-| #11 "单向不可逆"替换        | 0    | 1    | D-03 3 文件术语残留                                                                                                          |
+| 决策                        | B 级 | D 级 | 说明                                                                                                |
+| --------------------------- | ---- | ---- | --------------------------------------------------------------------------------------------------- |
+| #1 目录即身份/type 废除     | 0    | 1    | D-13 Mind-Design type 残留                                                                          |
+| #3 note 有 stage            | 1    | 2    | B-04 AGENTS.md 矛盾；D-02 3 文档称"note 无 stage"；D-08 note 缺 stage                               |
+| #4 frontmatter 精简         | 0    | 1    | D-12 AGENTS.md 缺 decided-by/successor 定义                                                         |
+| #5 upstream 自指向          | 0    | 1    | D-11 validator 缺自指向检查                                                                         |
+| #6 decided-by 限 decisions/ | 3    | 0    | B-01 specs/ 清理；B-02 proposals/ 清理；B-07/B-08 代码模型                                          |
+| #8 glossary 项目根          | 1    | 0    | B-06 README 位置错误                                                                                |
+| #10 po/ 废除                | 1    | 1    | B-05 Roadmap；D-05 Legacy-Migration 历史引用                                                        |
+| #11 "单向不可逆"替换        | 0    | 1    | D-03 3 文件术语残留                                                                                 |
 | #id 格式强制连字符          | 0    | 5    | B-03 upstream 断裂；D-01 全局漂移；D-09 note id；D-14 validator vs Conventions；D-16 Dev-Governance |
-| 文件名规范（无时间戳/驼峰） | 0    | 0    | S-10 建议确立文件名规范                                                                                    |
-| — 其他                      | 1    | 2    | B-03（同 id 格式）；D-06 External-Validation 迁移 note；D-15 upstream 数组；D-17 search_by_nature                          |
+| 文件名规范（无时间戳/驼峰） | 0    | 0    | S-10 建议确立文件名规范                                                                             |
+| — 其他                      | 1    | 2    | B-03（同 id 格式）；D-06 External-Validation 迁移 note；D-15 upstream 数组；D-17 search_by_nature   |
 
 ---
 

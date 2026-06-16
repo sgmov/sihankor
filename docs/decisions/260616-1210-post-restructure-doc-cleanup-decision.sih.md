@@ -16,6 +16,7 @@ decided-by: ai-assist
 采纳轻量修订提案 260616-1210-post-restructure-doc-cleanup：
 
 **Engineering-Mapping**：
+
 - 删除 `idea 类型` 引用（第 20、262 行）
 - 删除 `tags 不参与逻辑` 引用（第 20、40、56、262 行）
 - 删除 F-08（第 38 行）
@@ -24,12 +25,14 @@ decided-by: ai-assist
 - G-04 保留——"同格 ratify 文档不超 3 个活跃版本"不依赖 type
 
 **Engine-Roadmap**：
+
 - 成熟度矩阵更新：Compendium 1/3→2/3, Onomastic 2/3→3/3, Arguments 1/3→2/3（已完成推进）
 - frontmatter 校验：`id/type/stage` → `id/stage`
 - 删除"目录位置与 type 匹配（F-08）"
 - 删除 `decided-by 签认存在`
 
 **Engine-Design-Summary**：
+
 - 状态机图 `note: 1/3 → 2/3(自动)` → `note: 1/3 → 2/3(人类确认)`
 
 ## 后果

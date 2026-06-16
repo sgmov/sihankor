@@ -13,26 +13,26 @@ upstream: 240610-1030-on-sihankor-canon
 
 ### 1.1 编码方案
 
-| 编码 | 编码原理                                                                     |
-| ---- | ---------------------------------------------------------------------------- |
-| 1/3  | 分数 n/3：序数自明（1/3 < 2/3 < 3/3）                                        |
-| 2/3  | 同上                                                                         |
-| 3/3  | 3/3 = 1 = 定稿归一                                                           |
-| 0/   | 权威归零，后随 successor id |
-| X    | ASCII 通用终止记号                                                           |
+| 编码 | 编码原理                              |
+| ---- | ------------------------------------- |
+| 1/3  | 分数 n/3：序数自明（1/3 < 2/3 < 3/3） |
+| 2/3  | 同上                                  |
+| 3/3  | 3/3 = 1 = 定稿归一                    |
+| 0/   | 权威归零，后随 successor id           |
+| X    | ASCII 通用终止记号                    |
 
 stage 的中文名称随 nature 而变化，非固定。引擎不依赖 stage 的中文名称做状态判定，仅依赖编码。stage-by-nature 语义见下表：
 
 正向流（1/3 → 2/3 → 3/3）：
 
-| nature                     | 1/3  | 2/3  | 3/3  |
-| -------------------------- | ---- | ---- | ---- |
+| nature                           | 1/3  | 2/3  | 3/3  |
+| -------------------------------- | ---- | ---- | ---- |
 | spec/proposal/decision/reference | 起草 | 审查 | 定稿 |
 
 终止与替换（0/ 与 X）：
 
-| nature                     | 0/   | X    |
-| -------------------------- | ---- | ---- |
+| nature                           | 0/   | X    |
+| -------------------------------- | ---- | ---- |
 | spec/proposal/decision/reference | 替换 | 终止 |
 
 ### 1.2 编码设计原理
@@ -82,16 +82,17 @@ let now = Local::now();
 
 ### 3.1 目录命名
 
-| 目录 | 中文 | 用途 |
-| ---- | ---- | ---- |
-| `specs/` | 系统定义 | 定义系统是什么 |
-| `proposals/` | 变更提议 | 论证我们该往哪走 |
-| `decisions/` | 决策记录 | 记录为什么这样选 |
-| `reference/` | 参照标准 | 术语定义与概念纲要 |
+| 目录         | 中文     | 用途                     |
+| ------------ | -------- | ------------------------ |
+| `specs/`     | 系统定义 | 定义系统是什么           |
+| `proposals/` | 变更提议 | 论证我们该往哪走         |
+| `decisions/` | 决策记录 | 记录为什么这样选         |
+| `reference/` | 参照标准 | 术语定义与概念纲要       |
 | `knowledge/` | 集体知识 | 未规约化的构思碎片与洞察 |
-| `archive/` | 废弃归档 | 已废弃的历史文档 |
+| `archive/`   | 废弃归档 | 已废弃的历史文档         |
 
 `knowledge/` 下分两个子目录：
+
 - `knowledge/drafts/`：构思碎片（非 .sih.md，无 frontmatter，无固定身份）
 - `knowledge/notes/`：实践洞察（.sih.md，nature 为 note）
 
@@ -123,13 +124,13 @@ paths:
 - 拆分时机：单目录文件数 > 30。
 - 拆分维度：
 
-| 目录 | 维度 | 示例 |
-| ---- | ---- | ---- |
-| `specs/` | 领域 | `specs/payment/` |
-| `proposals/` | 时间 | `proposals/2026/` |
-| `decisions/` | 领域 | `decisions/payment/` |
-| `reference/` | 领域 | `reference/payment/glossary.md` |
-| `knowledge/notes/` | — | 不拆 |
+| 目录               | 维度 | 示例                            |
+| ------------------ | ---- | ------------------------------- |
+| `specs/`           | 领域 | `specs/payment/`                |
+| `proposals/`       | 时间 | `proposals/2026/`               |
+| `decisions/`       | 领域 | `decisions/payment/`            |
+| `reference/`       | 领域 | `reference/payment/glossary.md` |
+| `knowledge/notes/` | —    | 不拆                            |
 
 ### 3.4 终止文档与归档
 
@@ -140,9 +141,9 @@ paths:
 
 ### 4.1 必填字段
 
-| 字段 | 格式 | 说明 |
-| ---- | ---- | ---- |
-| `id` | 见 [$二、id格式](#二id-格式) | 文档唯一标识 |
+| 字段    | 格式                               | 说明                     |
+| ------- | ---------------------------------- | ------------------------ |
+| `id`    | 见 [$二、id格式](#二id-格式)       | 文档唯一标识             |
 | `stage` | 见 [$一、stage编码](#一stage-编码) | 治理可信度或生命周期状态 |
 
 无需 `type` 字段。文档身份（nature）由所在目录唯一确定：引擎从路径第一层推断。`specs/` 下为 spec，`proposals/` 下为 proposal，`decisions/` 下为 decision，`reference/` 下为 reference，`knowledge/notes/` 下为 note。
@@ -161,13 +162,13 @@ upstream: 240610-1030-on-sihankor-canon
 
 文档身份由所在目录唯一确定。无需 `type` 字段。引擎从路径第一层推断 nature。
 
-| 目录 | nature | stage 语义 |
-|------|--------|-----------|
-| `specs/` | spec | 可信度（1/3=起草，2/3=审查中，3/3=定稿） |
-| `proposals/` | proposal | 可信度（1/3=提案中，2/3=决议中，3/3=已决议） |
-| `decisions/` | decision | 可信度（1/3=草拟，2/3=审查中，3/3=定稿） |
-| `reference/` | reference | 可信度（1/3=起草中，2/3=审查中，3/3=定稿） |
-| `knowledge/notes/` | note | 1/3→2/3→3/3。note 的 stage 表达生命周期成熟度 |
+| 目录               | nature    | stage 语义                                    |
+| ------------------ | --------- | --------------------------------------------- |
+| `specs/`           | spec      | 可信度（1/3=起草，2/3=审查中，3/3=定稿）      |
+| `proposals/`       | proposal  | 可信度（1/3=提案中，2/3=决议中，3/3=已决议）  |
+| `decisions/`       | decision  | 可信度（1/3=草拟，2/3=审查中，3/3=定稿）      |
+| `reference/`       | reference | 可信度（1/3=起草中，2/3=审查中，3/3=定稿）    |
+| `knowledge/notes/` | note      | 1/3→2/3→3/3。note 的 stage 表达生命周期成熟度 |
 
 完整语义定义见[《司衡法论》$3.2](../philosophy/On-SiHankor-Canon.sih.md#32-状态定义)。
 
@@ -175,17 +176,17 @@ upstream: 240610-1030-on-sihankor-canon
 
 ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份 ADR 必须附带签认字段，记录意图源头：
 
-| 字段 | 格式 | 说明 |
-| ---- | ---- | ---- |
+| 字段         | 格式              | 说明                                             |
+| ------------ | ----------------- | ------------------------------------------------ |
 | `decided-by` | 人名或`ai-assist` | 决策的意图源头。`ai-auto` 不得用于人需决策的 ADR |
 
 签认的两种有效值：
 
-| 值 | 含义 | 顺因链 |
-| --- | ---- | ------ |
-| 人名 | 人类做出判断，AI 仅辅助记录 | 意图→决策→ADR，完整 |
+| 值          | 含义                           | 顺因链                    |
+| ----------- | ------------------------------ | ------------------------- |
+| 人名        | 人类做出判断，AI 仅辅助记录    | 意图→决策→ADR，完整       |
 | `ai-assist` | AI 起草 ADR 建议，人类审核签发 | 意图→AI 表达→人类确认→ADR |
-| `ai-auto` | AI 自主决策（**违例**） | 意图缺失，ADR 不应存在 |
+| `ai-auto`   | AI 自主决策（**违例**）        | 意图缺失，ADR 不应存在    |
 
 签认出现位置：
 
@@ -250,16 +251,16 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 字段说明：
 
-| 字段 | 必填 | 说明 |
-| ---- | ---- | ---- |
-| `event` | 是 | 事件类型：`stage-change`、`detection`、`promotion-suggestion`、`stall-warning` |
-| `stage` | 否 | 仅 `stage-change` 事件：变更描述，格式 `原stage→新stage` 或 `→新stage` |
-| `decided-by` | 仅 stage-change 人工触发 | 状态变更的决策者。`sihankor-engine` 表示引擎自动触发 |
-| `detection` | 否 | 仅 `detection` 事件：检测到的模式标识 |
-| `rule` | 是 | 授权此操作的规则引用（Canon 条款或 config.yml 键） |
-| `evidence` | 是 | 触发条件的具体证据，随事件类型而异 |
-| `timestamp` | 是 | ISO 8601 时间戳 |
-| `commit` | 否 | 触发此操作的 Git commit SHA |
+| 字段         | 必填                     | 说明                                                                           |
+| ------------ | ------------------------ | ------------------------------------------------------------------------------ |
+| `event`      | 是                       | 事件类型：`stage-change`、`detection`、`promotion-suggestion`、`stall-warning` |
+| `stage`      | 否                       | 仅 `stage-change` 事件：变更描述，格式 `原stage→新stage` 或 `→新stage`         |
+| `decided-by` | 仅 stage-change 人工触发 | 状态变更的决策者。`sihankor-engine` 表示引擎自动触发                           |
+| `detection`  | 否                       | 仅 `detection` 事件：检测到的模式标识                                          |
+| `rule`       | 是                       | 授权此操作的规则引用（Canon 条款或 config.yml 键）                             |
+| `evidence`   | 是                       | 触发条件的具体证据，随事件类型而异                                             |
+| `timestamp`  | 是                       | ISO 8601 时间戳                                                                |
+| `commit`     | 否                       | 触发此操作的 Git commit SHA                                                    |
 
 事件文件与文档同生命周期：文档晋升清退或 X 归档时，对应事件文件同步移至 `docs/archived/` 下。Git commit message 附简要摘要（`[sihankor] event: stage-change 1/3→2/3 rule: Canon$6.5`），但以事件文件为权威来源。
 
@@ -373,10 +374,11 @@ engine 通过 derives-from 链检测过期：zh.yml 条目声明的 derives-from
 
 #### 变更分级
 
-| 变更等级 | 触发条件 | 治理流程 |
-| -------- | -------- | -------- |
-| 映射调整 | 修改 `mapping`、`disambiguation`、`rejected` | 轻量：直接修改 |
-| 概念变更 | 修改 `definition`（zh.yml） | 完整：proposals/ → decisions/ |
+| 变更等级 | 触发条件                                     | 治理流程                      |
+| -------- | -------------------------------------------- | ----------------------------- |
+| 映射调整 | 修改 `mapping`、`disambiguation`、`rejected` | 轻量：直接修改                |
+| 概念变更 | 修改 `definition`（zh.yml）                  | 完整：proposals/ → decisions/ |
+
 ```
 
 #### 拆分机制
@@ -385,11 +387,11 @@ engine 通过 derives-from 链检测过期：zh.yml 条目声明的 derives-from
 
 ### 5.5 引擎 校验规则
 
-| 规则         | 触发条件                                                           | 动作                       |
-| ------------ | ------------------------------------------------------------------ | -------------------------- |
-| orphan       | 条目 `derives-from` 指向不存在的文档 id（含 successor 链末端无效） | 标记 "orphan"              |
-| stale        | `derives-from` 文档的修改日期 > 条目的 `verified`                  | 标记 "stale"               |
-| duplicate    | 同语言目录下两个文件出现相同概念键                                 | 标记 "duplicate"，阻断加载 |
+| 规则      | 触发条件                                                           | 动作                       |
+| --------- | ------------------------------------------------------------------ | -------------------------- |
+| orphan    | 条目 `derives-from` 指向不存在的文档 id（含 successor 链末端无效） | 标记 "orphan"              |
+| stale     | `derives-from` 文档的修改日期 > 条目的 `verified`                  | 标记 "stale"               |
+| duplicate | 同语言目录下两个文件出现相同概念键                                 | 标记 "duplicate"，阻断加载 |
 
 ## 六、生命周期流程图
 

@@ -7,7 +7,7 @@ upstream: 240602-0900-on-sihankor
 # 司衡引擎：方向与任务计划
 
 > 基于当前 docs/ 全部文档与 src/ 代码库的全面审查，生成于 2026-06-13，更新于 2026-06-16。
-> 前置计划：[SiHankor-Legacy-Migration-Governance](../decisions/SiHankor-Legacy-Migration-Governance.sih.md)（已完成）。
+> 前置计划：[SiHankor-Legacy-Migration-Governance](../../decisions/SiHankor-Legacy-Migration-Governance.sih.md)（已完成）。
 
 ## 一、当前状态总览
 
@@ -270,7 +270,7 @@ let nature = infer_nature(&doc.file_path.unwrap_or_default());
 - 发散诊断：区分意图漂移/引用断裂/重复冗余/良性多角度讨论
 - 每个 `Divergence` 必须含 `confidence`（道四要求：分析也是规约，必含不确定性标注）
 
-对应设计文档：[Mind-Design](../specs/engineering/SiHankor-Mind-Design.sih.md)。
+对应设计文档：[Mind-Design](SiHankor-Mind-Design.sih.md)。
 
 #### T2.2 iWW 消息机（估 3-5 天）
 

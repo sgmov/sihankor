@@ -34,18 +34,17 @@ upstream: 240610-1030-on-sihankor-canon
 
 每条道和法在 Mind 中的工程约束。不重新定义道和法——引用 Tao 和 Canon 的对应条款，标注"因此 Mind 必须做到什么"。
 
-| 道/法 | 依据                                                                               | 对 Mind 的约束                                                                                             |
-| ----- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 道一  | [《道论》$2.1](../philosophy/On-SiHankor-Tao.sih.md#21-定义)：发散自-然，收敛必-为 | 文档体系必然发散——Mind 必须做跨文档关系照见，不能只做单文档检查                                            |
-| 道二  | [《道论》$2.2](../philosophy/On-SiHankor-Tao.sih.md#22-道二)：意图先于代码         | 分析必须先理解意图元数据（nature/stage/upstream）。nature 由引擎从文档所在目录推断（目录即身份）。对 propose 文档做 ratify 级检查是违道                     |
-| 道三  | [《道论》$2.3](../philosophy/On-SiHankor-Tao.sih.md#23-道三)：代码自晦，意图必复   | 文档字面不揭示其关系——Mind 的立身之本是照见单文档看不到的跨文档关系（引用/重复/冲突/空白）                 |
-| 道四  | [《道论》$2.4](../philosophy/On-SiHankor-Tao.sih.md#24-道四)：规约与实现必有间隙   | Mind 的分析报告也是规约——必含 `@limitations`、`self_question`、`confidence`。不输出"确定正确"的结论        |
-| 顺因  | [《法论》$2.1](../philosophy/On-SiHankor-Canon.sih.md#21-顺因尊重因果方向)         | 三机流转不可逆序：iCL→iWW→iCT 严格顺序。分析未完成时，不生成建议                                           |
-| 有度  | [《法论》$2.2](../philosophy/On-SiHankor-Canon.sih.md#22-有度收敛恰到好处)         | 分析力度按文档 stage 分级：propose 轻量，resolve 中量，ratify 全量                                         |
-| 知止  | [《法论》$2.3](../philosophy/On-SiHankor-Canon.sih.md#23-知止知道不做什么)         | 三类不分析：非 .sih.md 不做结构分析、意图模糊的文档标记 human_review、哲学讨论不判对错                     |
-| 损补  | [《法论》$2.4](../philosophy/On-SiHankor-Canon.sih.md#24-损补损有余补不足)         | 分析输出区分减损建议（合并重复/归档过时）和补充建议（补全引用链/补全 limitations），不输出笼统的"问题"标记 |
-| 顺势  | [《法论》$2.5](../philosophy/On-SiHankor-Canon.sih.md#25-顺势力度适配场景)         | archive/ 中的文档不生成修改建议。propose 阶段建议以"可能"措辞，ratify 阶段以"应"措辞                       |
-
+| 道/法 | 依据                                                                               | 对 Mind 的约束                                                                                                                          |
+| ----- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 道一  | [《道论》$2.1](../philosophy/On-SiHankor-Tao.sih.md#21-定义)：发散自-然，收敛必-为 | 文档体系必然发散——Mind 必须做跨文档关系照见，不能只做单文档检查                                                                         |
+| 道二  | [《道论》$2.2](../philosophy/On-SiHankor-Tao.sih.md#22-道二)：意图先于代码         | 分析必须先理解意图元数据（nature/stage/upstream）。nature 由引擎从文档所在目录推断（目录即身份）。对 propose 文档做 ratify 级检查是违道 |
+| 道三  | [《道论》$2.3](../philosophy/On-SiHankor-Tao.sih.md#23-道三)：代码自晦，意图必复   | 文档字面不揭示其关系——Mind 的立身之本是照见单文档看不到的跨文档关系（引用/重复/冲突/空白）                                              |
+| 道四  | [《道论》$2.4](../philosophy/On-SiHankor-Tao.sih.md#24-道四)：规约与实现必有间隙   | Mind 的分析报告也是规约——必含 `@limitations`、`self_question`、`confidence`。不输出"确定正确"的结论                                     |
+| 顺因  | [《法论》$2.1](../philosophy/On-SiHankor-Canon.sih.md#21-顺因尊重因果方向)         | 三机流转不可逆序：iCL→iWW→iCT 严格顺序。分析未完成时，不生成建议                                                                        |
+| 有度  | [《法论》$2.2](../philosophy/On-SiHankor-Canon.sih.md#22-有度收敛恰到好处)         | 分析力度按文档 stage 分级：propose 轻量，resolve 中量，ratify 全量                                                                      |
+| 知止  | [《法论》$2.3](../philosophy/On-SiHankor-Canon.sih.md#23-知止知道不做什么)         | 三类不分析：非 .sih.md 不做结构分析、意图模糊的文档标记 human_review、哲学讨论不判对错                                                  |
+| 损补  | [《法论》$2.4](../philosophy/On-SiHankor-Canon.sih.md#24-损补损有余补不足)         | 分析输出区分减损建议（合并重复/归档过时）和补充建议（补全引用链/补全 limitations），不输出笼统的"问题"标记                              |
+| 顺势  | [《法论》$2.5](../philosophy/On-SiHankor-Canon.sih.md#25-顺势力度适配场景)         | archive/ 中的文档不生成修改建议。propose 阶段建议以"可能"措辞，ratify 阶段以"应"措辞                                                    |
 
 ## 三、四步分析法（术层）
 
@@ -74,7 +73,6 @@ upstream: 240610-1030-on-sihankor-canon
 ```
 
 ④ 的输出可以触发新一轮 ①——例如发现某个文档的意图定位需要人类确认后，用确认结果重新分析。
-
 
 ## 四、三机流转与输出 Schema（几层+约层）
 
@@ -150,7 +148,6 @@ struct Verification {
 - 每个 `Divergence` 项必有 `confidence`（道四要求）
 - `five_law_check` 的 5 条法必须逐条检验，不可省略
 
-
 ## 五、MCP 工具定义（形迹层）
 
 工具按**三机流转阶段**划分，不按问题类型划分。4 个工具覆盖 3 个认知阶段：
@@ -169,7 +166,6 @@ Mind 不执行写入操作——文件修改由下游引擎执行。决策 JSON 
 1. **dry-run 先于执行**：`affected_documents` 的每项需展示替换前后的具体文本行，待人类确认后由引擎执行
 2. **最小影响面**：`affected_documents` 只列直接下游，不推测间接影响
 3. **可回退**：每个写入建议附回退操作描述
-
 
 ## 六、与现有引擎的边界
 
@@ -198,7 +194,6 @@ flowchart LR
 
 Mind 的职责在输出 JSON 时结束。引擎接收 JSON 后执行 `affected_documents` 中描述的操作。引擎不自行判断是否执行——如果 `verification.overall` 为 fail，引擎应拒绝执行并标记为 human_review。
 
-
 ## 七、与约系的关系
 
 Mind 的约层（结构化输出 Schema）与引擎约系（`.sih/index/` 中的 SQLite 索引）是不同层次的约，不重叠：
@@ -211,7 +206,6 @@ Mind 的约层（结构化输出 Schema）与引擎约系（`.sih/index/` 中的
 | 目的     | 让决策可追溯、可验证 | 让形迹可搜索、可引用    |
 
 Mind 依赖引擎约系获取分析数据，但 Mind 自身的约层服务于认知透明度——两者是消费关系，不是重叠关系。
-
 
 ## 八、自我质疑
 

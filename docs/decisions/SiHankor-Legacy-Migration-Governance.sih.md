@@ -117,25 +117,25 @@ decided-by: ai-assist
 
 ## 三、执行记录
 
-| 日期       | 项目                          | 操作                                              | 涉及文件                                        |
-| ---------- | ----------------------------- | ------------------------------------------------- | ----------------------------------------------- |
-| 2026-06-12 | L2 AI 定位交叉检查            | 补入哲学溯源 + 历史注记                           | `Engine-Design-Summary.sih.md` $一              |
-| 2026-06-12 | L13 发散形态+条件调节         | 补入四形态子节 + 条件依赖段                       | `On-SiHankor-Tao.sih.md` $2.1, $2.5             |
-| 2026-06-12 | L18 内容审核机制              | 废弃；提取原则补入 Canon 顺因段                   | `On-SiHankor-Canon.sih.md` $2.1                 |
-| 2026-06-12 | L7/C1 道一检验                | 补入命题拆解+天然三强度+因果区分                  | `Arguments.sih.md` $一                          |
-| 2026-06-12 | L8/C2 道三检验                | 补入道层双轴框架论述                              | `Arguments.sih.md` $二                          |
-| 2026-06-13 | L3 决策索引                   | 废弃；提取#41/#42 发现时刻为 Arguments 方法论注记 | `Arguments.sih.md` $四末尾                      |
-| 2026-06-13 | P1-A: FAL 代表性案例          | 五维各一例，5 行分号格式                          | `Arguments.sih.md` $四.2                        |
-| 2026-06-13 | P1-B: 跨智库注记+#41/#42 注记 | D10 注记 + 方法论注记                             | `Arguments.sih.md` $四.8 末尾                   |
-| 2026-06-13 | P3: Engineering-Mapping       | 补充不确定性元数据 + 软阈值分级                   | `Engineering-Mapping.sih.md` $七.5, $七.6       |
-| 2026-06-13 | P4: Assay 三种偏见            | 补入反证偏见/精确性偏见/片断化偏见                | `On-SiHankor-Assay.sih.md` $五末尾              |
-| 2026-06-13 | P5: Document-Conventions      | 补入可读性约定子节                                | `Document-Conventions.sih.md` $八.10            |
+| 日期       | 项目                          | 操作                                                    | 涉及文件                                        |
+| ---------- | ----------------------------- | ------------------------------------------------------- | ----------------------------------------------- |
+| 2026-06-12 | L2 AI 定位交叉检查            | 补入哲学溯源 + 历史注记                                 | `Engine-Design-Summary.sih.md` $一              |
+| 2026-06-12 | L13 发散形态+条件调节         | 补入四形态子节 + 条件依赖段                             | `On-SiHankor-Tao.sih.md` $2.1, $2.5             |
+| 2026-06-12 | L18 内容审核机制              | 废弃；提取原则补入 Canon 顺因段                         | `On-SiHankor-Canon.sih.md` $2.1                 |
+| 2026-06-12 | L7/C1 道一检验                | 补入命题拆解+天然三强度+因果区分                        | `Arguments.sih.md` $一                          |
+| 2026-06-12 | L8/C2 道三检验                | 补入道层双轴框架论述                                    | `Arguments.sih.md` $二                          |
+| 2026-06-13 | L3 决策索引                   | 废弃；提取#41/#42 发现时刻为 Arguments 方法论注记       | `Arguments.sih.md` $四末尾                      |
+| 2026-06-13 | P1-A: FAL 代表性案例          | 五维各一例，5 行分号格式                                | `Arguments.sih.md` $四.2                        |
+| 2026-06-13 | P1-B: 跨智库注记+#41/#42 注记 | D10 注记 + 方法论注记                                   | `Arguments.sih.md` $四.8 末尾                   |
+| 2026-06-13 | P3: Engineering-Mapping       | 补充不确定性元数据 + 软阈值分级                         | `Engineering-Mapping.sih.md` $七.5, $七.6       |
+| 2026-06-13 | P4: Assay 三种偏见            | 补入反证偏见/精确性偏见/片断化偏见                      | `On-SiHankor-Assay.sih.md` $五末尾              |
+| 2026-06-13 | P5: Document-Conventions      | 补入可读性约定子节                                      | `Document-Conventions.sih.md` $八.10            |
 | 2026-06-13 | P6: po/README                 | 创建翻译流水线 README（注：po/ 目录已在后续重构中废除） | `docs/glossary/po/README.md`                    |
-| 2026-06-13 | 12 项决策批量决议             | 全部确认                                          | 见 $二 已决议事项表                             |
-| 2026-06-13 | cc-v2 + glm-v2 决策决议       | 15 项全部决议                                     | 见 $二 增量决策表                               |
-| 2026-06-13 | P7: 迁移完成审计              | 19 个待删文件全部通过                             | legacy/ 目录                                    |
-| 2026-06-13 | P8: 删除 legacy 文件          | rm 19 个文件（A/B/C/D 类）                        | legacy/ 目录                                    |
-| 2026-06-13 | P9: Mind 设计规范             | 创建 SiHankor-Mind-Design.sih.md                  | `specs/engineering/SiHankor-Mind-Design.sih.md` |
+| 2026-06-13 | 12 项决策批量决议             | 全部确认                                                | 见 $二 已决议事项表                             |
+| 2026-06-13 | cc-v2 + glm-v2 决策决议       | 15 项全部决议                                           | 见 $二 增量决策表                               |
+| 2026-06-13 | P7: 迁移完成审计              | 19 个待删文件全部通过                                   | legacy/ 目录                                    |
+| 2026-06-13 | P8: 删除 legacy 文件          | rm 19 个文件（A/B/C/D 类）                              | legacy/ 目录                                    |
+| 2026-06-13 | P9: Mind 设计规范             | 创建 SiHankor-Mind-Design.sih.md                        | `specs/engineering/SiHankor-Mind-Design.sih.md` |
 
 ## 附录：独立审阅记录
 
