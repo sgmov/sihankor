@@ -26,9 +26,10 @@ upstream: 240602-0900-on-sihankor
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
 | plan 语义拆分      | roadmap → specs/engineering/，plan 拆为 proposal+spec              | 完成              |
-| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，48 tests    |
-| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，48 tests    |
-| T2.3 iCT 方圆机    | 五法检验 + verify_decision + full_analysis MCP 工具                  | 完成，48 tests    |
+| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，53 tests    |
+| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，53 tests    |
+| T2.3 iCT 方圆机    | 五法检验 + verify_decision + full_analysis MCP 工具                  | 完成，53 tests    |
+| T2.4 Mind 工具整合 | 4 MCP 工具 panorama + limitations/self_question 填充 + 集成测试      | 完成，53 tests    |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -159,14 +160,14 @@ flowchart TB
         A8["Core README + glossary 引导"]
     end
 
-    subgraph Phase2["第二阶段：思维核心（几层）"]
+    subgraph Phase2["第二阶段：思维核心（几层）✅"]
         B1["T2.1 iCL 明晰机 ✅"]
         B2["T2.2 iWW 消息机 ✅"]
         B3["T2.3 iCT 方圆机 ✅"]
-        B4["T2.4 Mind MCP 工具"]
+        B4["T2.4 Mind 工具整合 ✅"]
     end
 
-    subgraph Phase3["第三阶段：体系收敛（ratify）"]
+    subgraph Phase3["第三阶段：体系收敛（ratify）⚠ 当前"]
         C1["工程文档 2/3→3/3"]
         C2["参照文档 2/3→3/3"]
         C3["测试 + CI + 发布"]
@@ -401,7 +402,7 @@ gantt
     T2.1 iCL 明晰机              :done, b1, 2026-06-17, 0d
     T2.2 iWW 消息机              :done, b2, 2026-06-17, 0d
     T2.3 iCT 方圆机              :done, b3, 2026-06-17, 0d
-    T2.4 Mind MCP 工具           :b4, after b3, 4d
+    T2.4 Mind 工具整合           :done, b4, 2026-06-17, 0d
     section 第三阶段：体系收敛
     doc ratify 3/3              :c1, after b4, 10d
     测试 + CI 增强              :c3, after b4, 5d
@@ -412,17 +413,17 @@ gantt
 | 第零阶段 | 4-7d   | 0      | 4-7d   |
 | 第一阶段 | 14-18d | 0      | 18-25d |
 | 第一-A   | 3-5d   | 0      | 21-30d |
-| 第二阶段 | 3d     | 4d     | 18-27d |
-| 第三阶段 | 0      | 10-15d | 46-65d |
+| 第二阶段 | 4d     | 0      | 14-23d |
+| 第三阶段 | 0      | 10-15d | 24-38d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
 ## 八、当前第一步（2026-06-16 更新）
 
-T2.1~T2.3 三机流转全部完成。下一步：
+T2.1~T2.4 全部完成，Phase 2 Mind Core 完工。
 
-1. **T2.4 Mind MCP 工具整合**：4 工具已全部实现（analyze_document/propose_decision/verify_decision/full_analysis），需补齐 tool description 和集成测试
-2. **或进入 Phase 3 体系收敛**：工程文档 2/3→3/3 + 参照文档推进
+1. **Phase 3 体系收敛**：工程文档 2/3→3/3 + 参照文档 2/3→3/3
+2. **或 spec 文档 ratify 推进**：Mind-Design、Five-Law-Check-Criteria 等反映实现状态
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 

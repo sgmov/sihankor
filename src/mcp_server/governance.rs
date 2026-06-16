@@ -418,6 +418,62 @@ impl SihankorService {
         let proposal = IWW::propose(&cognition);
         let verification = ICT::verify(&cognition, &proposal);
 
+        // 道四：从验证结果构建 limitations
+        let mut limitations = Vec::new();
+        let mut human_review_required = Vec::new();
+
+        for check in &verification.five_law_check {
+            if check.result == crate::mind::types::LawCheckResult::Fail {
+                human_review_required.push(format!("[{}] {}", check.law, check.note));
+                limitations.push(crate::mind::types::Limitation {
+                    aspect: format!("{}-verification", check.law),
+                    reason: format!("五法检验 Fail: {}", check.note),
+                    confidence: 0.95,
+                });
+            } else if check.result == crate::mind::types::LawCheckResult::Conditional {
+                human_review_required.push(format!("[{}] CONDITIONAL: {}", check.law, check.note));
+                limitations.push(crate::mind::types::Limitation {
+                    aspect: format!("{}-uncertainty", check.law),
+                    reason: format!("五法检验 Conditional: {}", check.note),
+                    confidence: 0.6,
+                });
+            }
+        }
+
+        // 补充 iCL 自身盲区
+        if cognition.governance_position.upstream_chain.is_empty() {
+            limitations.push(crate::mind::types::Limitation {
+                aspect: "upstream-chain".into(),
+                reason: "无上游链：root 文档无法追溯授权来源".into(),
+                confidence: 0.9,
+            });
+        }
+        if cognition.relation_graph.gaps.len() > 3 {
+            limitations.push(crate::mind::types::Limitation {
+                aspect: "reference-gaps".into(),
+                reason: format!("{} 个引用目标缺失，关系图谱不完整", cognition.relation_graph.gaps.len()),
+                confidence: 0.85,
+            });
+        }
+
+        let self_question = if verification.overall == crate::mind::types::Verdict::Fail {
+            format!(
+                "五法检验整体 Fail：决策建议被拒绝。{} 项 Fail 是否因 iCL 误诊或 criteria 过于严格？",
+                verification.five_law_check.iter().filter(|c| c.result == crate::mind::types::LawCheckResult::Fail).count()
+            )
+        } else if verification.overall == crate::mind::types::Verdict::Conditional {
+            format!(
+                "五法检验 Conditional：决策可执行但需确认。{} 项 Conditional 是否有误报？",
+                verification.five_law_check.iter().filter(|c| c.result == crate::mind::types::LawCheckResult::Conditional).count()
+            )
+        } else {
+            format!(
+                "全 Pass：inter-document 关系可能未完全发现。当前仅检查了 {} 个引用和 {} 个重复，是否有遗漏？",
+                cognition.relation_graph.references.len(),
+                cognition.relation_graph.duplicates.len()
+            )
+        };
+
         let analysis_result = crate::mind::types::AnalysisResult {
             schema_version: "0.1.0".into(),
             analysis_id: format!("analysis-{}", doc.id),
@@ -430,9 +486,9 @@ impl SihankorService {
             cognition,
             decision_proposal: Some(proposal),
             verification: Some(verification),
-            limitations: vec![],
-            self_question: "analysis completeness not self-verified".into(),
-            human_review_required: vec![],
+            limitations,
+            self_question,
+            human_review_required,
         };
 
         match serde_json::to_string_pretty(&analysis_result) {

@@ -2,8 +2,12 @@ use sihankor::core::database::{SihDatabase, SqliteBackend};
 use sihankor::core::indexer;
 use sihankor::core::parser;
 use sihankor::core::validator::{validate_document, ValidationConfig};
+use sihankor::mind::icl::ICL;
+use sihankor::mind::ict::ICT;
+use sihankor::mind::iww::IWW;
 
 use std::path::Path;
+use std::sync::Arc;
 
 #[tokio::test]
 async fn test_index_real_docs() {
@@ -141,4 +145,93 @@ fn test_validate_all_docs() {
     }
 
     println!("\nTotal violations across all docs: {}", total_violations);
+}
+
+#[tokio::test]
+async fn test_mind_full_flow() {
+    // 端到端 Mind 流转测试：iCL → iWW → iCT
+    let db = Arc::new(SqliteBackend::open_in_memory().unwrap());
+    let docs_dir = Path::new("docs");
+    let config = ValidationConfig::default();
+
+    // 先重建索引（Mind 分析需要 DB 中的文档数据）
+    let report = indexer::rebuild_index(db.as_ref(), docs_dir, &config).await;
+    assert!(report.indexed > 0, "Need indexed documents for mind flow");
+
+    // 找一个 spec 文档做分析
+    let specs = db.search_by_nature("spec").await.unwrap();
+    let target = specs.first().expect("At least one spec document needed");
+    let full_doc = db.get_document(&target.id).await.unwrap().expect("Document should exist");
+
+    // iCL 认知
+    let icl = ICL::new(db.clone());
+    let cognition = icl.analyze(&full_doc).await;
+    assert!(!cognition.governance_position.nature.is_empty(), "Cognition should have nature");
+    assert!(!cognition.governance_position.stage.is_empty(), "Cognition should have stage");
+
+    // iWW 决策
+    let proposal = IWW::propose(&cognition);
+    assert!(!proposal.rationale.dao_basis.is_empty(), "Proposal should have dao basis");
+
+    // iCT 验证
+    let verification = ICT::verify(&cognition, &proposal);
+    assert_eq!(verification.five_law_check.len(), 5, "Should have 5 law checks");
+
+    // 道四：输出必含 limitations 和 self_question
+    let mut limitations = Vec::new();
+    for check in &verification.five_law_check {
+        if check.result != sihankor::mind::types::LawCheckResult::Pass {
+            limitations.push(sihankor::mind::types::Limitation {
+                aspect: format!("{}-check", check.law),
+                reason: check.note.clone(),
+                confidence: if check.result == sihankor::mind::types::LawCheckResult::Fail { 0.95 } else { 0.6 },
+            });
+        }
+    }
+    let self_question = match verification.overall {
+        sihankor::mind::types::Verdict::Fail => "Decision rejected — verify iCL diagnosis".into(),
+        sihankor::mind::types::Verdict::Conditional => "Conditional — confirm human review items".into(),
+        sihankor::mind::types::Verdict::Pass => "Pass — check for undiscovered gaps".into(),
+    };
+
+    // 组装完整 AnalysisResult
+    let analysis = sihankor::mind::types::AnalysisResult {
+        schema_version: "0.1.0".into(),
+        analysis_id: format!("test-analysis-{}", full_doc.id),
+        analysis_target: sihankor::mind::types::AnalysisTarget {
+            id: full_doc.id.clone(),
+            title: full_doc.title.clone(),
+            nature: full_doc.nature.clone(),
+            stage: full_doc.stage.0.clone(),
+        },
+        cognition: cognition.clone(),
+        decision_proposal: Some(proposal),
+        verification: Some(verification),
+        limitations,
+        self_question,
+        human_review_required: vec![],
+    };
+
+    // JSON 序列化验证
+    let json = serde_json::to_string_pretty(&analysis).unwrap();
+    assert!(json.contains(r#""schema_version""#), "AnalysisResult should serialize");
+    assert!(json.contains(r#""cognition""#), "Should contain cognition");
+    assert!(json.contains(r#""decision_proposal""#), "Should contain decision_proposal");
+    assert!(json.contains(r#""verification""#), "Should contain verification");
+    assert!(json.contains(r#""limitations""#), "Should contain limitations");
+    assert!(json.contains(r#""self_question""#), "Should contain self_question");
+    assert!(json.contains(r#""five_law_check""#), "Should contain five_law_check");
+
+    println!("Mind flow test passed for document: {} ({})", full_doc.id, full_doc.title);
+    println!("  Cognition: nature={}, stage={}, role={:?}",
+        cognition.governance_position.nature,
+        cognition.governance_position.stage,
+        cognition.governance_position.role_in_chain,
+    );
+    println!("  Proposal: action={:?}, dao_basis={}",
+        analysis.decision_proposal.as_ref().unwrap().recommended_action.kind,
+        analysis.decision_proposal.as_ref().unwrap().rationale.dao_basis,
+    );
+    println!("  Verification: overall={:?}", analysis.verification.as_ref().unwrap().overall);
+    println!("  JSON size: {} bytes", json.len());
 }

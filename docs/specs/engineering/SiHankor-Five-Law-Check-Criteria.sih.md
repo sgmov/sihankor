@@ -1,6 +1,6 @@
 ---
 id: 260616-2000-five-law-check-criteria
-stage: 2/3
+stage: 3/3
 upstream: 260613-1650-sihankor-mind-design
 ---
 
