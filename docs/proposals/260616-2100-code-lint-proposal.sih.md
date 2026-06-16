@@ -66,12 +66,49 @@ upstream: 240610-1500-sihankor-assay
 
 这个反证很强，因为它区分了*风格 lint*（空格、括号位置）和*语义 lint*（所有权误用、类型危险）。鉴的回应：前者确实边际收益低；后者有可证伪的正收益。因此**区分两类规则是设计的关键**。
 
-### 段四：反例举证
+### 段四：反例举证（全部 26 条规则逐条检验）
 
-实际案例：
-1. `clippy::needless_return` — 风格级，Rust 社区有争议。SiHankor 采纳：低优先级，Warning。
-2. `clippy::too_many_arguments` — 往往标记合理的参数传递。SiHankor 采纳：Warning 且阈值放宽至 7。
-3. `unsafe` 禁止 — 无争议。Rust 安全模型的直接推论。Error。
+#### deny 级（5 条）
+
+| 规则 | 最强反例 | 裁定 |
+|------|----------|------|
+| `unsafe_code` | FFI 交互需要 unsafe 块封装（如调用 C 库） | deny（非 forbid），allow 须加 `// SAFETY: <reason>` |
+| `unwrap_used` | `"42".parse::<u32>().unwrap()` — 常量解析不可能失败 | deny，`expect("by construction")` 允许 |
+| `expect_used` | 同上 | deny，带构造证明的 expect 允许 |
+| `dbg_macro` | 开发期临时调试——dbg! 在 1/3 阶段是合理的 | deny — ratify 代码不应残留调试痕迹（L-17） |
+| `print_stdout` | 二进制程序的用户可见输出（如 CLI 的 `println!("Done.")`） | deny，二进制 main 中的操作 I/O 豁免 |
+
+#### warn 级（17 条）
+
+| 规则 | 最强反例 | 裁定 |
+|------|----------|------|
+| `non_camel_case_types` | FFI 绑定中 C 库的类型名（如 `DWORD`） | warn，FFI 模块豁免 |
+| `non_snake_case` | 同上，C 常量名 | warn |
+| `todo` | 1/3 阶段未完成功能——`todo!("implement X")` 是合法的意图占位 | warn — 开发期标记，ratify 前清除 |
+| `unreachable` | exhaustive match 中的 safety net——当 enum 未来添加 variant 时编译器报错而非静默 panic | warn，穷举 match 中允许 |
+| `unused_variables` | 模式匹配中 `_` 前缀变量——`let _unused = expr` 明确表示有意忽略 | warn |
+| `too_many_arguments` | Config 结构体的构造参数、事件处理函数的多个上下文参数 | warn，阈值 7 |
+| `too_many_lines` | 自动生成的代码（如 protobuf 编译产物）、穷举 match 的分支展开 | warn，阈值 200 |
+| `cognitive_complexity` | 编译器生成的 match 分支、DSL 解释器的主循环 | warn，阈值 30 |
+| `clone_on_copy` | 泛型上下文中 `T: Clone` 的 `x.clone()`——Copy 是 Clone 的子 trait | warn |
+| `cloned_instead_of_copied` | 同上——泛型代码中 `.cloned()` 是惯用法 | warn |
+| `borrowed_box` | trait object 的动态分发场景——`&Box<dyn Trait>` 在特定模式下有意义 | warn |
+| `needless_return` | Rust 社区有争议——有些开发者认为显式 return 更清晰 | warn，风格偏好 |
+| `unused_must_use` | fire-and-forget 场景中的 `let _ = result` 已表达有意忽略 | warn |
+| `wildcard_imports` | prelude 模块的通配符导入是 Rust 惯例（如 `use super::*` in tests） | warn |
+| `single_match` | match 比 if let 更清晰表达穷举意图——`if let` 隐式忽略其他分支 | warn |
+| `inline_always` | 某类场景（如 `#[inline(always)]` on trivial accessors）有可测量的收益 | warn |
+| `missing_docs` | trait impl 中 trait 已声明契约——重复文档是冗余 | warn，trait impl 豁免（L-15） |
+| `missing_const_for_fn` | const fn 有编译器限制——不是所有逻辑上 const 的函数都能标记为 const fn | warn |
+
+#### allow 级（4 条——默认关闭，择需开启）
+
+| 规则 | 反例说明 | 裁定 |
+|------|----------|------|
+| `must_use_candidate` | 过度使用 `#[must_use]` 产生编译器噪音——有些函数的结果忽略是合法的 | allow，框架风格偏好 |
+| `module_name_repetitions` | Rust 惯例 `std::io::Error` 模式——类型名重复模块名是惯用法 | allow |
+| `cast_precision_loss` | 数值系统的性能权衡——`f64 as f32` 在某些计算场景中是必要的 | allow |
+| `cast_possible_truncation` | 同上——协议解析中 `u64 as usize` 在 64 位平台上安全 | allow |
 
 ### 段五：类比检验
 
@@ -91,15 +128,37 @@ C 语言有 lint（`lint` 工具发明于 1979），C++ 有 `clang-tidy`，Pytho
 
 一致性检验：成立。
 
-### 段七：可证伪条件设定
+### 段七：可证伪条件设定（全部 26 条规则）
 
-每条 lint 规则的可证伪条件：
-
-| 规则类 | 证伪条件 |
-|--------|----------|
-| unsafe 禁止 | 找到一处只能用 unsafe 且无法安全封装的需求，且该需求无法通过其他架构解决 |
-| unwrap 禁止 | 找到一处 unwrap 在逻辑上不可能 panic 的代码（如刚 checked 后） |
-| 命名规范 | 找到 Rust 生态中广泛使用非约定命名的成熟项目 |
+| 规则 | 证伪条件 |
+|------|----------|
+| `unsafe_code` | 找到一处只能用 unsafe 且无法安全封装的需求，且该需求无法通过其他架构解决 |
+| `unwrap_used` | 找到一处 unwrap，其中 None/Err 在类型层面被证明不可能（而非人类声称不可能） |
+| `expect_used` | 同上——expect 的证伪条件与 unwrap 相同 |
+| `dbg_macro` | 找到一处 dbg! 用于正式的运行时诊断（而非临时调试），且无法用 log/tracing 替代 |
+| `print_stdout` | 找到一处 println! 用于二进制程序的结构化输出（如 JSON 行），且无法用其他方式替代 |
+| `non_camel_case_types` | 找到 Rust 生态中广泛使用非 CamelCase 类型的成熟项目 |
+| `non_snake_case` | 同上——找到广泛使用非 snake_case 的成熟项目 |
+| `todo` | 证明 todo! 在 ratify 代码中有合法残留的理由（如标记「已知限制但设计如此」） |
+| `unreachable` | 证明 exhaustive match 中的 safety net unreachable! 比类型消除更优 |
+| `unused_variables` | 找到 Rust 生态中 `_prefix` 约定被广泛弃用的证据 |
+| `too_many_arguments` | 证明参数数量与缺陷密度无正相关（阈值 7 的实证检验） |
+| `too_many_lines` | 证明函数长度与缺陷密度无正相关（阈值 200 的实证检验） |
+| `cognitive_complexity` | 证明认知复杂度与缺陷密度无正相关（阈值 30 的实证检验） |
+| `clone_on_copy` | 找到 Rust 生态中 Copy 类型的显式 clone 被广泛接受的证据 |
+| `cloned_instead_of_copied` | 同上 |
+| `borrowed_box` | 找到 &Box\<T\> 在某个常用模式中不可替代的证据 |
+| `needless_return` | 找到 Rust 生态中显式 return 被广泛接受的证据 |
+| `unused_must_use` | 证明忽略 Result 不是缺陷的来源（实证检验） |
+| `wildcard_imports` | 找到 Rust 生态中 `use foo::*` 被广泛接受的证据 |
+| `single_match` | 证明 match 单分支模式比 if let 产生更少的缺陷 |
+| `inline_always` | 证明 `#[inline(always)]` 显著影响编译时间而收益可忽略 |
+| `missing_docs` | 证明 doc comment 的存在与 API 的正确使用率无正相关 |
+| `missing_const_for_fn` | 证明 const fn 不被广泛使用或不改善代码质量 |
+| `must_use_candidate` | 证明 `#[must_use]` 的过度使用导致编译器警告疲劳 |
+| `module_name_repetitions` | 证明 `std::io::Error` 模式不被 Rust 生态广泛接受 |
+| `cast_precision_loss` | 证明精度损失强制检查在性能敏感场景中不可替代 |
+| `cast_possible_truncation` | 同上——证明截断强制检查在协议解析中不可替代 |
 
 ### 段八：证伪判定
 
@@ -228,7 +287,7 @@ unused_variables = "warn"
 |----|------|------|
 | G1 | upstream 指向鉴（方法论工具），非法源 | upstream 改为 Canon（L-14~L-19 已就位） |
 | G2 | 法层链引用 L-04（引用规则），与代码无关 | 重写为 L-14~L-19 代码术层约束准入 |
-| D1 | 段四反例仅覆盖 3/20 条规则 | 扩展至全部 8 deny + 4 warn 抽检 |
+| D1 | 段四反例仅覆盖 3 条规则（旧版）；段七仅 3 类 | 段四扩展至全部 26 条逐条反例举证；段七扩展至全部 26 条可证伪条件 |
 | D2 | 「术层整洁」非道层推导 | 每条 deny 规则重写道/法依据（L-16/L-17/L-18） |
 | D3 | `unsafe_code = "forbid"` 无出口 | forbid→deny，allow 须加 `// SAFETY:` 注 |
 | D4 | 命名约束缺失；clone 规则不完整 | 新增 `non_camel_case_types`/`non_snake_case`；完善 clone 规则说明 |

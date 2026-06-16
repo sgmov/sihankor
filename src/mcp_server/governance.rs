@@ -180,7 +180,7 @@ impl SihankorService {
     #[tool(description = "Get project governance overview: document counts, stage distribution, alerts")]
     pub async fn project_status(
         &self,
-        Parameters(_): Parameters<()>,
+        Parameters(_): Parameters<serde_json::Value>,
     ) -> String {
         let total = self.db.count_documents().await.unwrap_or(0);
         let by_stage = self.db.count_by_stage().await.unwrap_or_default();
@@ -239,7 +239,7 @@ impl SihankorService {
     #[tool(description = "Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents")]
     pub async fn index_rebuild(
         &self,
-        Parameters(_): Parameters<()>,
+        Parameters(_): Parameters<serde_json::Value>,
     ) -> String {
         let docs_dir = PathBuf::from(&self.config.docs_dir);
         let report = indexer::rebuild_index(self.db.as_ref(), &docs_dir, &self.config.validation).await;
