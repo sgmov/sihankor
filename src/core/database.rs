@@ -108,7 +108,7 @@ impl SihDatabase for SqliteBackend {
                 doc.content,
                 status,
                 indexed_at,
-                "",  // nature: populated by indexer from file path via infer_nature()
+                doc.nature,
             ],
         )?;
         Ok(())
@@ -117,7 +117,7 @@ impl SihDatabase for SqliteBackend {
     async fn get_document(&self, id: &str) -> Result<Option<Document>, DatabaseError> {
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE id = ?1",
         )?;
 
@@ -136,7 +136,7 @@ impl SihDatabase for SqliteBackend {
     async fn search_by_nature(&self, nature: &str) -> Result<Vec<Document>, DatabaseError> {
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE nature = ?1",
         )?;
 
@@ -250,17 +250,26 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError> {
-        // Nature is inferred from the document path, not stored as a column.
-        // Return an empty distribution for now.
-        // TODO: add nature column or infer from path metadata
-        Ok(Vec::new())
+        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let mut stmt = conn.prepare(
+            "SELECT nature, COUNT(*) as cnt FROM documents WHERE nature != '' GROUP BY nature ORDER BY cnt DESC",
+        )?;
+        let counts: Vec<(String, usize)> = stmt
+            .query_map([], |row| {
+                let nature: String = row.get(0)?;
+                let cnt: usize = row.get(1)?;
+                Ok((nature, cnt))
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(counts)
     }
 
     async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError> {
         let status_str = status.as_str();
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE status = ?1",
         )?;
 
@@ -285,6 +294,7 @@ fn row_to_document(
     let content: String = row.get(5)?;
     let status_str: String = row.get(6)?;
     let indexed_at_str: String = row.get(7)?;
+    let nature: String = row.get(8)?;
 
     let frontmatter: super::models::Frontmatter = serde_json::from_str(&frontmatter_json)?;
     let indexed_at = indexed_at_str.parse::<chrono::DateTime<chrono::Utc>>().unwrap_or_else(|_| chrono::Utc::now());
@@ -298,6 +308,7 @@ fn row_to_document(
         content,
         status: DocStatus::from_str(&status_str).unwrap_or(DocStatus::Error),
         indexed_at,
+        nature,
     })
 }
 

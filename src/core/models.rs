@@ -87,6 +87,7 @@ pub struct Document {
     pub content: String,
     pub status: DocStatus,
     pub indexed_at: DateTime<Utc>,
+    pub nature: String,
 }
 
 /// 搜索结果

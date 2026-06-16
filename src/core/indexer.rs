@@ -70,6 +70,12 @@ pub async fn index_document(
         doc.status = DocStatus::Warning;
     }
 
+    // 推断 nature
+    let nature = crate::core::validator::infer_nature(file_path)
+        .unwrap_or("unknown")
+        .to_string();
+    doc.nature = nature;
+
     // 写入数据库
     db.upsert_document(doc.clone()).await.map_err(|e| IndexError::DatabaseError {
         path: file_path.to_string_lossy().to_string(),

@@ -355,7 +355,7 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
 }
 
 /// 从文件路径推断 document nature
-fn infer_nature(path: &Path) -> Option<&str> {
+pub fn infer_nature(path: &Path) -> Option<&str> {
     let path_str = path.to_string_lossy();
     if path_str.contains("specs/") {
         Some("spec")
@@ -411,7 +411,7 @@ mod tests {
         super::super::models::Document {
             id: id.to_string(),
             stage: Stage(stage.to_string()),
-            title: "Test".to_string(),
+            title: "Test Document".to_string(),
             upstream: upstream.map(|s| s.to_string()),
             frontmatter: Frontmatter {
                 id: id.to_string(),
@@ -420,39 +420,77 @@ mod tests {
                 decided_by: None,
                 extra: serde_json::Value::Null,
             },
-            content: "# Test\nBody text".to_string(),
+            content: "# Test\n\nBody text.".to_string(),
             status: DocStatus::Ok,
             indexed_at: Utc::now(),
+            nature: String::new(),
         }
     }
 
+    fn make_path(nature: &str) -> &Path {
+        match nature {
+            "spec" => Path::new("docs/specs/engineering/test.sih.md"),
+            "proposal" => Path::new("docs/proposals/test.sih.md"),
+            "decision" => Path::new("docs/decisions/test.sih.md"),
+            "reference" => Path::new("docs/reference/test.sih.md"),
+            "note" => Path::new("docs/knowledge/notes/test.sih.md"),
+            _ => Path::new("docs/test.sih.md"),
+        }
+    }
+
+    // ── F-01: id 格式 ──
+
     #[test]
-    fn test_valid_id_format() {
+    fn test_f01_valid_id_format() {
         assert!(is_valid_id("260613-1800-test-doc"));
         assert!(is_valid_id("260613-1800-001-test"));
+        assert!(is_valid_id("990101-0000-x"));
         assert!(!is_valid_id("invalid-id"));
         assert!(!is_valid_id("260613-test"));
+        assert!(!is_valid_id("260613-1800")); // no semantic name
+    }
+
+    // ── F-03: stage 值合法 ──
+
+    #[test]
+    fn test_f03_valid_stage_values() {
+        // Use note path to avoid F-04 (upstream required for spec)
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_frontmatter(&doc, Some(make_path("note")));
+        assert!(!result.has_errors()); // "1/3" is valid
+
+        let doc = make_test_doc("260613-1800-test-x", "X", None);
+        let result = validate_frontmatter(&doc, Some(make_path("note")));
+        assert!(!result.has_errors()); // "X" is valid
     }
 
     #[test]
-    fn test_frontmatter_missing_upstream_for_spec() {
+    fn test_f03_invalid_stage_rejected() {
+        let doc = make_test_doc("260613-1800-test", "4/3", None);
+        let result = validate_frontmatter(&doc, Some(make_path("spec")));
+        assert!(result.has_errors());
+    }
+
+    // ── F-04: upstream 对非 note 文档必填 ──
+
+    #[test]
+    fn test_f04_spec_requires_upstream() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
-        // Without path context, upstream is required by default
-        let result = validate_frontmatter(&doc, None);
+        let result = validate_frontmatter(&doc, Some(make_path("spec")));
         assert!(result.has_errors());
     }
 
     #[test]
-    fn test_frontmatter_note_no_upstream_ok() {
+    fn test_f04_note_without_upstream_ok() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
-        // With knowledge/notes/ path, upstream not required
-        let path = std::path::Path::new("docs/knowledge/notes/test.sih.md");
-        let result = validate_frontmatter(&doc, Some(path));
+        let result = validate_frontmatter(&doc, Some(make_path("note")));
         assert!(!result.has_errors());
     }
 
+    // ── F-05: 禁止 body 中的 --- ──
+
     #[test]
-    fn test_content_forbidden_horizontal_rule() {
+    fn test_f05_no_horizontal_rule_in_body() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "# Title\n\n---\n\nSome text".to_string();
         let result = validate_content(&doc);
@@ -460,12 +498,230 @@ mod tests {
     }
 
     #[test]
-    fn test_governance_ai_auto_forbidden() {
-        // decisions/ document with ai-auto decided-by should flag
-        let path = std::path::Path::new("docs/decisions/test.sih.md");
-        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-upstream"));
+    fn test_f05_body_without_hr_ok() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_content(&doc);
+        assert!(!result.has_errors());
+    }
+
+    // ── F-06: 禁止 decided-by: ai-auto ──
+
+    #[test]
+    fn test_f06_ai_auto_forbidden() {
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
         doc.frontmatter.decided_by = Some("ai-auto".to_string());
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        assert!(result.has_errors());
+    }
+
+    #[test]
+    fn test_f06_ai_assist_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
+        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        // ai-assist is allowed (F-06 only blocks ai-auto)
+        let fatal = result.violations.iter().any(|v| v.rule_id == "F-06" && matches!(v.severity, ViolationSeverity::Fatal));
+        assert!(!fatal);
+    }
+
+    // ── F-07: 非 decisions/ 文档禁止 decided-by ──
+
+    #[test]
+    fn test_f07_non_decision_must_not_have_decided_by() {
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
+        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        let result = validate_governance(&doc, Some(make_path("spec")));
+        assert!(result.has_errors());
+    }
+
+    #[test]
+    fn test_f07_decision_with_decided_by_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
+        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        let err = result.violations.iter().any(|v| v.rule_id == "F-07");
+        assert!(!err);
+    }
+
+    // ── G-02: 文档在可识别目录下 ──
+
+    #[test]
+    fn test_g02_recognized_directory() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_structure(&doc, Some(Path::new("docs/specs/philosophy/test.sih.md")));
+        let g02 = result.violations.iter().find(|v| v.rule_id == "G-02");
+        assert!(g02.is_none()); // no G-02 violation for recognized dir
+    }
+
+    #[test]
+    fn test_g02_unrecognized_directory_warns() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_structure(&doc, Some(Path::new("docs/unknown/test.sih.md")));
+        let g02 = result.violations.iter().find(|v| v.rule_id == "G-02");
+        assert!(g02.is_some());
+    }
+
+    // ── G-03: 路径深度 ≤ 3 ──
+
+    #[test]
+    fn test_g03_path_depth_ok() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_structure(&doc, Some(Path::new("docs/specs/test.sih.md")));
+        let g03 = result.violations.iter().find(|v| v.rule_id == "G-03");
+        assert!(g03.is_none());
+    }
+
+    #[test]
+    fn test_g03_path_too_deep_warns() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_structure(&doc, Some(Path::new("docs/a/b/c/d/test.sih.md")));
+        let g03 = result.violations.iter().find(|v| v.rule_id == "G-03");
+        assert!(g03.is_some());
+    }
+
+    // ── G-04: 表格 ≤ 3 列 ──
+
+    #[test]
+    fn test_g04_table_cols_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |".to_string();
+        let result = validate_content(&doc);
+        let g04 = result.violations.iter().find(|v| v.rule_id == "G-04");
+        assert!(g04.is_none());
+    }
+
+    #[test]
+    fn test_g04_table_too_wide() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |".to_string();
+        let result = validate_content(&doc);
+        let g04 = result.violations.iter().find(|v| v.rule_id == "G-04");
+        assert!(g04.is_some());
+    }
+
+    // ── G-05: 代码块语言标签 ──
+
+    #[test]
+    fn test_g05_code_block_with_lang() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "```rust\nlet x = 1;\n```".to_string();
+        let result = validate_content(&doc);
+        let g05 = result.violations.iter().find(|v| v.rule_id == "G-05");
+        assert!(g05.is_none());
+    }
+
+    #[test]
+    fn test_g05_code_block_no_lang() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "```\nsome code\n```".to_string();
+        let result = validate_content(&doc);
+        let g05 = result.violations.iter().find(|v| v.rule_id == "G-05");
+        assert!(g05.is_some());
+    }
+
+    // ── G-06: 无 emoji ──
+
+    #[test]
+    fn test_g06_no_emoji() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        let result = validate_content(&doc);
+        let g06 = result.violations.iter().find(|v| v.rule_id == "G-06");
+        assert!(g06.is_none());
+    }
+
+    #[test]
+    fn test_g06_emoji_detected() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "Hello 👋 world".to_string();
+        let result = validate_content(&doc);
+        let g06 = result.violations.iter().find(|v| v.rule_id == "G-06");
+        assert!(g06.is_some());
+    }
+
+    // ── G-08: Stage X 标记 ──
+
+    #[test]
+    fn test_g08_stage_x_warns() {
+        let doc = make_test_doc("260613-1800-test", "X", Some("260613-1700-x"));
+        let result = validate_lifecycle(&doc);
+        let g08 = result.violations.iter().find(|v| v.rule_id == "G-08");
+        assert!(g08.is_some());
+    }
+
+    #[test]
+    fn test_g08_stage_3_ok() {
+        let doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
+        let result = validate_lifecycle(&doc);
+        let g08 = result.violations.iter().find(|v| v.rule_id == "G-08");
+        assert!(g08.is_none());
+    }
+
+    // ── G-09: decisions/ 2/3+ 应有 decided-by ──
+
+    #[test]
+    fn test_g09_decision_without_decided_by_warns() {
+        let doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        let g09 = result.violations.iter().find(|v| v.rule_id == "G-09");
+        assert!(g09.is_some());
+    }
+
+    #[test]
+    fn test_g09_decision_with_decided_by_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
+        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        let g09 = result.violations.iter().find(|v| v.rule_id == "G-09");
+        assert!(g09.is_none());
+    }
+
+    // ── G-10: 根文档自指向 ──
+
+    #[test]
+    fn test_g10_root_self_reference_ok() {
+        let path = Path::new("docs/specs/philosophy/On-SiHankor.sih.md");
+        let doc = make_test_doc("240602-0900-on-sihankor", "3/3", Some("240602-0900-on-sihankor"));
+        // G-10 is silent: no violation emitted for self-reference
         let result = validate_governance(&doc, Some(path));
+        let violations = result.violations.iter().filter(|v| v.rule_id == "G-10").count();
+        assert_eq!(violations, 0); // G-10 should not emit violations, just validate internally
+    }
+
+    // ── J-01: 列表嵌套 ≤ 2 层 ──
+
+    #[test]
+    fn test_j01_nested_list_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "- item\n  - sub\n    - subsub".to_string();
+        let result = validate_content(&doc);
+        let j01 = result.violations.iter().find(|v| v.rule_id == "J-01");
+        assert!(j01.is_none());
+    }
+
+    #[test]
+    fn test_j01_list_too_deep() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        doc.content = "- a\n  - b\n    - c\n      - d".to_string();
+        let result = validate_content(&doc);
+        let j01 = result.violations.iter().find(|v| v.rule_id == "J-01");
+        assert!(j01.is_some());
+    }
+
+    // ── Integration: full validate_document ──
+
+    #[test]
+    fn test_full_validation_clean_doc() {
+        let doc = make_test_doc("260613-1800-test-doc", "2/3", Some("260613-1700-upstream"));
+        let result = validate_document(&doc, Some(make_path("spec")), &ValidationConfig::default());
+        // A clean, well-formed document should have no Fatal errors and may have guidelines
+        assert!(!result.has_errors());
+    }
+
+    #[test]
+    fn test_full_validation_broken_doc() {
+        let mut doc = make_test_doc("bad-id", "bad-stage", None);
+        doc.content = "---\nbroken".to_string();
+        let result = validate_document(&doc, Some(make_path("spec")), &ValidationConfig::default());
         assert!(result.has_errors());
     }
 }

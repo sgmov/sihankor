@@ -44,6 +44,7 @@ pub fn parse_content(content: &str) -> Result<Document, ParseError> {
         content: doc_content,
         status: DocStatus::Ok,
         indexed_at: Utc::now(),
+        nature: String::new(), // set by indexer after parsing
     })
 }
 

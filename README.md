@@ -1,7 +1,6 @@
 ---
 id: 240613-1733-readme
-type: readme
-stage: 1/3
+stage: 2/3
 ---
 
 # SiHankor
@@ -105,6 +104,27 @@ sihankor/
 | plan / roadmap | specs/engineering/ | 方向规约，定义系统将如何成为 |
 | RFC / 方案对比 | proposals/ | 变更提议，决议后关闭 |
 | task / sprint | 文档内部内容 | 不独立成 nature |
+
+### 新读者引导
+
+首次接触司衡，按以下路径建立心智模型：
+
+**核心概念**（每项 5 分钟）：
+
+| 概念 | 一句话 | 深入学习 |
+|------|--------|----------|
+| **nature** | 文档身份，由目录推断（spec/proposal/decision/reference/note），不在 frontmatter 声明 | [Canon §6.2](docs/specs/philosophy/On-SiHankor-Canon.sih.md) |
+| **stage** | 文档生命周期：1/3 起草 → 2/3 审查中 → 3/3 定稿。note 有 stage | [Canon §5](docs/specs/philosophy/On-SiHankor-Canon.sih.md) |
+| **upstream** | 决策上游链，每个文档声明「谁授权了我」 | [Conventions §4](docs/specs/engineering/SiHankor-Document-Conventions.sih.md) |
+| **frontmatter** | 文档元数据（id/stage/upstream），引擎解析和验证的入口 | [Conventions §4](docs/specs/engineering/SiHankor-Document-Conventions.sih.md) |
+
+**推荐阅读顺序**：
+
+1. [司衡总纲](docs/specs/philosophy/On-SiHankor.sih.md) — 司衡信什么
+2. [司衡道论](docs/specs/philosophy/On-SiHankor-Tao.sih.md) — 六层脉络
+3. [司衡法论/Canon](docs/specs/philosophy/On-SiHankor-Canon.sih.md) — 文档治理规则
+4. [文档约定](docs/specs/engineering/SiHankor-Document-Conventions.sih.md) — 怎么写文档
+5. [引擎路线图](docs/specs/engineering/SiHankor-Engine-Roadmap.sih.md) — 接下来做什么
 
 ## 许可
 

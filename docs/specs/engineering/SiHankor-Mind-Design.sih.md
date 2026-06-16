@@ -171,24 +171,24 @@ Mind 不执行写入操作——文件修改由下游引擎执行。决策 JSON 
 
 ```mermaid
 flowchart LR
-    subgraph Mind[\"sihankor-mind（思维核心）\"]
-        M1[\"几层：三机流转\"]
-        M2[\"术层：四步分析法\"]
-        M3[\"约层：结构化输出\"]
+    subgraph Mind["sihankor-mind（思维核心）"]
+        M1["几层：三机流转"]
+        M2["术层：四步分析法"]
+        M3["约层：结构化输出"]
     end
-    subgraph Engine[\"sihankor 引擎（执行层）\"]
-        E1[\"形迹层：文件操作\"]
-        E2[\"parse → validate → modify\"]
+    subgraph Engine["sihankor 引擎（执行层）"]
+        E1["形迹层：文件操作"]
+        E2["parse → validate → modify"]
     end
-    Mind -->|\"JSON\"| Engine
+    Mind -->|"JSON"| Engine
 
-    subgraph MindBound[\"Mind 不可跨边界\"]
-        MB1[\"Mind 不写文件\"]
-        MB2[\"Mind 不代替人类决策\"]
+    subgraph MindBound["Mind 不可跨边界"]
+        MB1["Mind 不写文件"]
+        MB2["Mind 不代替人类决策"]
     end
-    subgraph EngineBound[\"引擎不可跨边界\"]
-        EB1[\"引擎不做推导\"]
-        EB2[\"引擎不修改 Mind 的决策逻辑\"]
+    subgraph EngineBound["引擎不可跨边界"]
+        EB1["引擎不做推导"]
+        EB2["引擎不修改 Mind 的决策逻辑"]
     end
 ```
 
