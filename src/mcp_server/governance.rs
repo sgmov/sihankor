@@ -12,6 +12,7 @@ use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
 use crate::core::validator::{self, ValidationConfig, ValidationResult};
 use crate::mind::icl::ICL;
+use crate::mind::ict::ICT;
 use crate::mind::iww::IWW;
 
 /// 司衡引擎治理 MCP 服务
@@ -342,6 +343,99 @@ impl SihankorService {
         });
 
         match serde_json::to_string_pretty(&result) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 决策验证：对已有的 decision_proposal 执行五法检验（iCT only）
+    #[tool(description = "Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace")]
+    pub async fn verify_decision(
+        &self,
+        Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+
+        let doc = match self.db.get_document(&target).await {
+            Ok(Some(doc)) => doc,
+            Ok(None) => {
+                let file_path = PathBuf::from(&target);
+                match parser::parse_file(&file_path) {
+                    Ok(mut doc) => {
+                        doc.nature = validator::infer_nature(&file_path)
+                            .unwrap_or("")
+                            .to_string();
+                        doc
+                    }
+                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                }
+            }
+            Err(e) => return format!("Database error: {}", e),
+        };
+
+        let cognition = icl.analyze(&doc).await;
+        let proposal = IWW::propose(&cognition);
+        let verification = ICT::verify(&cognition, &proposal);
+
+        let result = serde_json::json!({
+            "cognition": cognition,
+            "decision_proposal": proposal,
+            "verification": verification,
+        });
+
+        match serde_json::to_string_pretty(&result) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 完整三机流转分析：iCL → iWW → iCT
+    #[tool(description = "Full three-machine flow: iCL cognition → iWW decision proposal → iCT verification. Returns complete AnalysisResult.")]
+    pub async fn full_analysis(
+        &self,
+        Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+
+        let doc = match self.db.get_document(&target).await {
+            Ok(Some(doc)) => doc,
+            Ok(None) => {
+                let file_path = PathBuf::from(&target);
+                match parser::parse_file(&file_path) {
+                    Ok(mut doc) => {
+                        doc.nature = validator::infer_nature(&file_path)
+                            .unwrap_or("")
+                            .to_string();
+                        doc
+                    }
+                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                }
+            }
+            Err(e) => return format!("Database error: {}", e),
+        };
+
+        let cognition = icl.analyze(&doc).await;
+        let proposal = IWW::propose(&cognition);
+        let verification = ICT::verify(&cognition, &proposal);
+
+        let analysis_result = crate::mind::types::AnalysisResult {
+            schema_version: "0.1.0".into(),
+            analysis_id: format!("analysis-{}", doc.id),
+            analysis_target: crate::mind::types::AnalysisTarget {
+                id: doc.id.clone(),
+                title: doc.title.clone(),
+                nature: doc.nature.clone(),
+                stage: doc.stage.0.clone(),
+            },
+            cognition,
+            decision_proposal: Some(proposal),
+            verification: Some(verification),
+            limitations: vec![],
+            self_question: "analysis completeness not self-verified".into(),
+            human_review_required: vec![],
+        };
+
+        match serde_json::to_string_pretty(&analysis_result) {
             Ok(json) => json,
             Err(e) => format!("Serialization error: {}", e),
         }

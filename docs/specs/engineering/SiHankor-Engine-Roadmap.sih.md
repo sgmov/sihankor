@@ -26,8 +26,9 @@ upstream: 240602-0900-on-sihankor
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
 | plan 语义拆分      | roadmap → specs/engineering/，plan 拆为 proposal+spec              | 完成              |
-| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，41 tests    |
-| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，41 tests    |
+| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，48 tests    |
+| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，48 tests    |
+| T2.3 iCT 方圆机    | 五法检验 + verify_decision + full_analysis MCP 工具                  | 完成，48 tests    |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -161,7 +162,7 @@ flowchart TB
     subgraph Phase2["第二阶段：思维核心（几层）"]
         B1["T2.1 iCL 明晰机 ✅"]
         B2["T2.2 iWW 消息机 ✅"]
-        B3["T2.3 iCT 方圆机"]
+        B3["T2.3 iCT 方圆机 ✅"]
         B4["T2.4 Mind MCP 工具"]
     end
 
@@ -399,7 +400,7 @@ gantt
     section 第二阶段：思维核心
     T2.1 iCL 明晰机              :done, b1, 2026-06-17, 0d
     T2.2 iWW 消息机              :done, b2, 2026-06-17, 0d
-    T2.3 iCT 方圆机              :b3, after b2, 4d
+    T2.3 iCT 方圆机              :done, b3, 2026-06-17, 0d
     T2.4 Mind MCP 工具           :b4, after b3, 4d
     section 第三阶段：体系收敛
     doc ratify 3/3              :c1, after b4, 10d
@@ -411,18 +412,17 @@ gantt
 | 第零阶段 | 4-7d   | 0      | 4-7d   |
 | 第一阶段 | 14-18d | 0      | 18-25d |
 | 第一-A   | 3-5d   | 0      | 21-30d |
-| 第二阶段 | 2d     | 8-12d  | 20-29d |
+| 第二阶段 | 3d     | 4d     | 18-27d |
 | 第三阶段 | 0      | 10-15d | 46-65d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
 ## 八、当前第一步（2026-06-16 更新）
 
-T2.1 iCL 明晰机与 T2.2 iWW 消息机已完成。下一步：
+T2.1~T2.3 三机流转全部完成。下一步：
 
-1. **T2.3 iCT 方圆机**：五法逐条检验 + overall verdict + dao trace，预估 3-5d
-2. **或 Mind MCP 工具补全**：`verify_decision` (iCT only) + `full_analysis` (iCL→iWW→iCT 全流转)
-3. **或 iCT 前置：五法检验标准定义**——五法的 pass/fail/conditional 评判标准需明确化
+1. **T2.4 Mind MCP 工具整合**：4 工具已全部实现（analyze_document/propose_decision/verify_decision/full_analysis），需补齐 tool description 和集成测试
+2. **或进入 Phase 3 体系收敛**：工程文档 2/3→3/3 + 参照文档推进
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 
