@@ -15,7 +15,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eprintln!("sihankor engine starting, db at {}", db_path.display());
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
-    rmcp::serve_server(service, io).await?;
+    let running = rmcp::serve_server(service, io).await?;
+    eprintln!("sihankor engine ready");
+    running.waiting().await?;
     Ok(())
 }
 
