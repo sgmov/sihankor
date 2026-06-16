@@ -1,7 +1,6 @@
 ---
 id: 240611-0100-sihankor-philosophy-restructure
-type: plan
-stage: 1/3
+stage: X
 upstream: PHILOSOPHY
 ---
 
