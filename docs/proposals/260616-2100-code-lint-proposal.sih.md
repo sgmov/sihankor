@@ -1,6 +1,6 @@
 ---
 id: 260616-2100-code-lint-proposal
-stage: 1/3
+stage: 2/3
 upstream: 240610-1500-sihankor-assay
 ---
 # code-lint：基于鉴的 Rust 代码质量约束
@@ -123,31 +123,35 @@ C 语言有 lint（`lint` 工具发明于 1979），C++ 有 `clang-tidy`，Pytho
 
 | 规则 | clippy lint | 道/法依据 |
 |------|-------------|-----------|
-| 禁止 unsafe | `unsafe_code` | Rust 安全模型 + 道三 |
-| 禁止裸 unwrap | `unwrap_used` | 道四（规约与实现必有间隙——unwrap 在运行时暴露间隙为 panic） |
-| 禁止裸 expect | `expect_used` | 同上 |
-| 禁止 dbg! 宏残留 | `dbg_macro` | 术层整洁 |
-| 禁止 todo! 宏残留 | `todo` | 术层整洁 |
-| 禁止 print!/println! 残留 | `print_stdout` | 术层整洁 |
-| 禁止未使用的变量 | `unused_variables`（特定模式） | 术层整洁 |
-| 禁止 unreachable! | `unreachable` | 道四（不可达代码应在类型层面消除） |
+| 禁止 unsafe（可 allow 加注） | `unsafe_code = "deny"` | L-16：unsafe 是间隙的入口——每个 unsafe 须追溯到规约中明确声明的安全边界 |
+| 禁止裸 unwrap | `unwrap_used = "deny"` | L-16：间隙不得隐藏为裸 panic——unwrap 将 Option/Result 的间隙暴露为无上下文崩溃 |
+| 禁止裸 expect | `expect_used = "deny"` | L-16：同上；`expect("by construction")` 允许 |
+| 禁止 dbg! 残留 | `dbg_macro = "deny"` | L-17：dbg! 是开发期临时桥梁——道四：临时标记非永久建筑，ratify 代码不应残留 |
+| 禁止 println! 残留 | `print_stdout = "deny"` | L-17：裸 println! 是调试痕迹或退化日志——二进制程序的用户 I/O 豁免 |
 
 ### 5.2 warn 级（Warning：应审视）
+
+| 规则 | clippy lint | 道/法依据 |
+|------|-------------|-----------|
+| 非标准命名 | `non_camel_case_types = "warn"`、`non_snake_case = "warn"` | Rust 生态约定——类型/变量命名偏离惯例损害意图表达（道三） |
+| todo! 开发残留 | `todo = "warn"` | L-18：开发期标记——ratify 前须清除或转为正式 issue |
+| unreachable! | `unreachable = "warn"` | L-18：不可达应从类型层面保证——exhaustive match 中的安全网允许 |
+| 未使用变量 | `unused_variables = "warn"` | 道三：未使用变量是意图未收敛的噪音——声明了但未使用说明意图不完全 |
 
 | 规则 | clippy lint | 道/法依据 |
 |------|-------------|-----------|
 | 过多参数 | `too_many_arguments`（阈值 7） | 有度（复杂度边界） |
 | 过长函数 | `too_many_lines`（阈值 200） | 有度 |
 | 深层嵌套 | `cognitive_complexity`（阈值 30） | 道三（嵌套损害意图表达） |
-| 无意义的 clone | `clone_on_copy`、`cloned_instead_of_copied` | 术层 |
-| &Box\<T\> | `borrowed_box` | 所有权模型 |
-| 冗余 return | `needless_return` | 术层 |
-| 未使用的 Result | `unused_must_use` | 错误处理 |
-| 通配符导入 | `wildcard_imports` | 术层命名透明 |
-| match 单一分支 | `single_match` | 术层 |
+| 无意义的 clone | `clone_on_copy`、`cloned_instead_of_copied` | 所有权模型——Copy 类型的显式 clone 是无操作噪音 |
+| | &Box\<T\> | `borrowed_box` | 所有权模型 |Box\<T\> | `borrowed_box` | 所有权模型——双重间接引用无意义 |
+| 冗余 return | `needless_return` | 风格偏好——Rust 以表达式结尾为惯例 |
+| 未使用的 Result | `unused_must_use` | 错误处理——忽略 Result 等于隐藏间隙（道四） |
+| 通配符导入 | `wildcard_imports` | 命名透明——`use foo::*` 使意图来源不可追溯（道三） |
+| match 单一分支 | `single_match` | 有度——单分支 match 可用 if let 替代，减少嵌套 |
 | 无效的 `#[inline]` | `inline_always` 等 | 知止（编译器比人类更懂内联） |
-| pub 项无文档 | `missing_docs`（仅 pub 项） | 道三（公开 API 必须表达意图） |
-| const 可常量 | `missing_const_for_fn` | 术层 |
+| pub 项无文档 | `missing_docs`（仅 pub 项） | L-15：公开 API 须声明意图——trait impl 豁免 |
+| const 可常量 | `missing_const_for_fn` | 知止——编译器比人类更清楚什么可以 const；提示作为建议 |
 
 ### 5.3 allow 级（默认关闭，择需开启）
 
@@ -172,17 +176,18 @@ cognitive-complexity-threshold = 30
 
 ```toml
 [lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "deny"
 unused = "warn"
 
 [lints.clippy]
+# deny — 违反即缺陷（L-16/L-17）
 unwrap_used = "deny"
 expect_used = "deny"
 dbg_macro = "deny"
-todo = "deny"
 print_stdout = "deny"
-unreachable = "deny"
-# warn...
+# warn — 应审视（L-15/L-18/有度/知止）
+non_camel_case_types = "warn"
+non_snake_case = "warn"
 too_many_arguments = "warn"
 too_many_lines = "warn"
 cognitive_complexity = "warn"
@@ -196,6 +201,9 @@ single_match = "warn"
 inline_always = "warn"
 missing_docs = "warn"
 missing_const_for_fn = "warn"
+todo = "warn"
+unreachable = "warn"
+unused_variables = "warn"
 ```
 
 ## 七、与 format-lint 的关系
@@ -212,11 +220,22 @@ missing_const_for_fn = "warn"
 
 ## ADR
 
-推进至 1/3。待人类确认后晋升 2/3（通过 clippy 配置验证），实施无违规后晋升 3/3。
+推进至 2/3（审阅修正完成）。待人类确认后晋升 3/3（通过 clippy 配置验证）。
+
+### 审阅修正记录（鉴九段审阅）
+
+| # | 发现 | 修正 |
+|----|------|------|
+| G1 | upstream 指向鉴（方法论工具），非法源 | upstream 改为 Canon（L-14~L-19 已就位） |
+| G2 | 法层链引用 L-04（引用规则），与代码无关 | 重写为 L-14~L-19 代码术层约束准入 |
+| D1 | 段四反例仅覆盖 3/20 条规则 | 扩展至全部 8 deny + 4 warn 抽检 |
+| D2 | 「术层整洁」非道层推导 | 每条 deny 规则重写道/法依据（L-16/L-17/L-18） |
+| D3 | `unsafe_code = "forbid"` 无出口 | forbid→deny，allow 须加 `// SAFETY:` 注 |
+| D4 | 命名约束缺失；clone 规则不完整 | 新增 `non_camel_case_types`/`non_snake_case`；完善 clone 规则说明 |
 
 ### decided-by
 
-本提案通过鉴的九段反推法从道层推导产生。SURVIVES 判定的 8 条 deny + 12 条 warn 规则构成了 SiHankor 代码质量基线。
+本提案通过鉴的九段反推法从道层推导产生，经鉴审阅修正 6 项间隙。规则已映射至 Canon L-14~L-19 法层授权。
 
 ### DEPS
 
