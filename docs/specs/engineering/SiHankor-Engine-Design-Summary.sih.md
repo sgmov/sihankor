@@ -1,7 +1,7 @@
 ---
-id: 260611-0000-sihankor-engine-design-summary
+id: 2606110000-sihankor-engine-design-summary
 stage: 2/3
-upstream: 240610-1030-on-sihankor-canon
+upstream: 2406101030-on-sihankor-canon
 ---
 
 # 司衡引擎设计摘要
@@ -14,7 +14,7 @@ upstream: 240610-1030-on-sihankor-canon
 
 **司衡引擎是什么**：一个承认治理自身也不完备的代码工程收敛引擎。它不是外加于代码工程的统治者，而是代码工程自己长出来的收敛机制。
 
-**解决什么问题**：代码工程中意图天然发散（道一），需要系统的、持续的治理力量介入才能收敛。引擎将"发散自然，收敛必为"这一哲学主张工程化，提供文档治理、认知分析、合规验证的能力。
+**解决什么问题**：代码工程中意图天然发散（道一），需要系统的、持续的治理力量介入才能收敛。引擎将"发散自-然，收敛必-为"这一哲学主张工程化，提供文档治理、认知分析、合规验证的能力。
 
 **在 AI 辅助开发体系中的位置**：引擎通过 MCP（Model Context Protocol）暴露**治理能力接口**（非被动工具箱），供 AI IDE Agent（Cursor、Claude Code、Cline 等）调用。Agent 负责"何时调用"（when），引擎负责"怎么执行"（how）。
 
@@ -63,11 +63,10 @@ note: 1/3 → 2/3(人类确认) → 3/3(晋升) → 0/decayed(衰减)
 
 三层结构：
 
-| 文件            | 职责                                                            | 语言相关性 |
-| --------------- | --------------------------------------------------------------- | ---------- |
-| `_concepts.yml` | 概念注册表，记录 derives-from 和 related                        | 语言无关   |
-| `zh.yml`        | 中文权威定义（概念语义的唯一权威源）                            | 中文       |
-| `en.yml`        | 英文映射（mapping）、被拒词（rejected）、消歧（disambiguation） | 英文       |
+| 文件     | 职责                                                            | 语言相关性 |
+| -------- | --------------------------------------------------------------- | ---------- |
+| `zh.yml` | 中文权威定义（概念语义的唯一权威源）                            | 中文       |
+| `en.yml` | 英文映射（mapping）、被拒词（rejected）、消歧（disambiguation） | 英文       |
 
 因果方向不可逆：`specs/` → `reference/` → `glossary/`。reference 变更必须传播到 glossary，glossary 变更不反向影响 reference。
 
@@ -87,7 +86,7 @@ note: 1/3 → 2/3(人类确认) → 3/3(晋升) → 0/decayed(衰减)
 pub trait SihDatabase: Send + Sync {
     async fn upsert_document(&self, doc: Document) -> Result<()>;
     async fn get_document(&self, id: &str) -> Result<Option<Document>>;
-    async fn search_by_type(&self, doc_type: &str) -> Result<Vec<Document>>;
+    async fn search_by_nature(&self, nature: &str) -> Result<Vec<Document>>;
     async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>>;
     async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>>;
 }
@@ -104,7 +103,6 @@ pub trait SihDatabase: Send + Sync {
 ```rust
 pub struct Document {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub title: String,
     pub upstream: Option<String>,
@@ -128,10 +126,8 @@ pub struct Document {
 ```rust
 pub struct Frontmatter {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub upstream: Option<String>,
-    pub decided_by: Option<String>,
     pub extra: serde_json::Value,
 }
 ```
@@ -164,7 +160,6 @@ pub enum DocStatus {
 ```sql
 CREATE TABLE documents (
     id          TEXT PRIMARY KEY,
-    type        TEXT NOT NULL,
     stage       TEXT NOT NULL,
     title       TEXT NOT NULL,
     upstream    TEXT,
@@ -174,7 +169,6 @@ CREATE TABLE documents (
     indexed_at  TEXT NOT NULL
 );
 
-CREATE INDEX idx_documents_type ON documents(type);
 CREATE INDEX idx_documents_stage ON documents(stage);
 CREATE INDEX idx_documents_upstream ON documents(upstream);
 CREATE INDEX idx_documents_status ON documents(status);
@@ -183,7 +177,7 @@ CREATE INDEX idx_documents_status ON documents(status);
 **设计要点**
 
 - `frontmatter` 在 Rust 侧是强类型结构体，SQL 侧存 JSON：类型安全在应用层，存储弹性在数据库层
-- `upstream` 可 NULL：note 类型无上游；根级文档用全大写域标识（如 `PHILOSOPHY`），不存为 NULL
+- `upstream` 可 NULL：note 无上游；根级文档自指向自身 id
 - `stage` 存字符串（如 `1/3`、`2/3`、`3/3`、`0/`、`X`），非枚举：stage 编码是法层定义，可能扩展（有度：不过度规约）
 
 > 来源：对话中已讨论（数据库选型、SihDatabase trait 设计）、设计文档已定义（文档约定、法论）

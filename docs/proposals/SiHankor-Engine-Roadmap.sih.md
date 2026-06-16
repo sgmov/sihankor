@@ -1,7 +1,7 @@
 ---
-id: 260613-1800-sihankor-engine-roadmap
+id: 2606131800-sihankor-engine-roadmap
 stage: 1/3
-upstream: 240602-0900-on-sihankor
+upstream: 2406020900-on-sihankor
 ---
 
 # 司衡引擎下一步方向与任务计划
@@ -36,8 +36,8 @@ flowchart LR
 
     subgraph Engineering["工程层"]
         E1["Engine-Design-Summary<br/>2/3"]
-        E2["Engineering-Mapping<br/>1/3"]
-        E3["Mind-Design<br/>1/3"]
+        E2["Engineering-Mapping<br/>2/3"]
+        E3["Mind-Design<br/>2/3"]
         E4["Document-Conventions<br/>2/3"]
     end
 
@@ -96,8 +96,8 @@ E4（原 plan 的"实现先于文档 ratify"）将 1/3→2/3（resolve）和 2/3
 
 | 文档                | 当前 | 目标 | 推进条件                               |
 | ------------------- | ---- | ---- | -------------------------------------- |
-| Engineering-Mapping | 1/3  | 2/3  | 映射框架完整，可作为引擎实现的设计依据 |
-| Mind-Design         | 1/3  | 2/3  | 四步分析法+三机流转+Schema 定义完整    |
+| Engineering-Mapping | 2/3  | 3/3  | 引擎实现中验证所有映射项的正确性        |
+| Mind-Design         | 2/3  | 3/3  | 引擎实现中验证分析模型的正确性          |
 
 Engineering-Mapping 和 Mind-Design 是**规定实现的设计文档**，不是记录实现的说明文档。它们必须先于代码达到 2/3，才能作为引擎实现的权威参照。
 
@@ -185,7 +185,7 @@ flowchart TD
 pub trait SihDatabase: Send + Sync {
     async fn upsert_document(&self, doc: Document) -> Result<()>;
     async fn get_document(&self, id: &str) -> Result<Option<Document>>;
-    async fn search_by_type(&self, doc_type: &str) -> Result<Vec<Document>>;
+    async fn search_by_nature(&self, nature: &str) -> Result<Vec<Document>>;
     async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>>;
     async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>>;
 }
@@ -196,7 +196,7 @@ pub trait SihDatabase: Send + Sync {
 - `SihDatabase` trait 定义（async trait：契约不泄漏实现细节）
 - `SqliteBackend` 实现（rusqlite + spawn_blocking）
 - `Document` 结构体：含 `Frontmatter`（展开 + `extra` 兜底）、`DocStatus`（Ok/Warning/Error 三级）、解析后正文
-- 文档表 schema：id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at
+- 文档表 schema：id, stage, title, upstream, frontmatter_json, content, status, indexed_at
 - `search_content` 初始使用 LIKE（为 FTS5 预留接口）
 
 设计详情见 [Engine-Design-Summary $2.4](../specs/engineering/SiHankor-Engine-Design-Summary.sih.md#24-存储方案)。
@@ -224,7 +224,7 @@ pub trait SihDatabase: Send + Sync {
 | frontmatter | id/stage 必填、格式校验、upstream 对 spec/proposal/decision/reference 必填  | 顺因   |
 | structure   | 子目录深度 ≤3                                            | 有度   |
 | content     | 字符约束（AGENTS.md）、代码块语言标签、表格列数 ≤3       | 有度   |
-| reference   | resolve_ref 指向有效文档、不可引用 1/3 或 X 文档（G-02） | 顺因   |
+| reference   | upstream 指向有效文档、不可引用 1/3 或 X 文档（G-02） | 顺因   |
 | lifecycle   | stage 转移合法性、不可逆向（ratify→reopen→ratify 除外）  | 有度   |
 | governance  | upstream 链完整、无循环引用                              | 顺因   |
 
@@ -276,7 +276,7 @@ pub trait SihDatabase: Send + Sync {
 
 - 每个工具有独立的 rust struct 请求/响应类型
 - `resolve_chain` 使用 SQLite recursive CTE
-- `project_status` 输出按 type/stage 的分布统计
+- `project_status` 输出按 nature/stage 的分布统计
 
 对应设计文档：[Engine-Design-Summary](../specs/engineering/SiHankor-Engine-Design-Summary.sih.md) $五（治理引擎 MCP）。
 
@@ -304,7 +304,7 @@ pub trait SihDatabase: Send + Sync {
 
 关键交付：
 
-- 意图定位：读取 type/stage/upstream，确定文档在治理体系中的位置
+- 意图定位：读取 nature/stage/upstream，确定文档在治理体系中的位置
 - 关系照见：基于 SQLite 的引用/重复/冲突/空白四维关系图谱
 - 发散诊断：区分意图漂移/引用断裂/重复冗余/良性多角度讨论
 - 每个 `Divergence` 必须含 `confidence`（道四要求：分析也是规约，必含不确定性标注）
@@ -500,8 +500,6 @@ gantt
 4. **Engineering-Mapping 1/3 → 2/3**：已完成。映射框架完整，可作为引擎实现的设计依据。
 
 5. **Mind-Design 1/3 → 2/3**：已完成。四步分析法+三机流转+Schema 定义完整。
-
-5. **Mind-Design 1/3 → 2/3**：确保四步分析法、三机流转模型、输出 Schema 定义完整且自洽。这是 Mind 实现的设计上游。约 1 天。
 
 ### 引擎线（第一阶段，文档线完成后启动）
 

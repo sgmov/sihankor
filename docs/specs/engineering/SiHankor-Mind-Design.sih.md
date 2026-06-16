@@ -1,7 +1,7 @@
 ---
-id: 260613-1650-sihankor-mind-design
+id: 2606131650-sihankor-mind-design
 stage: 2/3
-upstream: 240610-1030-on-sihankor-canon
+upstream: 2406101030-on-sihankor-canon
 ---
 
 # 司衡思维核心（Mind）设计规范
@@ -54,8 +54,8 @@ upstream: 240610-1030-on-sihankor-canon
 ```text
 输入 → ① 意图定位（道二·顺因）
          确定文档在治理体系中的位置
-         追问：这份文档的 type/stage/upstream 是什么？给谁看的？确定性什么程度？
-         输出：文档治理定位（type × stage × upstream 链）
+         追问：这份文档的 nature/stage/upstream 是什么？给谁看的？确定性什么程度？
+         输出：文档治理定位（nature × stage × upstream 链）
 
      → ② 关系照见（道三·损补）
          发现跨文档关系
@@ -124,9 +124,9 @@ struct AnalysisResult {
 }
 
 struct Cognition {
-    governance_position: GovPosition,   // type × stage × upstream 链
+    governance_position: GovPosition,   // nature × stage × upstream 链
     relation_graph: RelationGraph,      // 引用/重复/冲突/空白
-    divergence_diagnosis: Vec<Divergence>, // 发散诊断列表（每项含 type/severity/confidence）
+    divergence_diagnosis: Vec<Divergence>, // 发散诊断列表（每项含 nature/severity/confidence）
 }
 
 struct DecisionProposal {
