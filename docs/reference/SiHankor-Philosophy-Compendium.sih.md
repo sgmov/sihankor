@@ -1,6 +1,6 @@
 ---
 id: 260613-1728-sihankor-philosophy-compendium
-stage: 2/3
+stage: 3/3
 upstream: 240602-0900-on-sihankor
 ---
 # 司衡哲学纲要

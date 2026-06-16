@@ -1,6 +1,6 @@
 ---
 id: 260611-0000-sihankor-engine-design-summary
-stage: 2/3
+stage: 3/3
 upstream: 240610-1030-on-sihankor-canon
 ---
 

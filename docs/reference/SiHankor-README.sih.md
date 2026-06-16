@@ -1,6 +1,6 @@
 ---
 id: 260615-1500-sihankor-readme
-stage: 2/3
+stage: 3/3
 upstream: 240602-0900-on-sihankor
 ---
 

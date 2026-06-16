@@ -18,10 +18,11 @@ upstream: 240602-0900-on-sihankor
 | 哲学五论           | 总纲/道论/鉴论/法论/元：全部 3/3                                   | 定稿，不可逆      |
 | Legacy 迁移        | 21 个 legacy 文件已审计、迁移、删除                                | 完成              |
 | 第一阶段：引擎核心 | parser + validator（13 规则）+ indexer + orchestrator + 6 MCP 工具 | 已完成，~1800 LOC |
-| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 2/3，术层设计完成，iCL 已实现 |
-| 工程映射           | 道→法→术→几完整映射 + 三域边界 + 道家调和                          | 1/3，映射框架完成 |
-| 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 2/3，规则体系完整 |
-| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 2/3               |
+| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 3/3，已实现 |
+| 工程映射           | 道→法→术→几完整映射 + 三域边界 + 道家调和                          | 3/3，stable |
+| 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 3/3，validator 全覆盖 |
+| 引擎设计概要       | 引擎架构设计 + 模块职责 + 数据流                                    | 3/3，已实现 |
+| 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 2/3（open GAP） |
 | 治理链决策         | 全栈治理链决议完成                                                 | 3/3               |
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
@@ -168,8 +169,8 @@ flowchart TB
     end
 
     subgraph Phase3["第三阶段：体系收敛（ratify）⚠ 当前"]
-        C1["工程文档 2/3→3/3"]
-        C2["参照文档 2/3→3/3"]
+        C1["工程文档 2/3→3/3 ⚡"]
+        C2["参照文档 2/3→3/3 ⚡"]
         C3["测试 + CI + 发布"]
     end
 
@@ -414,16 +415,18 @@ gantt
 | 第一阶段 | 14-18d | 0      | 18-25d |
 | 第一-A   | 3-5d   | 0      | 21-30d |
 | 第二阶段 | 4d     | 0      | 14-23d |
-| 第三阶段 | 0      | 10-15d | 24-38d |
+| 第三阶段 | 1d     | 4-8d   | 15-24d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
 ## 八、当前第一步（2026-06-16 更新）
 
-T2.1~T2.4 全部完成，Phase 2 Mind Core 完工。
+Phase 3 体系收敛推进中：3 个 engineering spec + 2 个 reference doc 已推进至 3/3。
 
-1. **Phase 3 体系收敛**：工程文档 2/3→3/3 + 参照文档 2/3→3/3
-2. **或 spec 文档 ratify 推进**：Mind-Design、Five-Law-Check-Criteria 等反映实现状态
+待完成：
+1. **Dev-Governance 2/3→3/3**：需先解决 [GAP] 占位 + Reopen 规范（或接受 open gap 保持 2/3 作为事实声明）
+2. **Notes/Proposals 清理**：knowledge/notes/ 中文档 stage 推进 + 过期 proposals 归档
+3. **CI/CD 集成**：在 CI 中跑 `cargo test --all` + clippy, 构建 release binary
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 

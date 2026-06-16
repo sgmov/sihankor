@@ -1,6 +1,6 @@
 ---
 id: 240610-1500-sihankor-document-conventions
-stage: 2/3
+stage: 3/3
 upstream: 240610-1030-on-sihankor-canon
 ---
 
