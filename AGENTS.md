@@ -3,7 +3,7 @@
 ## Character Constraints
 
 - Use only ASCII characters and CJK characters. Do not use emojis or other non-ASCII symbols.
-- Replace em-dash (U+2014) with fullwidth colon (U+FF1A) when the em-dash acts as a connector between Chinese words or clauses. Example: `A——B` → `A：B`.
+- Replace em-dash (U+2014) with fullwidth colon (U+FF1A) when the em-dash acts as a connector between Chinese words or clauses. Example: `A：：B` -> `A：B`.
 - Replace middle dot (U+00B7) with ASCII hyphen `-`.
 - Replace left curly quote (U+201C) and right curly quote (U+201D) with straight double quotes `"`.
 - Replace right arrow (U+2192) with `->` and left arrow (U+2190) with `<-`.
@@ -37,24 +37,24 @@ Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory field
 | Field        | Required                         | Format                                       | Description                                                                                                                                                                                                              |
 | ------------ | -------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`         | all                              | `YYMMDD-HHMM[-NNN]-语义短名`                 | Unique document identifier. Date and time (YYMMDD-HHMM) with mandatory hyphen separator, followed by a semantic short name. Example: `240602-0900-on-sihankor`                                                           |
-| `stage`      | all                              | `1/3`, `2/3`, `3/3`, `0/<successor-id>`, `X` | Document lifecycle stage. spec/proposal/decision/reference: governance confidence. note: lifecycle maturity (same encoding). Stage value `0/<successor-id>` encodes successor id directly — no separate successor field. |
+| `stage`      | all                              | `1/3`, `2/3`, `3/3`, `0/<successor-id>`, `X` | Document lifecycle stage. spec/proposal/decision/reference: governance confidence. note: lifecycle maturity (same encoding). Stage value `0/<successor-id>` encodes successor id directly ： no separate successor field. |
 | `upstream`   | spec/proposal/decision/reference | document id                                  | Governance authorization source (single value). Notes: optional. Root docs point to own id.                                                                                                                              |
 | `decided-by` | decision only                    | human identifier                             | Who decided this decision. Only allowed in decisions/ directory.                                                                                                                                                         |
 | `verified`   | note only                        | `YYMMDD`                                     | Date the note's insight was last confirmed as valid.                                                                                                                                                                     |
 
-`type` field is abolished. Document identity (nature) is determined by directory: `specs/` → spec, `proposals/` → proposal, `decisions/` → decision, `reference/` → reference, `knowledge/notes/` → note.
+`type` field is abolished. Document identity (nature) is determined by directory: `specs/` -> spec, `proposals/` -> proposal, `decisions/` -> decision, `reference/` -> reference, `knowledge/notes/` -> note.
 
 ### Directory Structure
 
 | Directory           | Nature    | Stage         | Description                                                             |
 | ------------------- | --------- | ------------- | ----------------------------------------------------------------------- |
-| `specs/`            | spec      | 1/3→2/3→3/3   | System definitions: what the system is                                  |
-| `proposals/`        | proposal  | 1/3→2/3→3/3   | Change proposals: what we propose to change                             |
-| `decisions/`        | decision  | 2/3→3/3       | Decision records (ADR): why we chose this                               |
+| `specs/`            | spec      | 1/3->2/3->3/3   | System definitions: what the system is                                  |
+| `proposals/`        | proposal  | 1/3->2/3->3/3   | Change proposals: what we propose to change                             |
+| `decisions/`        | decision  | 2/3->3/3       | Decision records (ADR): why we chose this                               |
 | `reference/`        | reference | typically 3/3 | Reference standards: what terms mean                                    |
-| `knowledge/notes/`  | note      | 1/3→2/3→3/3   | Practice insights: what we learned. Stage expresses lifecycle maturity. |
-| `knowledge/drafts/` | —         | none          | Idea fragments, not .sih.md                                             |
-| `archive/`          | —         | X or 0        | Deprecated documents                                                    |
+| `knowledge/notes/`  | note      | 1/3->2/3->3/3   | Practice insights: what we learned. Stage expresses lifecycle maturity. |
+| `knowledge/drafts/` | ：         | none          | Idea fragments, not .sih.md                                             |
+| `archive/`          | ：         | X or 0        | Deprecated documents                                                    |
 
 Full governance rules: see `docs/specs/philosophy/On-SiHankor-Canon.sih.md`
 

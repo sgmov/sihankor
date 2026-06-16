@@ -16,13 +16,13 @@ iCT 方圆机接收 iCL 的 `cognition` 和 iWW 的 `decision_proposal`，对五
 
 **整体判据 `overall`**：
 
-- 任意一条法返回 Fail → overall = Fail
-- 无 Fail 且任意一条法返回 Conditional → overall = Conditional
-- 全部 Pass → overall = Pass
+- 任意一条法返回 Fail -> overall = Fail
+- 无 Fail 且任意一条法返回 Conditional -> overall = Conditional
+- 全部 Pass -> overall = Pass
 
 ## 二、顺因（ShunYin）
 
-> Canon §2.1：意图先于规范，规范先于实现。任何逆因果方向的操作都是违道。
+> Canon $2.1：意图先于规范，规范先于实现。任何逆因果方向的操作都是违道。
 
 | 属性 | 内容 |
 |------|------|
@@ -33,7 +33,7 @@ iCT 方圆机接收 iCL 的 `cognition` 和 iWW 的 `decision_proposal`，对五
 
 以下全部满足：
 
-1. **不逆写上游**：如果 action 涉及修改文档，目标不是当前文档的上游文档（upstream_chain 中的文档不可被当前文档的 action 直接修改）。Reopen 级修正（修改上游 Canon 等法层文档）只有在 action.kind = HumanReview 时才合法——因为人类才能决定是否 Reopen。
+1. **不逆写上游**：如果 action 涉及修改文档，目标不是当前文档的上游文档（upstream_chain 中的文档不可被当前文档的 action 直接修改）。Reopen 级修正（修改上游 Canon 等法层文档）只有在 action.kind = HumanReview 时才合法：：因为人类才能决定是否 Reopen。
 2. **不跳过治理阶段**：action 不会将 stage 1/3 的文档直接提升到 3/3（跳过 2/3 decision 阶段）。action 不将对 proposal 文档执行 ratify 级操作。
 3. **引用方向一致**：如果 action 涉及修改 upstream 引用，新 upstream 是合法的上级（nature 链合法）。不出现 spec 引用 proposal 作为上游（下游 nature 应在链的下游侧）。
 
@@ -49,8 +49,8 @@ iCT 方圆机接收 iCL 的 `cognition` 和 iWW 的 `decision_proposal`，对五
 
 任一条满足：
 
-1. **HumanReview 标记**：action.kind = HumanReview 且触及上游文档修改——HumanReview 模式下允许突破常规，但 iCT 无法判定人类决定是否合道，标记为 Conditional。
-2. **治理链边界**：文档 nature 链合法性判断中，涉及 `note`→`proposal` 等灰色区域时（note 的因果角色尚未完全定义），标记为 Conditional。
+1. **HumanReview 标记**：action.kind = HumanReview 且触及上游文档修改：：HumanReview 模式下允许突破常规，但 iCT 无法判定人类决定是否合道，标记为 Conditional。
+2. **治理链边界**：文档 nature 链合法性判断中，涉及 `note`->`proposal` 等灰色区域时（note 的因果角色尚未完全定义），标记为 Conditional。
 
 ### 检验逻辑
 
@@ -79,7 +79,7 @@ check_shunyin(cognition, action) -> LawCheck:
 
 ## 三、有度（YouDu）
 
-> Canon §2.2：规约不多不少。过度规约 = 刻意有为 = 违道；不足规约 = 放任发散 = 无收。
+> Canon $2.2：规约不多不少。过度规约 = 刻意有为 = 违道；不足规约 = 放任发散 = 无收。
 
 | 属性 | 内容 |
 |------|------|
@@ -90,7 +90,7 @@ check_shunyin(cognition, action) -> LawCheck:
 
 以下全部满足：
 
-1. **力度匹配严重度**：Critical 级发散 → action 力度 ≥ HumanReview（不允许 NoAction 应对 Critical）；Warning 级发散 → action 力度 ≥ Merge/HumanReview（不允许 NoAction 应对 Warning 级重复）；Info/Benign → NoAction 合法。
+1. **力度匹配严重度**：Critical 级发散 -> action 力度 >= HumanReview（不允许 NoAction 应对 Critical）；Warning 级发散 -> action 力度 >= Merge/HumanReview（不允许 NoAction 应对 Warning 级重复）；Info/Benign -> NoAction 合法。
 2. **不过度反应**：单个 Info 级发散不触发 Archive 或 Canon Reopen 级 action。多个 Warning 不会自动升级为"全部归档"。
 3. **action.alternatives 的多样性**：至少有 1 个替代方案的力度与推荐方案不同（展示有度的不同选项）。
 
@@ -105,7 +105,7 @@ check_shunyin(cognition, action) -> LawCheck:
 
 任一条满足：
 
-1. **边界模糊**：发散 severity 为 Warning 但 confidence < 0.7——可能 iCL 诊断不准确，过度反应的风险存在。
+1. **边界模糊**：发散 severity 为 Warning 但 confidence < 0.7：：可能 iCL 诊断不准确，过度反应的风险存在。
 2. **多重发散混合**：同时存在 Critical 和 Info 发散，推荐 action 可能对某些发散过度、对某些发散不足。
 
 ### 检验逻辑
@@ -134,7 +134,7 @@ check_youdou(cognition, action) -> LawCheck:
 
 ## 四、知止（ZhiZhi）
 
-> Canon §2.3：不是所有东西都需要规约，不是所有规约都需要 ratify，不是所有问题都能通过治理解决。
+> Canon $2.3：不是所有东西都需要规约，不是所有规约都需要 ratify，不是所有问题都能通过治理解决。
 
 | 属性 | 内容 |
 |------|------|
@@ -155,11 +155,11 @@ check_youdou(cognition, action) -> LawCheck:
 任一条满足：
 
 1. **越权判断**：action 对法层文档（Canon）做出明确否定判断或直接修改建议（非 HumanReview 模式）。
-2. **修改非治约文件**：affected_documents 中包含 .rs / .md（非 .sih.md）等非治约文件——Mind 不可修改代码。
+2. **修改非治约文件**：affected_documents 中包含 .rs / .md（非 .sih.md）等非治约文件：：Mind 不可修改代码。
 
 ### Conditional
 
-1. **间接影响边界模糊**：affected_documents.indirect 中包含非治约文件——这些文件可能受治理变更影响但不应被 Mind 直接修改。标记 Conditional 要求人类确认影响范围。
+1. **间接影响边界模糊**：affected_documents.indirect 中包含非治约文件：：这些文件可能受治理变更影响但不应被 Mind 直接修改。标记 Conditional 要求人类确认影响范围。
 
 ### 检验逻辑
 
@@ -186,7 +186,7 @@ check_zhizhi(cognition, action) -> LawCheck:
 
 ## 五、损补（SunBu）
 
-> Canon §2.4：去冗余、减发散、填空白、补缺失。不是随机增删，而是有方向的调节。
+> Canon $2.4：去冗余、减发散、填空白、补缺失。不是随机增删，而是有方向的调节。
 
 | 属性 | 内容 |
 |------|------|
@@ -197,15 +197,15 @@ check_zhizhi(cognition, action) -> LawCheck:
 
 全部满足：
 
-1. **损的方向正确**：对 Duplication 发散推荐 Merge 或 Archive——减少冗余。对已过时的文档推荐 Archive——减少维护负担。不推荐"保留所有重复"（NoAction for High/Exact duplication）。
-2. **补的方向正确**：对 ReferenceBreak/Gap 发散推荐补充缺失文档（或标记 HumanReview 用于创建新文档）——填补空白。不推荐对 Gap 做 Archive。
+1. **损的方向正确**：对 Duplication 发散推荐 Merge 或 Archive：：减少冗余。对已过时的文档推荐 Archive：：减少维护负担。不推荐"保留所有重复"（NoAction for High/Exact duplication）。
+2. **补的方向正确**：对 ReferenceBreak/Gap 发散推荐补充缺失文档（或标记 HumanReview 用于创建新文档）：：填补空白。不推荐对 Gap 做 Archive。
 3. **损补不同时作用于同一对象**：不对同一个文档既建议损（归档）又建议补（扩展）。
 
 ### Fail
 
 任一条满足：
 
-1. **方向反置**：对 Duplication（overlap=High/Exact）推荐 NoAction（该损不损）。对 Gap 推荐 Archive（该补却损——空白没填反而删了引用源）。
+1. **方向反置**：对 Duplication（overlap=High/Exact）推荐 NoAction（该损不损）。对 Gap 推荐 Archive（该补却损：：空白没填反而删了引用源）。
 2. **损补同时冲突**：对同一文档同时建议 merge（补）和 archive（损），且未说明先后顺序。
 
 ### Conditional
@@ -240,7 +240,7 @@ check_sunbu(cognition, action) -> LawCheck:
 
 ## 六、顺势（ShunShi）
 
-> Canon §2.5：不该收敛时收敛 = 拔苗助长；该收敛时不收敛 = 错失时机。
+> Canon $2.5：不该收敛时收敛 = 拔苗助长；该收敛时不收敛 = 错失时机。
 
 | 属性 | 内容 |
 |------|------|
@@ -261,11 +261,11 @@ check_sunbu(cognition, action) -> LawCheck:
 
 1. **措辞跨阶段**：对 stage 3/3 文档使用"可能建议"等弱措辞（该严不严）。对 stage 1/3 文档使用"必须"等强措辞（拔苗助长）。
 2. **root 文档被合并**：推荐将 root 文档 merge 到其他文档（root 应保持独立权威）。
-3. **形成引用环**：action 变更 upstream 引用后，形成 `A → B → A` 的循环依赖。
+3. **形成引用环**：action 变更 upstream 引用后，形成 `A -> B -> A` 的循环依赖。
 
 ### Conditional
 
-1. **transitional stage**：文档 stage 为 2/3（resolve）时，措辞力度介于"可能"和"应"之间——标记 Conditional。
+1. **transitional stage**：文档 stage 为 2/3（resolve）时，措辞力度介于"可能"和"应"之间：：标记 Conditional。
 2. **新文档**：action 建议创建新文档时（尚无 stage），无法判断顺势匹配度。
 
 ### 检验逻辑
@@ -310,7 +310,7 @@ overall_verdict(checks: Vec<LawCheck>) -> Verdict:
 
 ### 设计决策：stage 2/3 的 Conditional 模式
 
-顺势 §六 将 stage 2/3（resolve）设为系统性的 Conditional 触发条件。这意味着多数活跃文档的决策都会产生 Conditional 标记——这不是缺陷，而是对 2/3 作为过渡阶段的正确反映：resolve 阶段的措辞本就不应像 propose 那样宽松，也不应像 ratify 那样严格。Conditional 在此处的作用是提醒人类确认措辞力度，而非暗示 criteria 有问题。
+顺势 $六 将 stage 2/3（resolve）设为系统性的 Conditional 触发条件。这意味着多数活跃文档的决策都会产生 Conditional 标记：：这不是缺陷，而是对 2/3 作为过渡阶段的正确反映：resolve 阶段的措辞本就不应像 propose 那样宽松，也不应像 ratify 那样严格。Conditional 在此处的作用是提醒人类确认措辞力度，而非暗示 criteria 有问题。
 
 ## 八、dao_trace 生成
 
@@ -330,16 +330,16 @@ overall_verdict(checks: Vec<LawCheck>) -> Verdict:
 
 ### 9.1 iCL 依赖
 
-iCT 的检验建立在 iCL 认知产出（`cognition`）之上。如果 iCL 误诊发散类型或遗漏 relation_graph 中的 gap，iCT 将基于错误输入做判断。**iCT 不校验 iCL 的准确性**——这是 Mind 内部的分层信任模型：iCL 负责认知，iCT 负责验证决策，两者边界清晰，但信任链的断裂风险需声明。
+iCT 的检验建立在 iCL 认知产出（`cognition`）之上。如果 iCL 误诊发散类型或遗漏 relation_graph 中的 gap，iCT 将基于错误输入做判断。**iCT 不校验 iCL 的准确性**：：这是 Mind 内部的分层信任模型：iCL 负责认知，iCT 负责验证决策，两者边界清晰，但信任链的断裂风险需声明。
 
 ### 9.2 NLP 不确定性
 
-顺势 §六 R1（措辞匹配）依赖对中文描述的自然语言判断（`contains_weak_hedging` / `contains_mandatory_language`）。中文措辞的"可能"与"应"之间没有明确算法边界——关键词匹配（如检测"必须"/"应当"/"不可"）只能作为近似，无法替代语义理解。实现时需：
+顺势 $六 R1（措辞匹配）依赖对中文描述的自然语言判断（`contains_weak_hedging` / `contains_mandatory_language`）。中文措辞的"可能"与"应"之间没有明确算法边界：：关键词匹配（如检测"必须"/"应当"/"不可"）只能作为近似，无法替代语义理解。实现时需：
 - 用关键词匹配作为 first-pass（高 precision，低 recall）
 - 将 NLP 不确定性纳入 confidence 字段
 - 标记所有 NLP-based Fail 为"建议确认"
 
-### 9.3 gap→divergence 边界
+### 9.3 gap->divergence 边界
 
 `relation_graph.gaps` 记录被引用但缺失的文档 id。**gap 是客观事实（observation），divergence 是主观判断（judgment）**。只有被 iCL 判定为 `DivergenceType::ReferenceBreak` 的 gap 才会触发五法检验。这意味着：
 - 一个 gap 被 iCL 忽略 = iCT 不会对 gap 做出反应

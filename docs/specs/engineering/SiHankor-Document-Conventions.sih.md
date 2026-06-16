@@ -23,7 +23,7 @@ upstream: 240610-1030-on-sihankor-canon
 
 stage 的中文名称随 nature 而变化，非固定。引擎不依赖 stage 的中文名称做状态判定，仅依赖编码。stage-by-nature 语义见下表：
 
-正向流（1/3 → 2/3 → 3/3）：
+正向流（1/3 -> 2/3 -> 3/3）：
 
 | nature                           | 1/3  | 2/3  | 3/3  |
 | -------------------------------- | ---- | ---- | ---- |
@@ -100,7 +100,7 @@ let now = Local::now();
 
 ### 3.2 目录自定义
 
-文档的语义边界（追问、stage 范围、upstream 语义）是法层定义。目录名是术层约定——在 `.sih/config.yml` 中声明映射即可。引擎从路径第一层推断文档 nature，不依赖目录名硬编码。
+文档的语义边界（追问、stage 范围、upstream 语义）是法层定义。目录名是术层约定：：在 `.sih/config.yml` 中声明映射即可。引擎从路径第一层推断文档 nature，不依赖目录名硬编码。
 
 ```yaml
 # .sih/config.yml
@@ -130,12 +130,12 @@ paths:
 | `proposals/`       | 时间 | `proposals/2026/`               |
 | `decisions/`       | 领域 | `decisions/payment/`            |
 | `reference/`       | 领域 | `reference/payment/glossary.md` |
-| `knowledge/notes/` | —    | 不拆                            |
+| `knowledge/notes/` | ：    | 不拆                            |
 
 ### 3.4 终止文档与归档
 
 - **终止文档（stage X）**：所有目录中 stage X 的文档，迁移至 `docs/archive/{原目录}/{name}.X.md`
-- **notes 衰退**：note 的 verified 超过 `review_after_days` → engine 标记衰退警告，降权检索。note 的终止（X）→ `docs/archive/notes/{name}.X.md`
+- **notes 衰退**：note 的 verified 超过 `review_after_days` -> engine 标记衰退警告，降权检索。note 的终止（X）-> `docs/archive/notes/{name}.X.md`
 
 ## 四、frontmatter 字段
 
@@ -168,7 +168,7 @@ upstream: 240610-1030-on-sihankor-canon
 | `proposals/`       | proposal  | 可信度（1/3=提案中，2/3=决议中，3/3=已决议）  |
 | `decisions/`       | decision  | 可信度（1/3=草拟，2/3=审查中，3/3=定稿）      |
 | `reference/`       | reference | 可信度（1/3=起草中，2/3=审查中，3/3=定稿）    |
-| `knowledge/notes/` | note      | 1/3→2/3→3/3。note 的 stage 表达生命周期成熟度 |
+| `knowledge/notes/` | note      | 1/3->2/3->3/3。note 的 stage 表达生命周期成熟度 |
 
 完整语义定义见[《司衡法论》$3.2](../philosophy/On-SiHankor-Canon.sih.md#32-状态定义)。
 
@@ -184,8 +184,8 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 | 值          | 含义                           | 顺因链                    |
 | ----------- | ------------------------------ | ------------------------- |
-| 人名        | 人类做出判断，AI 仅辅助记录    | 意图→决策→ADR，完整       |
-| `ai-assist` | AI 起草 ADR 建议，人类审核签发 | 意图→AI 表达→人类确认→ADR |
+| 人名        | 人类做出判断，AI 仅辅助记录    | 意图->决策->ADR，完整       |
+| `ai-assist` | AI 起草 ADR 建议，人类审核签发 | 意图->AI 表达->人类确认->ADR |
 | `ai-auto`   | AI 自主决策（**违例**）        | 意图缺失，ADR 不应存在    |
 
 签认出现位置：
@@ -254,7 +254,7 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 | 字段         | 必填                     | 说明                                                                           |
 | ------------ | ------------------------ | ------------------------------------------------------------------------------ |
 | `event`      | 是                       | 事件类型：`stage-change`、`detection`、`promotion-suggestion`、`stall-warning` |
-| `stage`      | 否                       | 仅 `stage-change` 事件：变更描述，格式 `原stage→新stage` 或 `→新stage`         |
+| `stage`      | 否                       | 仅 `stage-change` 事件：变更描述，格式 `原stage->新stage` 或 `->新stage`         |
 | `decided-by` | 仅 stage-change 人工触发 | 状态变更的决策者。`sihankor-engine` 表示引擎自动触发                           |
 | `detection`  | 否                       | 仅 `detection` 事件：检测到的模式标识                                          |
 | `rule`       | 是                       | 授权此操作的规则引用（Canon 条款或 config.yml 键）                             |
@@ -262,7 +262,7 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 | `timestamp`  | 是                       | ISO 8601 时间戳                                                                |
 | `commit`     | 否                       | 触发此操作的 Git commit SHA                                                    |
 
-事件文件与文档同生命周期：文档晋升清退或 X 归档时，对应事件文件同步移至 `docs/archived/` 下。Git commit message 附简要摘要（`[sihankor] event: stage-change 1/3→2/3 rule: Canon$6.5`），但以事件文件为权威来源。
+事件文件与文档同生命周期：文档晋升清退或 X 归档时，对应事件文件同步移至 `docs/archived/` 下。Git commit message 附简要摘要（`[sihankor] event: stage-change 1/3->2/3 rule: Canon$6.5`），但以事件文件为权威来源。
 
 ### 4.6 notes 约定
 
@@ -281,8 +281,8 @@ note 的 stage 表达生命周期成熟度：
 
 - **创建**：AI 或人类创建草稿，verified 为空或初始日期
 - **确认**：人类审视后更新 verified 字段为确认日期（格式 YYMMDD）
-- **衰退**：verified 超过 `review_after_days` 未更新 → engine 标记衰退警告，降权检索。人可重新审视并更新 verified 解除衰退
-- **成熟转化**：当 note 的洞察足够成熟（达到 3/3）时，人创建新的 spec/proposal/decision 文档（有 stage）承载其核心内容。原 note 的 stage 推进至 3/3 表示洞察已充分验证。身份变更（note→spec/decision）创建新文档
+- **衰退**：verified 超过 `review_after_days` 未更新 -> engine 标记衰退警告，降权检索。人可重新审视并更新 verified 解除衰退
+- **成熟转化**：当 note 的洞察足够成熟（达到 3/3）时，人创建新的 spec/proposal/decision 文档（有 stage）承载其核心内容。原 note 的 stage 推进至 3/3 表示洞察已充分验证。身份变更（note->spec/decision）创建新文档
 - **终止**：人类主动标记 X，迁移至 `docs/archive/notes/{name}.X.md`
 
 详细定义见[《司衡法论》$6.2](../philosophy/On-SiHankor-Canon.sih.md#62-目录结构定义)。
@@ -322,7 +322,7 @@ decided-by: {值}
   - [文档名](./path)
 ```
 
-`DEPS` 与 `SEE-ALSO` 共用三层结构：id（引擎标识）→ 说明（人类阅读）→ 链接（形迹层可追溯）。两者语义区别：DEPS 为上游依赖（被本文直接引用或授权的文档），SEE-ALSO 为同级关联（与本文主题相关的其他文档）。
+`DEPS` 与 `SEE-ALSO` 共用三层结构：id（引擎标识）-> 说明（人类阅读）-> 链接（形迹层可追溯）。两者语义区别：DEPS 为上游依赖（被本文直接引用或授权的文档），SEE-ALSO 为同级关联（与本文主题相关的其他文档）。
 
 ## 五、glossary 文件格式
 
@@ -334,7 +334,7 @@ glossary/
   en.yml            # 工程通用语映射（mapping + rejected + disambiguation + verified）
 ```
 
-glossary/ 为可选——无多语言需求的项目不创建此目录。
+glossary/ 为可选：：无多语言需求的项目不创建此目录。
 
 ### 5.2 zh.yml（源语言权威定义）
 
@@ -350,7 +350,7 @@ glossary/ 为可选——无多语言需求的项目不创建此目录。
 
 ### 5.3 en.yml（工程通用语映射）
 
-`rejected` 为键值对（被拒词即键，理由即值）。en.yml 不声明 `derives-from`——通过概念键关联到 zh.yml，再通过 zh.yml 的 derives-from 到达 reference/。
+`rejected` 为键值对（被拒词即键，理由即值）。en.yml 不声明 `derives-from`：：通过概念键关联到 zh.yml，再通过 zh.yml 的 derives-from 到达 reference/。
 
 ```yaml
 法:
@@ -366,7 +366,7 @@ glossary/ 为可选——无多语言需求的项目不创建此目录。
 
 #### 因果方向
 
-`specs/` → `reference/` → `glossary/zh.yml` → `glossary/en.yml`。reference 变更必须传播到 glossary，glossary 变更不反向影响 reference。
+`specs/` -> `reference/` -> `glossary/zh.yml` -> `glossary/en.yml`。reference 变更必须传播到 glossary，glossary 变更不反向影响 reference。
 
 #### stale 检测
 
@@ -377,9 +377,9 @@ engine 通过 derives-from 链检测过期：zh.yml 条目声明的 derives-from
 | 变更等级 | 触发条件                                     | 治理流程                      |
 | -------- | -------------------------------------------- | ----------------------------- |
 | 映射调整 | 修改 `mapping`、`disambiguation`、`rejected` | 轻量：直接修改                |
-| 概念变更 | 修改 `definition`（zh.yml）                  | 完整：proposals/ → decisions/ |
+| 概念变更 | 修改 `definition`（zh.yml）                  | 完整：proposals/ -> decisions/ |
 
-```
+```text
 
 #### 拆分机制
 
@@ -407,7 +407,7 @@ flowchart TD
     R -->|"推进"| RF["3/3 定稿"]
     P -->|"放弃"| PX["X 废弃<br/>方向不值得推进"]
     R -->|"否决"| RX["X 废弃<br/>经 ADR 检验后被否"]
-```
+```text
 
 ### 6.2 修正流
 
@@ -419,7 +419,7 @@ flowchart TD
     RO -->|"成立"| R["2/3 决议"]
     RO -->|"不成立"| RF
     R -->|"修正完成"| RF
-```
+```text
 
 ### 6.3 替换流
 
@@ -437,7 +437,7 @@ flowchart TD
     NEW-X -->|"L-11 自动触发"| RECOVER["旧文档恢复 3/3"]
     NEW -.->|"停滞 >30 天"| STALL{"引擎主动提示<br />L-13 主动撤回"}
     STALL -->|"是"| RECOVER2["旧文档恢复 3/3<br/>新文档不废弃"]
-```
+```text
 
 ## 七、文件名规范
 
@@ -445,7 +445,7 @@ flowchart TD
 
 ```text
 文件名 = 语义词-语义词-... .sih.md
-```
+```text
 
 每个语义词首字母大写（PascalCase），连字符连接。`SiHankor` 保留大写 S 和大写 H。后缀 `.sih.md` 标记文档为司衡治理文档。
 
@@ -500,7 +500,7 @@ flowchart TD
 ```text
 [文档名](./path/to/file.sih.md)
 [《文档名》$节号、标题](./path/to/file.sih.md#节号-标题)
-```
+```text
 
 - `《》` 包裹文档中文名或标题
 - 路径相对于当前文件，以 `./` 或 `../` 起始
@@ -511,14 +511,14 @@ flowchart TD
 ```markdown
 [《司衡法论》](../philosophy/On-SiHankor-Canon.sih.md)
 [《司衡法论》$6.2、五目录定义](../philosophy/On-SiHankor-Canon.sih.md#62-五目录定义)
-```
+```text
 
 #### 本文内引用
 
 ```markdown
 [$节号、标题](#节号-标题)
 [$节号.子节号-标题](#节号子节号-标题)
-```
+```text
 
 - `$` 后直接跟节号，无空格
 - 中文数字节号（如 `$二、标题`）和阿拉伯数字节号（如 `$2.3、标题`）均可，同一文档内保持一致
@@ -528,7 +528,7 @@ flowchart TD
 ```markdown
 [$二、id格式](#二id-格式)
 [$4.3、文档类型](#43-文档类型)
-```
+```text
 
 附录格式（含 ADR、DEPS、SEE-ALSO）见 [$4.7、附录格式](#47-附录格式)。
 

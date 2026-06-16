@@ -12,17 +12,17 @@ upstream: 240610-1030-on-sihankor-canon
 
 ### 1.1 当前体系的四个结构性问题
 
-**问题一：双信号系统。** type 字段（frontmatter）和目录（文件系统）同时声明文档身份。两份信号可以不一致——Canon $6.3 明确允许"文档可以不在 type 对应的目录中"。人对目录形成第一印象，打开文件后读到 type，两个信号冲突时需自行判断。道三：信号自晦，恢复意图的成本转嫁给人类。
+**问题一：双信号系统。** type 字段（frontmatter）和目录（文件系统）同时声明文档身份。两份信号可以不一致：：Canon $6.3 明确允许"文档可以不在 type 对应的目录中"。人对目录形成第一印象，打开文件后读到 type，两个信号冲突时需自行判断。道三：信号自晦，恢复意图的成本转嫁给人类。
 
-**问题二：stage 承载三层语义。** 当前 stage 同时表达文档成熟度、治理流程位置、下游引用权限。三层语义混在一个字段中，导致 `1/3 → 2/3 → 3/3` 既表达信心增长又表达流程推进又表达可用性提升。对 note 而言，`1/3` 复用 `n/3` 编码但语义完全不同（生命周期 vs 可信度）。
+**问题二：stage 承载三层语义。** 当前 stage 同时表达文档成熟度、治理流程位置、下游引用权限。三层语义混在一个字段中，导致 `1/3 -> 2/3 -> 3/3` 既表达信心增长又表达流程推进又表达可用性提升。对 note 而言，`1/3` 复用 `n/3` 编码但语义完全不同（生命周期 vs 可信度）。
 
-**问题三：type 定义不一致。** Canon $3.2 定义 4 种 type，Document-Conventions $4.3 扩展为 7 种。SiHankor-Type-Extension 决策（2606140000）记录了这是实现先于规约暴露的间隙，但修复方向是"扩展 type"——在根因上叠加而非修正。
+**问题三：type 定义不一致。** Canon $3.2 定义 4 种 type，Document-Conventions $4.3 扩展为 7 种。SiHankor-Type-Extension 决策（2606140000）记录了这是实现先于规约暴露的间隙，但修复方向是"扩展 type"：：在根因上叠加而非修正。
 
 **问题四：治理元层与被治理内容混放。** brainstorming 产物、notes、specs 共享同一套目录浏览流。人在 `notes/` 或 `specs/philosophy/` 中无法快速区分"这是构思碎片""这是实践洞察""这是系统规范"。
 
 ### 1.2 道层推导
 
-**道二（意图先于代码）**：文档的身份是意图——它要做什么（规范、提案、决策、参照、沉淀）。目录是文档意图的第一信号。人类打开文件之前先看到目录和文件名。
+**道二（意图先于代码）**：文档的身份是意图：：它要做什么（规范、提案、决策、参照、沉淀）。目录是文档意图的第一信号。人类打开文件之前先看到目录和文件名。
 
 **道三（代码自晦，意图必复）**：不应有两个信号说同一件事。目录即身份，打开文件只是确认，不是发现。
 
@@ -32,7 +32,7 @@ upstream: 240610-1030-on-sihankor-canon
 
 ## 二、决策
 
-### 2.1 目录即身份——废除 type 字段
+### 2.1 目录即身份：：废除 type 字段
 
 | 目录               | nature（引擎推断） | 中文     | 定义                                                       |
 | ------------------ | ------------------ | -------- | ---------------------------------------------------------- |
@@ -42,7 +42,7 @@ upstream: 240610-1030-on-sihankor-canon
 | `reference/`       | reference          | 参照标准 | 回答"术语/概念精确指什么"。供查阅，不求证                  |
 | `knowledge/notes/` | note               | 实践洞察 | 回答"我们学到了什么"。从工程实践中提炼                     |
 
-引擎从路径推断 nature：`docs/{第一层目录}/**` → nature = 目录名。`knowledge/notes/` 是特例——nature 为 note，由第二层目录确定。
+引擎从路径推断 nature：`docs/{第一层目录}/**` -> nature = 目录名。`knowledge/notes/` 是特例：：nature 为 note，由第二层目录确定。
 
 ### 2.2 stage 语义按 nature 分化
 
@@ -110,11 +110,11 @@ successor: <文档id>      # 仅 stage 为 0 时出现
 
 ### 2.5 glossary 定位修正
 
-**glossary/**：跨人类语言的语义精确传递。中文（源语言）→ 英文（工程通用语）。可选——无多语言需求的项目不创建此目录。
+**glossary/**：跨人类语言的语义精确传递。中文（源语言）-> 英文（工程通用语）。可选：：无多语言需求的项目不创建此目录。
 
-`zh.yml` 中每个条目声明 `derives-from`，指向 reference/ 中的文档 id。engine 通过 `zh.yml → derives-from → reference/` 做 join，不需要 `_concepts.yml`。
+`zh.yml` 中每个条目声明 `derives-from`，指向 reference/ 中的文档 id。engine 通过 `zh.yml -> derives-from -> reference/` 做 join，不需要 `_concepts.yml`。
 
-**semantic.yml**：意图与代码之间的语义翻译引擎。排放于 `.sih/semantic.yml`。每个项目都需要（道四不可逃）。engine 维护——iCL 用语义映射做意图恢复，iCT 用 semantic 做间隙检测。
+**semantic.yml**：意图与代码之间的语义翻译引擎。排放于 `.sih/semantic.yml`。每个项目都需要（道四不可逃）。engine 维护：：iCL 用语义映射做意图恢复，iCT 用 semantic 做间隙检测。
 
 ### 2.6 删除项
 
@@ -144,16 +144,16 @@ successor: <文档id>      # 仅 stage 为 0 时出现
 
 ## 三、执行顺序
 
-按顺因之法（法层→术层→形迹层）：
+按顺因之法（法层->术层->形迹层）：
 
-1. Canon Reopen：3/3 → 2/3，附间隙证据
+1. Canon Reopen：3/3 -> 2/3，附间隙证据
 2. 修改 Canon：废除 type 定义（$3.2），目录即身份（$6），stage 语义表（新增），glossary/semantic 定位修正
 3. 更新 Document-Conventions：同步 frontmatter 字段、目录结构
 4. 文件物理移动
 5. 批量更新交叉引用路径
 6. 新建 reference/SiHankor-README.sih.md
-7. 旧 restructure plan → X
-8. Canon → 3/3，ADR
+7. 旧 restructure plan -> X
+8. Canon -> 3/3，ADR
 
 ## 四、道四声明
 
@@ -171,7 +171,7 @@ successor: <文档id>      # 仅 stage 为 0 时出现
 
 ### 决策
 
-废除 type 字段，目录即身份。stage 语义按 nature 分化。引入 knowledge/ 和 archive/。glossary 定位为纯跨人类语言翻译。semantic.yml 为引擎意图↔代码映射。删除 _concepts.yml、po/、plan/、notes/（迁移后）。
+废除 type 字段，目录即身份。stage 语义按 nature 分化。引入 knowledge/ 和 archive/。glossary 定位为纯跨人类语言翻译。semantic.yml 为引擎意图<->代码映射。删除 _concepts.yml、po/、plan/、notes/（迁移后）。
 
 ### 后果
 

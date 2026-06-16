@@ -12,7 +12,7 @@ upstream:
 
 ## 一、解决的 gap
 
-[GAP: 引擎核心模块未实现 — 阻塞所有文档解析和 frontmatter 校验]
+[GAP: 引擎核心模块未实现 ： 阻塞所有文档解析和 frontmatter 校验]
 
 ## 二、方案对比
 
@@ -38,7 +38,7 @@ upstream:
 
 1. 解析 `docs/` 下所有 .sih.md 的 frontmatter，提取 `id`、`stage`、`upstream`、`successor` 字段
 2. 对 field 级别的格式错误（如 stage 不是合法值、id 格式不匹配）输出带行号的错误
-3. 解析失败不崩溃——返回 Partial 结果 + 错误列表（道四：解析器也可能出错）
+3. 解析失败不崩溃：：返回 Partial 结果 + 错误列表（道四：解析器也可能出错）
 4. 解析速度：docs/ 下当前 25 份文档 < 50ms
 
 ## 四、对规约的影响
@@ -48,7 +48,7 @@ upstream:
 
 ## 五、实现模块
 
-```
+```text
 src/
   parser/
     mod.rs           # 模块入口
@@ -70,4 +70,4 @@ frontmatter-parser:
 
 ## 七、引导阶段声明
 
-本提案走引擎开发治理链。因 engine 尚未实现，第五步（自动验证 + semantic.yml 填充）待 parser 自身完成后由它对自己执行——循环自举。验证方式：parser 解析自身的 proposal 文档（即本文），输出 frontmatter 解析结果，人类对比验证。
+本提案走引擎开发治理链。因 engine 尚未实现，第五步（自动验证 + semantic.yml 填充）待 parser 自身完成后由它对自己执行：：循环自举。验证方式：parser 解析自身的 proposal 文档（即本文），输出 frontmatter 解析结果，人类对比验证。

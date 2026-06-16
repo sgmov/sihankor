@@ -16,7 +16,7 @@ verified: 260616
 
 作为 engine 的第一个 MCP tool `sih_generate_id`：
 
-```
+```text
 input:  语义短名 (string)
 output: "YYMMDDHHMM-语义短名" (string)
 impl:   chrono::Local::now() → format

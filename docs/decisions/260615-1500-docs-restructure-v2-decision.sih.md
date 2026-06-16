@@ -13,20 +13,20 @@ decided-by: ai-assist
 
 司衡文档体系存在四个结构性问题：(1) type 字段与目录构成双信号系统，违反道三；(2) stage 同时承载成熟度、流程位置、引用权限三层语义；(3) type 定义在 Canon 与 Document-Conventions 中不一致；(4) 治理元层与被治理内容混放在同一浏览流中。
 
-提案从道层重新推导，提出"目录即身份"替代 type 字段、"stage 语义按 nature 分化"替代三层语义混装、引入 knowledge/ 和 archive/ 分离构思碎片与废弃文档、将 glossary 定位为纯跨人类语言翻译、新增 semantic.yml 作为意图↔代码语义映射。
+提案从道层重新推导，提出"目录即身份"替代 type 字段、"stage 语义按 nature 分化"替代三层语义混装、引入 knowledge/ 和 archive/ 分离构思碎片与废弃文档、将 glossary 定位为纯跨人类语言翻译、新增 semantic.yml 作为意图<->代码语义映射。
 
 ## 决策
 
 采纳提案全部内容，已执行：
 
-1. 废除 `type` 字段 — 目录即身份，引擎从路径第一层推断 nature
-2. `stage` 语义按 nature 分化 — spec/proposal/decision/reference 表达可信度，note 表达生命周期
-3. 目录结构重整 — `specs/` `proposals/` `decisions/` `reference/` `knowledge/`（含 drafts/ notes/）`archive/`
-4. frontmatter 字段精简 — id, stage, upstream, successor（删除 type, domain）
-5. glossary 重定位 — zh.yml 充实 derives-from，删除 _concepts.yml 和 po/
-6. semantic.yml 新建 — 排放于 .sih/，引擎意图↔代码映射
+1. 废除 `type` 字段 ： 目录即身份，引擎从路径第一层推断 nature
+2. `stage` 语义按 nature 分化 ： spec/proposal/decision/reference 表达可信度，note 表达生命周期
+3. 目录结构重整 ： `specs/` `proposals/` `decisions/` `reference/` `knowledge/`（含 drafts/ notes/）`archive/`
+4. frontmatter 字段精简 ： id, stage, upstream, successor（删除 type, domain）
+5. glossary 重定位 ： zh.yml 充实 derives-from，删除 _concepts.yml 和 po/
+6. semantic.yml 新建 ： 排放于 .sih/，引擎意图<->代码映射
 7. 17 份文档 frontmatter 批量更新，5 份文件物理移动
-8. Canon Reopen → 修改 $3.2 $6 → 定稿 3/3
+8. Canon Reopen -> 修改 $3.2 $6 -> 定稿 3/3
 9. Document-Conventions 同步更新
 
 ## 后果

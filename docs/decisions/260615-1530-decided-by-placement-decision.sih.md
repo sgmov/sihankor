@@ -25,4 +25,4 @@ decided-by: ai-assist
 - On-SiHankor 和 Arche frontmatter 清理 `decided-by` 行
 - Document-Conventions $4.4 补充排除规则
 - Document-Conventions $4.5 事件记录 schema 增加 `decided-by` 字段
-- Canon 不变——法层已覆盖"人为触发 stage 变更需 ADR"，此决策是术层执行细节
+- Canon 不变：：法层已覆盖"人为触发 stage 变更需 ADR"，此决策是术层执行细节

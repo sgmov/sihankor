@@ -16,7 +16,7 @@ upstream: 240610-1030-on-sihankor-canon
 
 **引导阶段**（engine 达到 MVP 基线之前）：
 
-- 链的前三步（drafts → proposal → decision）可立即运行——它们只需要人类的纪律和文档约定
+- 链的前三步（drafts -> proposal -> decision）可立即运行：：它们只需要人类的纪律和文档约定
 - 链的第四步（代码实现）由人自律执行
 - 链的第五步（自动验证 + semantic.yml 填充）暂不执行，待 engine 具备 parser 能力后启动
 
@@ -32,11 +32,11 @@ knowledge/drafts/     proposals/          decisions/         specs/engineering/ 
              (非.sih.md)        1/3→2/3→3/3  stage 3/3      stage 2/3→3/3                       gap标记
 ```
 
-### 第一阶段：意图孵化（knowledge/drafts/ → proposals/）
+### 第一阶段：意图孵化（knowledge/drafts/ -> proposals/）
 
 起点：任何关于引擎的模糊意图。
 
-加工：grill-me 追问。追问方向源于鉴层的反推九段式——不是"这个想法对不对"，而是：
+加工：grill-me 追问。追问方向源于鉴层的反推九段式：：不是"这个想法对不对"，而是：
 
 1. 这个功能解决哪个道层问题？（顺因：上游溯源）
 2. 如果不做，哪个 gap 会持续存在？（必要性）
@@ -55,12 +55,12 @@ knowledge/drafts/     proposals/          decisions/         specs/engineering/ 
 proposal 结构：
 
 - 要解决的 gap
-- 方案对比（≥2 种，推荐一种并说明理由）
+- 方案对比（>=2 种，推荐一种并说明理由）
 - 对现有规约的影响（是否导致 spec/ 中某文档需修改）
 - 验收标准（可验证、可量化）
 
-1/3→2/3：提案结构化完成，进入审查
-2/3→3/3：经过鉴的检验，决议通过。决议者是人类
+1/3->2/3：提案结构化完成，进入审查
+2/3->3/3：经过鉴的检验，决议通过。决议者是人类
 
 ### 第三阶段：决策落地（decisions/ + specs/ 更新）
 
@@ -77,9 +77,9 @@ proposal 3/3 的产出：
 
 engine 实现后：
 
-1. `.sih/semantic.yml` 注册代码↔规约映射
+1. `.sih/semantic.yml` 注册代码<->规约映射
 2. engine 对自身 docs/ 执行验证（自指）
-3. gap 状态变更：open → closed（经 engine 验证通过）
+3. gap 状态变更：open -> closed（经 engine 验证通过）
 
 ## 三、变更分级
 
@@ -88,7 +88,7 @@ engine 实现后：
 | 级别     | 流程                                      | 示例                                    |
 | -------- | ----------------------------------------- | --------------------------------------- |
 | 勘误     | 直接修改 + commit message 引用理由        | typo 修正、路径更新、格式修正           |
-| 轻量修订 | proposal → decision（跳过 brainstorming） | 修改一条验证规则、增加一个 MCP 工具参数 |
+| 轻量修订 | proposal -> decision（跳过 brainstorming） | 修改一条验证规则、增加一个 MCP 工具参数 |
 | 设计变更 | 完整链                                    | 新增一个治理模块、改变三机流转模型      |
 | 法层修正 | Canon Reopen 流程                         | 修改 stage 语义、新增或废除一条法       |
 
@@ -103,13 +103,13 @@ engine 实现后：
 3. 人类确认推进 = decision 阶段（模拟）
 4. 产出 `docs/specs/engineering/sihankor-dev-governance.sih.md` = spec 阶段
 
-本提案不要求 grill-me 追问（追问模板本身尚未定义），不要求 engine 验证（engine 不存在）。这是第一遍——条件不完备是合理的，引导阶段的显式声明覆盖了此间隙。
+本提案不要求 grill-me 追问（追问模板本身尚未定义），不要求 engine 验证（engine 不存在）。这是第一遍：：条件不完备是合理的，引导阶段的显式声明覆盖了此间隙。
 
 ## 五、待决议事项
 
 ### 5.1 gap 实体定义（阻塞项）
 
-proposal 中引用 gap 时，当前使用 roadmap 中的 G1-G6 编号作为占位。gap 不是司衡体系的内建概念——没有法层定义，没有术层格式，没有生命周期。
+proposal 中引用 gap 时，当前使用 roadmap 中的 G1-G6 编号作为占位。gap 不是司衡体系的内建概念：：没有法层定义，没有术层格式，没有生命周期。
 
 需要一份独立的 proposal 定义 gap 实体。在此之前，本提案及相关 proposal 中的 gap 引用使用占位格式 `[GAP: <简述>]`，待 gap 实体定义完成后批量替换为正式格式。
 
