@@ -12,6 +12,7 @@ use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
 use crate::core::validator::{self, ValidationConfig, ValidationResult};
 use crate::mind::icl::ICL;
+use crate::mind::iww::IWW;
 
 /// 司衡引擎治理 MCP 服务
 #[derive(Clone)]
@@ -300,6 +301,47 @@ impl SihankorService {
         let cognition = icl.analyze(&doc).await;
 
         match serde_json::to_string_pretty(&cognition) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 文档决策建议：iCL 认知 → iWW 生成决策建议
+    #[tool(description = "Generate a decision proposal from document cognition: recommended action with alternatives, rationale, and affected documents")]
+    pub async fn propose_decision(
+        &self,
+        Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+
+        // 先按 id 查找，再按路径查找
+        let doc = match self.db.get_document(&target).await {
+            Ok(Some(doc)) => doc,
+            Ok(None) => {
+                let file_path = PathBuf::from(&target);
+                match parser::parse_file(&file_path) {
+                    Ok(mut doc) => {
+                        doc.nature = validator::infer_nature(&file_path)
+                            .unwrap_or("")
+                            .to_string();
+                        doc
+                    }
+                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                }
+            }
+            Err(e) => return format!("Database error: {}", e),
+        };
+
+        let cognition = icl.analyze(&doc).await;
+        let proposal = IWW::propose(&cognition);
+
+        // 组装 iCL + iWW 结果
+        let result = serde_json::json!({
+            "cognition": cognition,
+            "decision_proposal": proposal,
+        });
+
+        match serde_json::to_string_pretty(&result) {
             Ok(json) => json,
             Err(e) => format!("Serialization error: {}", e),
         }

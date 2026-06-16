@@ -26,7 +26,8 @@ upstream: 240602-0900-on-sihankor
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
 | plan 语义拆分      | roadmap → specs/engineering/，plan 拆为 proposal+spec              | 完成              |
-| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，38 tests    |
+| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，41 tests    |
+| T2.2 iWW 消息机    | rule-based decision proposal + propose_decision MCP 工具             | 完成，41 tests    |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -158,10 +159,10 @@ flowchart TB
     end
 
     subgraph Phase2["第二阶段：思维核心（几层）"]
-        B1["iCL 明晰机：四步分析法实现"]
-        B2["iWW 消息机：决策建议生成"]
-        B3["iCT 方圆机：五法检验"]
-        B4["4 个 Mind MCP 工具"]
+        B1["T2.1 iCL 明晰机 ✅"]
+        B2["T2.2 iWW 消息机 ✅"]
+        B3["T2.3 iCT 方圆机"]
+        B4["T2.4 Mind MCP 工具"]
     end
 
     subgraph Phase3["第三阶段：体系收敛（ratify）"]
@@ -397,7 +398,7 @@ gantt
     Core README                  :done, a9, 2026-06-17, 0d
     section 第二阶段：思维核心
     T2.1 iCL 明晰机              :done, b1, 2026-06-17, 0d
-    T2.2 iWW 消息机              :b2, after b1, 5d
+    T2.2 iWW 消息机              :done, b2, 2026-06-17, 0d
     T2.3 iCT 方圆机              :b3, after b2, 4d
     T2.4 Mind MCP 工具           :b4, after b3, 4d
     section 第三阶段：体系收敛
@@ -410,20 +411,18 @@ gantt
 | 第零阶段 | 4-7d   | 0      | 4-7d   |
 | 第一阶段 | 14-18d | 0      | 18-25d |
 | 第一-A   | 3-5d   | 0      | 21-30d |
-| 第二阶段 | 1d     | 10-15d | 22-31d |
+| 第二阶段 | 2d     | 8-12d  | 20-29d |
 | 第三阶段 | 0      | 10-15d | 46-65d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
 ## 八、当前第一步（2026-06-16 更新）
 
-T2.1 iCL 明晰机已完成。下一步：
+T2.1 iCL 明晰机与 T2.2 iWW 消息机已完成。下一步：
 
-1. **T2.2 iWW 消息机**：从 cognition 生成 decision_proposal（推荐行动 + 方案对比），预估 3-5d
-2. **或扩展 iCL 测试覆盖**：增加跨文档关系照见、冲突检测的集成测试
-3. **或分析结果消费**：将 `analyze_document` 的输出接入 grill-me 追问流程
-
-前置条件全部满足，可并行推进 iWW 实现和测试增强。
+1. **T2.3 iCT 方圆机**：五法逐条检验 + overall verdict + dao trace，预估 3-5d
+2. **或 Mind MCP 工具补全**：`verify_decision` (iCT only) + `full_analysis` (iCL→iWW→iCT 全流转)
+3. **或 iCT 前置：五法检验标准定义**——五法的 pass/fail/conditional 评判标准需明确化
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 
