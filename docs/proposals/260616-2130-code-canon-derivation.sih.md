@@ -1,6 +1,6 @@
 ---
 id: 260616-2130-code-canon-derivation
-stage: 1/3
+stage: 3/3
 upstream: 240610-1030-on-sihankor-canon
 ---
 # 代码术层约束的法层推导
@@ -259,7 +259,7 @@ code-lint 提案（`260616-2100-code-lint-proposal`）的术层规则（8 deny +
 
 ## ADR
 
-推进至 1/3。鉴九段检验结果：6 条规则全部 CALIBRATE（有反例，需校准后采纳）。校准方案见 §七段九。待人类审阅后晋升 2/3。
+推进至 2/3。鉴九段检验完成，6 条规则 CALIBRATE 后已正式并入 Canon L-14~L-19（260616 Reopen）。Canon 退回 3/3。
 
 ### decided-by
 
