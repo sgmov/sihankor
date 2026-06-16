@@ -1,46 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// 文档类型枚举
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum DocType {
-    Treatise,
-    Compendium,
-    Mapping,
-    Note,
-    Plan,
-    Decision,
-    Proposal,
-}
-
-impl DocType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            DocType::Treatise => "treatise",
-            DocType::Compendium => "compendium",
-            DocType::Mapping => "mapping",
-            DocType::Note => "note",
-            DocType::Plan => "plan",
-            DocType::Decision => "decision",
-            DocType::Proposal => "proposal",
-        }
-    }
-
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "treatise" => Some(DocType::Treatise),
-            "compendium" => Some(DocType::Compendium),
-            "mapping" => Some(DocType::Mapping),
-            "note" => Some(DocType::Note),
-            "plan" => Some(DocType::Plan),
-            "decision" => Some(DocType::Decision),
-            "proposal" => Some(DocType::Proposal),
-            _ => None,
-        }
-    }
-}
-
 /// 文档生命周期阶段
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Stage(pub String);
@@ -109,7 +69,6 @@ impl DocStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Frontmatter {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub upstream: Option<String>,
     pub decided_by: Option<String>,
@@ -121,7 +80,6 @@ pub struct Frontmatter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub title: String,
     pub upstream: Option<String>,
@@ -135,7 +93,6 @@ pub struct Document {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchResult {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub title: String,
     pub snippet: String,
@@ -146,7 +103,6 @@ pub struct SearchResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainNode {
     pub id: String,
-    pub r#type: DocType,
     pub stage: Stage,
     pub title: String,
     pub upstream: Option<String>,

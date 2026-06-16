@@ -2,7 +2,7 @@ use std::path::Path;
 
 use chrono::Utc;
 use serde_yaml;
-use super::models::{DocStatus, DocType, Document, Frontmatter, Stage};
+use super::models::{DocStatus, Document, Frontmatter, Stage};
 
 /// 解析错误
 #[derive(Debug, thiserror::Error)]
@@ -13,8 +13,6 @@ pub enum ParseError {
     Yaml(#[from] serde_yaml::Error),
     #[error("Missing required frontmatter field: {0}")]
     MissingField(String),
-    #[error("Invalid document type: {0}")]
-    InvalidType(String),
     #[error("Invalid stage: {0}")]
     InvalidStage(String),
     #[error("No frontmatter found in document")]
@@ -39,7 +37,6 @@ pub fn parse_content(content: &str) -> Result<Document, ParseError> {
 
     Ok(Document {
         id: frontmatter.id.clone(),
-        r#type: frontmatter.r#type.clone(),
         stage: frontmatter.stage.clone(),
         title,
         upstream: frontmatter.upstream.clone(),
@@ -81,20 +78,15 @@ fn extract_frontmatter(content: &str) -> Result<(String, &str), ParseError> {
 fn parse_frontmatter(yaml_str: &str) -> Result<Frontmatter, ParseError> {
     let raw_value: serde_yaml::Value = serde_yaml::from_str(yaml_str)?;
 
-    // 提取必填字段
+    // 提取必填字段: id 和 stage
     let id = raw_value
         .get("id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ParseError::MissingField("id".to_string()))?
         .to_string();
 
-    let type_str = raw_value
-        .get("type")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| ParseError::MissingField("type".to_string()))?;
-
-    let doc_type = DocType::from_str(type_str)
-        .ok_or_else(|| ParseError::InvalidType(type_str.to_string()))?;
+    // type 字段已废除，不在 frontmatter 中解析
+    // document nature 由所在目录推断
 
     let stage_str = raw_value
         .get("stage")
@@ -124,7 +116,6 @@ fn parse_frontmatter(yaml_str: &str) -> Result<Frontmatter, ParseError> {
 
     Ok(Frontmatter {
         id,
-        r#type: doc_type,
         stage,
         upstream,
         decided_by,
@@ -152,7 +143,6 @@ fn yaml_value_to_json(yaml: &serde_yaml::Value) -> serde_json::Value {
 fn remove_known_fields(mut json: serde_json::Value) -> serde_json::Value {
     if let serde_json::Value::Object(map) = &mut json {
         map.remove("id");
-        map.remove("type");
         map.remove("stage");
         map.remove("upstream");
         map.remove("decided-by");
@@ -168,7 +158,6 @@ mod tests {
     fn test_parse_basic_document() {
         let content = r#"---
 id: 260613-1800-test-doc
-type: mapping
 stage: 1/3
 upstream: 240602-0900-on-sihankor
 ---
@@ -177,7 +166,6 @@ This is the body.
 "#;
         let doc = parse_content(content).unwrap();
         assert_eq!(doc.id, "260613-1800-test-doc");
-        assert_eq!(doc.r#type, DocType::Mapping);
         assert_eq!(doc.stage.0, "1/3");
         assert_eq!(doc.upstream, Some("240602-0900-on-sihankor".to_string()));
         assert_eq!(doc.title, "Test Document");
@@ -187,7 +175,6 @@ This is the body.
     #[test]
     fn test_parse_missing_id() {
         let content = r#"---
-type: mapping
 stage: 1/3
 ---
 # No ID
@@ -201,11 +188,10 @@ stage: 1/3
     }
 
     #[test]
-    fn test_parse_invalid_type() {
+    fn test_parse_invalid_stage() {
         let content = r#"---
 id: 260613-1800-test
-type: invalid
-stage: 1/3
+stage: invalid
 ---
 # Test
 "#;
@@ -224,14 +210,12 @@ stage: 1/3
     fn test_parse_note_without_upstream() {
         let content = r#"---
 id: 260613-1800-test-note
-type: note
 stage: 1/3
 ---
 # A Note
 Some content.
 "#;
         let doc = parse_content(content).unwrap();
-        assert_eq!(doc.r#type, DocType::Note);
         assert_eq!(doc.upstream, None);
     }
 
@@ -239,9 +223,8 @@ Some content.
     fn test_parse_extra_fields() {
         let content = r#"---
 id: 260613-1800-test
-type: treatise
 stage: 2/3
-upstream: PHILOSOPHY
+upstream: 240602-0900-on-sihankor
 custom-field: some-value
 ---
 # Test

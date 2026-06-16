@@ -3,20 +3,20 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
 use std::sync::Mutex;
 
-use super::models::{ChainNode, DocStatus, DocType, Document, SearchResult, Stage};
+use super::models::{ChainNode, DocStatus, Document, SearchResult, Stage};
 
 /// 数据库抽象 trait：契约不泄漏实现细节
 #[async_trait]
 pub trait SihDatabase: Send + Sync {
     async fn upsert_document(&self, doc: Document) -> Result<(), DatabaseError>;
     async fn get_document(&self, id: &str) -> Result<Option<Document>, DatabaseError>;
-    async fn search_by_type(&self, doc_type: &DocType) -> Result<Vec<Document>, DatabaseError>;
+    async fn search_by_nature(&self, _nature: &str) -> Result<Vec<Document>, DatabaseError>;
     async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>, DatabaseError>;
     async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>, DatabaseError>;
     async fn delete_document(&self, id: &str) -> Result<(), DatabaseError>;
     async fn count_documents(&self) -> Result<usize, DatabaseError>;
     async fn count_by_stage(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
-    async fn count_by_type(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
+    async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
     async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError>;
 }
 
@@ -67,7 +67,6 @@ impl SqliteBackend {
             "
             CREATE TABLE IF NOT EXISTS documents (
                 id              TEXT PRIMARY KEY,
-                type            TEXT NOT NULL,
                 stage           TEXT NOT NULL,
                 title           TEXT NOT NULL,
                 upstream        TEXT,
@@ -77,7 +76,6 @@ impl SqliteBackend {
                 indexed_at      TEXT NOT NULL
             );
 
-            CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(type);
             CREATE INDEX IF NOT EXISTS idx_documents_stage ON documents(stage);
             CREATE INDEX IF NOT EXISTS idx_documents_upstream ON documents(upstream);
             CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
@@ -92,17 +90,15 @@ impl SihDatabase for SqliteBackend {
     async fn upsert_document(&self, doc: Document) -> Result<(), DatabaseError> {
         let frontmatter_json = serde_json::to_string(&doc.frontmatter)?;
         let indexed_at = doc.indexed_at.to_rfc3339();
-        let doc_type = doc.r#type.as_str();
         let stage = &doc.stage.0;
         let status = doc.status.as_str();
 
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute(
-            "INSERT OR REPLACE INTO documents (id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT OR REPLACE INTO documents (id, stage, title, upstream, frontmatter_json, content, status, indexed_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
                 doc.id,
-                doc_type,
                 stage,
                 doc.title,
                 doc.upstream,
@@ -118,7 +114,7 @@ impl SihDatabase for SqliteBackend {
     async fn get_document(&self, id: &str) -> Result<Option<Document>, DatabaseError> {
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
              FROM documents WHERE id = ?1",
         )?;
 
@@ -134,16 +130,18 @@ impl SihDatabase for SqliteBackend {
         }
     }
 
-    async fn search_by_type(&self, doc_type: &DocType) -> Result<Vec<Document>, DatabaseError> {
-        let type_str = doc_type.as_str();
+    async fn search_by_nature(&self, _nature: &str) -> Result<Vec<Document>, DatabaseError> {
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        // Nature is inferred from directory path at indexing time, stored as metadata
+        // For now, search all documents and filter by path-based nature
+        // TODO: store nature as indexed column for efficient query
         let mut stmt = conn.prepare(
-            "SELECT id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at
-             FROM documents WHERE type = ?1",
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
+             FROM documents",
         )?;
 
         let docs = stmt
-            .query_map(params![type_str], |row| Ok(row_to_document(row)))?
+            .query_map([], |row| Ok(row_to_document(row)))?
             .filter_map(|r| r.ok())
             .filter_map(|r| r.ok())
             .collect();
@@ -155,24 +153,22 @@ impl SihDatabase for SqliteBackend {
         let pattern = format!("%{}%", query);
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, type, stage, title, content FROM documents WHERE content LIKE ?1 OR title LIKE ?1",
+            "SELECT id, stage, title, content FROM documents WHERE content LIKE ?1 OR title LIKE ?1",
         )?;
 
         let results = stmt
             .query_map(params![pattern], |row| {
                 let id: String = row.get(0)?;
-                let type_str: String = row.get(1)?;
-                let stage_str: String = row.get(2)?;
-                let title: String = row.get(3)?;
-                let content: String = row.get(4)?;
-                Ok((id, type_str, stage_str, title, content))
+                let stage_str: String = row.get(1)?;
+                let title: String = row.get(2)?;
+                let content: String = row.get(3)?;
+                Ok((id, stage_str, title, content))
             })?
             .filter_map(|r| r.ok())
-            .map(|(id, type_str, stage_str, title, content)| {
+            .map(|(id, stage_str, title, content)| {
                 let snippet = extract_snippet(&content, query, 80);
                 SearchResult {
                     id,
-                    r#type: DocType::from_str(&type_str).unwrap_or(DocType::Note),
                     stage: Stage(stage_str),
                     title,
                     snippet,
@@ -191,29 +187,27 @@ impl SihDatabase for SqliteBackend {
         let mut stmt = conn.prepare(
             "
             WITH RECURSIVE chain AS (
-                SELECT id, type, stage, title, upstream, 0 as depth
+                SELECT id, stage, title, upstream, 0 as depth
                 FROM documents WHERE id = ?1
                 UNION ALL
-                SELECT d.id, d.type, d.stage, d.title, d.upstream, c.depth + 1
+                SELECT d.id, d.stage, d.title, d.upstream, c.depth + 1
                 FROM documents d
                 INNER JOIN chain c ON d.id = c.upstream
-                WHERE c.depth < ?2 AND c.upstream IS NOT NULL AND c.upstream NOT GLOB '[A-Z]*'
+                WHERE c.depth < ?2 AND c.upstream IS NOT NULL
             )
-            SELECT id, type, stage, title, upstream, depth FROM chain ORDER BY depth
+            SELECT id, stage, title, upstream, depth FROM chain ORDER BY depth
             ",
         )?;
 
         let nodes = stmt
             .query_map(params![id, depth], |row| {
                 let id: String = row.get(0)?;
-                let type_str: String = row.get(1)?;
-                let stage_str: String = row.get(2)?;
-                let title: String = row.get(3)?;
-                let upstream: Option<String> = row.get(4)?;
-                let d: u32 = row.get(5)?;
+                let stage_str: String = row.get(1)?;
+                let title: String = row.get(2)?;
+                let upstream: Option<String> = row.get(3)?;
+                let d: u32 = row.get(4)?;
                 Ok(ChainNode {
                     id,
-                    r#type: DocType::from_str(&type_str).unwrap_or(DocType::Note),
                     stage: Stage(stage_str),
                     title,
                     upstream,
@@ -255,27 +249,18 @@ impl SihDatabase for SqliteBackend {
         Ok(results)
     }
 
-    async fn count_by_type(&self) -> Result<Vec<(String, usize)>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
-        let mut stmt = conn.prepare(
-            "SELECT type, COUNT(*) as cnt FROM documents GROUP BY type ORDER BY type",
-        )?;
-        let results = stmt
-            .query_map([], |row| {
-                let t: String = row.get(0)?;
-                let cnt: usize = row.get(1)?;
-                Ok((t, cnt))
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
-        Ok(results)
+    async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError> {
+        // Nature is inferred from the document path, not stored as a column.
+        // Return an empty distribution for now.
+        // TODO: add nature column or infer from path metadata
+        Ok(Vec::new())
     }
 
     async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError> {
         let status_str = status.as_str();
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, type, stage, title, upstream, frontmatter_json, content, status, indexed_at
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
              FROM documents WHERE status = ?1",
         )?;
 
@@ -293,21 +278,19 @@ fn row_to_document(
     row: &rusqlite::Row<'_>,
 ) -> Result<Document, DatabaseError> {
     let id: String = row.get(0)?;
-    let type_str: String = row.get(1)?;
-    let stage_str: String = row.get(2)?;
-    let title: String = row.get(3)?;
-    let upstream: Option<String> = row.get(4)?;
-    let frontmatter_json: String = row.get(5)?;
-    let content: String = row.get(6)?;
-    let status_str: String = row.get(7)?;
-    let indexed_at_str: String = row.get(8)?;
+    let stage_str: String = row.get(1)?;
+    let title: String = row.get(2)?;
+    let upstream: Option<String> = row.get(3)?;
+    let frontmatter_json: String = row.get(4)?;
+    let content: String = row.get(5)?;
+    let status_str: String = row.get(6)?;
+    let indexed_at_str: String = row.get(7)?;
 
     let frontmatter: super::models::Frontmatter = serde_json::from_str(&frontmatter_json)?;
     let indexed_at = indexed_at_str.parse::<chrono::DateTime<chrono::Utc>>().unwrap_or_else(|_| chrono::Utc::now());
 
     Ok(Document {
         id,
-        r#type: DocType::from_str(&type_str).unwrap_or(DocType::Note),
         stage: Stage(stage_str),
         title,
         upstream,

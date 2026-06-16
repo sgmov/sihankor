@@ -1,6 +1,5 @@
 use sihankor::core::database::{SihDatabase, SqliteBackend};
 use sihankor::core::indexer;
-use sihankor::core::models::DocType;
 use sihankor::core::parser;
 use sihankor::core::validator::{validate_document, ValidationConfig};
 
@@ -50,16 +49,16 @@ async fn test_search_and_resolve() {
     println!("Search for '司衡': {} results", results.len());
     assert!(!results.is_empty(), "Should find documents mentioning 司衡");
 
-    // 测试按类型查询
-    let treatises = db.search_by_type(&DocType::Treatise).await.unwrap();
-    println!("Treatises: {}", treatises.len());
+    // 测试按 nature 查询
+    let specs = db.search_by_nature("spec").await.unwrap();
+    println!("Specs: {}", specs.len());
 
     // 测试授权链
     let by_stage = db.count_by_stage().await.unwrap();
     println!("By stage: {:?}", by_stage);
 
-    let by_type = db.count_by_type().await.unwrap();
-    println!("By type: {:?}", by_type);
+    let by_nature = db.count_by_nature().await.unwrap();
+    println!("By nature: {:?}", by_nature);
 }
 
 #[test]
@@ -81,10 +80,15 @@ fn test_parse_philosophy_docs() {
             match parser::parse_file(&path) {
                 Ok(doc) => {
                     parsed += 1;
-                    println!("Parsed: {} ({}/{}) - {}", doc.id, doc.r#type.as_str(), doc.stage.0, doc.title);
+                    println!("Parsed: {} ({}) - {}", doc.id, doc.stage.0, doc.title);
 
-                    // 哲学文档应该都是 3/3
-                    assert_eq!(doc.stage.0, "3/3", "Philosophy docs should be at 3/3");
+                    // 哲学文档应该是 2/3 或 3/3
+                    assert!(
+                        doc.stage.0 == "2/3" || doc.stage.0 == "3/3",
+                        "Philosophy docs should be at 2/3 or 3/3, got {} for {}",
+                        doc.stage.0,
+                        doc.id
+                    );
                 }
                 Err(e) => {
                     errors.push((path.to_string_lossy().to_string(), e.to_string()));

@@ -100,8 +100,8 @@ impl SihankorService {
                         .iter()
                         .map(|r| {
                             format!(
-                                "[{}] {} ({}/{}) - {}",
-                                r.id, r.title, r.r#type.as_str(), r.stage.0, r.snippet
+                                "[{}] {} ({}) - {}",
+                                r.id, r.title, r.stage.0, r.snippet
                             )
                         })
                         .collect::<Vec<_>>()
@@ -126,9 +126,8 @@ impl SihankorService {
                     &ValidationConfig::default(),
                 );
                 format!(
-                    "ID: {}\nType: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
+                    "ID: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
                     doc.id,
-                    doc.r#type.as_str(),
                     doc.stage.0,
                     doc.title,
                     doc.upstream.as_deref().unwrap_or("none"),
@@ -158,11 +157,10 @@ impl SihankorService {
                         .iter()
                         .map(|n| {
                             format!(
-                                "{}[{}] {} ({}/{}) <- {}",
+                                "{}[{}] {} ({}) <- {}",
                                 "  ".repeat(n.depth as usize),
                                 n.depth,
                                 n.title,
-                                n.r#type.as_str(),
                                 n.stage.0,
                                 n.upstream.as_deref().unwrap_or("ROOT"),
                             )
@@ -183,7 +181,7 @@ impl SihankorService {
     ) -> String {
         let total = self.db.count_documents().await.unwrap_or(0);
         let by_stage = self.db.count_by_stage().await.unwrap_or_default();
-        let by_type = self.db.count_by_type().await.unwrap_or_default();
+        let by_nature = self.db.count_by_nature().await.unwrap_or_default();
 
         let stage_summary = by_stage
             .iter()
@@ -191,7 +189,7 @@ impl SihankorService {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let type_summary = by_type
+        let nature_summary = by_nature
             .iter()
             .map(|(t, c)| format!("  {}: {}", t, c))
             .collect::<Vec<_>>()
@@ -205,7 +203,7 @@ impl SihankorService {
         } else {
             error_docs
                 .iter()
-                .map(|d| format!("  [{}] {} ({}/{})", d.id, d.title, d.r#type.as_str(), d.stage.0))
+                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage.0))
                 .collect::<Vec<_>>()
                 .join("\n")
         };
@@ -215,7 +213,7 @@ impl SihankorService {
         } else {
             warning_docs
                 .iter()
-                .map(|d| format!("  [{}] {} ({}/{})", d.id, d.title, d.r#type.as_str(), d.stage.0))
+                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage.0))
                 .collect::<Vec<_>>()
                 .join("\n")
         };
@@ -225,10 +223,10 @@ impl SihankorService {
              ========================\n\
              Total documents: {}\n\n\
              By stage:\n{}\n\n\
-             By type:\n{}\n\n\
+             By nature:\n{}\n\n\
              Errors ({}):\n{}\n\n\
              Warnings ({}):\n{}",
-            total, stage_summary, type_summary,
+            total, stage_summary, nature_summary,
             error_docs.len(), error_list,
             warning_docs.len(), warning_list
         )

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use super::models::{DocType, Violation, ViolationSeverity};
+use super::models::{Violation, ViolationSeverity};
 
 /// 验证域
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,7 +82,7 @@ pub fn validate_document(
     let mut result = ValidationResult::new();
 
     if config.frontmatter {
-        result.merge(validate_frontmatter(doc));
+        result.merge(validate_frontmatter(doc, file_path));
     }
     if config.structure {
         result.merge(validate_structure(doc, file_path));
@@ -94,7 +94,7 @@ pub fn validate_document(
         result.merge(validate_lifecycle(doc));
     }
     if config.governance {
-        result.merge(validate_governance(doc));
+        result.merge(validate_governance(doc, file_path));
     }
     // reference 域需要数据库查询，在索引阶段单独执行
 
@@ -102,7 +102,7 @@ pub fn validate_document(
 }
 
 /// 域一：Frontmatter 验证
-fn validate_frontmatter(doc: &super::models::Document) -> ValidationResult {
+fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>) -> ValidationResult {
     let mut result = ValidationResult::new();
 
     // F-01: id 格式校验
@@ -115,19 +115,8 @@ fn validate_frontmatter(doc: &super::models::Document) -> ValidationResult {
         });
     }
 
-    // F-02: type 必须是合法类型
-    if !matches!(
-        doc.r#type,
-        DocType::Treatise | DocType::Compendium | DocType::Mapping | DocType::Note
-        | DocType::Plan | DocType::Decision | DocType::Proposal
-    ) {
-        result.violations.push(Violation {
-            rule_id: "F-02".to_string(),
-            severity: ViolationSeverity::Fatal,
-            message: format!("invalid type: {:?}", doc.r#type),
-            location: "frontmatter.type".to_string(),
-        });
-    }
+    // F-02: type 字段已废除——document nature 由目录路径推断
+    // 此规则已移除
 
     // F-03: stage 必须是有效编码
     if !doc.stage.is_valid() {
@@ -139,22 +128,24 @@ fn validate_frontmatter(doc: &super::models::Document) -> ValidationResult {
         });
     }
 
-    // F-04: upstream 对非 note/plan 类型必填
-    if !matches!(doc.r#type, DocType::Note | DocType::Plan) && doc.upstream.is_none() {
+    // F-04: upstream 必填性由 nature 决定
+    // note (knowledge/notes/) 无 upstream；proposal 在 proposals/ 有 upstream
+    let nature = file_path.and_then(|p| infer_nature(p));
+    let upstream_required = match nature {
+        Some("note") => false,
+        _ => true,
+    };
+    if upstream_required && doc.upstream.is_none() {
         result.violations.push(Violation {
             rule_id: "F-04".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: format!("upstream is required for type '{:?}'", doc.r#type),
+            message: "upstream is required for this document nature".to_string(),
             location: "frontmatter.upstream".to_string(),
         });
     }
 
-    // G-01: upstream 全大写域标识是合法的根级引用
-    if let Some(ref upstream) = doc.upstream {
-        if upstream.chars().all(|c| c.is_ascii_uppercase() || c == '_') && upstream.len() > 1 {
-            // 合法域标识，无需追溯
-        }
-    }
+    // G-01: upstream 全大写域标识检查已移除
+    // root docs 应自指向自身 id，不再使用 PHILOSOPHY 等大写域标识
 
     result
 }
@@ -164,32 +155,18 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
     let mut result = ValidationResult::new();
 
     if let Some(path) = file_path {
-        // G-02: type 与目录位置匹配
+        // G-02: 文档必须位于合法目录
         let path_str = path.to_string_lossy();
-        let _type_dir = doc.r#type.as_str();
+        let valid_dirs = ["specs/", "proposals/", "decisions/", "reference/", "knowledge/notes/"];
+        let in_valid_dir = valid_dirs.iter().any(|dir| path_str.contains(dir));
 
-        // 映射 type → 期望目录
-        let expected_dirs = match doc.r#type {
-            DocType::Treatise | DocType::Compendium | DocType::Mapping => {
-                vec!["specs/"]
-            }
-            DocType::Note => vec!["notes/", "reference/"],
-            DocType::Plan => vec!["plan/"],
-            DocType::Decision => vec!["decisions/"],
-            DocType::Proposal => vec!["proposals/"],
-        };
-
-        let in_expected = expected_dirs
-            .iter()
-            .any(|dir| path_str.contains(dir));
-
-        if !in_expected {
+        if !in_valid_dir {
             result.violations.push(Violation {
                 rule_id: "G-02".to_string(),
                 severity: ViolationSeverity::Guideline,
                 message: format!(
-                    "type '{:?}' document found outside expected directory (expected: {:?})",
-                    doc.r#type, expected_dirs
+                    "document '{}' not in a recognized directory (expected: specs/, proposals/, decisions/, reference/, knowledge/notes/)",
+                    doc.id
                 ),
                 location: path.to_string_lossy().to_string(),
             });
@@ -318,19 +295,23 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
 }
 
 /// 域六：Governance 验证
-fn validate_governance(doc: &super::models::Document) -> ValidationResult {
+fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // G-09: 2/3 和 3/3 的核心类型应有 decided-by
+    // G-09: 2/3 和 3/3 的 decisions/ 文档应有 decided-by
     if doc.stage.0 == "2/3" || doc.stage.0 == "3/3" {
-        if matches!(doc.r#type, DocType::Treatise | DocType::Compendium | DocType::Mapping | DocType::Decision) {
+        let is_decision = file_path
+            .and_then(|p| infer_nature(p))
+            .map(|n| n == "decision")
+            .unwrap_or(false);
+        if is_decision {
             if doc.frontmatter.decided_by.is_none() {
                 result.violations.push(Violation {
                     rule_id: "G-09".to_string(),
                     severity: ViolationSeverity::Guideline,
                     message: format!(
-                        "{:?} at stage {} should have decided-by field",
-                        doc.r#type, doc.stage.0
+                        "decision document '{}' at stage {} should have decided-by field",
+                        doc.id, doc.stage.0
                     ),
                     location: "frontmatter.decided-by".to_string(),
                 });
@@ -351,6 +332,24 @@ fn validate_governance(doc: &super::models::Document) -> ValidationResult {
     }
 
     result
+}
+
+/// 从文件路径推断 document nature
+fn infer_nature(path: &Path) -> Option<&str> {
+    let path_str = path.to_string_lossy();
+    if path_str.contains("specs/") {
+        Some("spec")
+    } else if path_str.contains("proposals/") {
+        Some("proposal")
+    } else if path_str.contains("decisions/") {
+        Some("decision")
+    } else if path_str.contains("reference/") {
+        Some("reference")
+    } else if path_str.contains("knowledge/notes/") {
+        Some("note")
+    } else {
+        None
+    }
 }
 
 /// id 格式校验：YYMMDD-HHMM[-NNN]-语义短名
@@ -388,16 +387,14 @@ mod tests {
     use crate::core::models::{DocStatus, Frontmatter, Stage};
     use chrono::Utc;
 
-    fn make_test_doc(id: &str, doc_type: DocType, stage: &str, upstream: Option<&str>) -> super::super::models::Document {
+    fn make_test_doc(id: &str, stage: &str, upstream: Option<&str>) -> super::super::models::Document {
         super::super::models::Document {
             id: id.to_string(),
-            r#type: doc_type.clone(),
             stage: Stage(stage.to_string()),
             title: "Test".to_string(),
             upstream: upstream.map(|s| s.to_string()),
             frontmatter: Frontmatter {
                 id: id.to_string(),
-                r#type: doc_type,
                 stage: Stage(stage.to_string()),
                 upstream: upstream.map(|s| s.to_string()),
                 decided_by: None,
@@ -418,22 +415,25 @@ mod tests {
     }
 
     #[test]
-    fn test_frontmatter_missing_upstream_for_treatise() {
-        let doc = make_test_doc("260613-1800-test", DocType::Treatise, "1/3", None);
-        let result = validate_frontmatter(&doc);
+    fn test_frontmatter_missing_upstream_for_spec() {
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        // Without path context, upstream is required by default
+        let result = validate_frontmatter(&doc, None);
         assert!(result.has_errors());
     }
 
     #[test]
     fn test_frontmatter_note_no_upstream_ok() {
-        let doc = make_test_doc("260613-1800-test", DocType::Note, "1/3", None);
-        let result = validate_frontmatter(&doc);
+        let doc = make_test_doc("260613-1800-test", "1/3", None);
+        // With knowledge/notes/ path, upstream not required
+        let path = std::path::Path::new("docs/knowledge/notes/test.sih.md");
+        let result = validate_frontmatter(&doc, Some(path));
         assert!(!result.has_errors());
     }
 
     #[test]
     fn test_content_forbidden_horizontal_rule() {
-        let mut doc = make_test_doc("260613-1800-test", DocType::Note, "1/3", None);
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "# Title\n\n---\n\nSome text".to_string();
         let result = validate_content(&doc);
         assert!(result.has_errors());
@@ -441,9 +441,11 @@ mod tests {
 
     #[test]
     fn test_governance_ai_auto_forbidden() {
-        let mut doc = make_test_doc("260613-1800-test", DocType::Treatise, "2/3", Some("PHILOSOPHY"));
+        // decisions/ document with ai-auto decided-by should flag
+        let path = std::path::Path::new("docs/decisions/test.sih.md");
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-upstream"));
         doc.frontmatter.decided_by = Some("ai-auto".to_string());
-        let result = validate_governance(&doc);
+        let result = validate_governance(&doc, Some(path));
         assert!(result.has_errors());
     }
 }
