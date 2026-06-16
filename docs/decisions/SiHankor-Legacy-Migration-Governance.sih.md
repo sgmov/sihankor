@@ -1,7 +1,7 @@
 ---
-id: 260613-2000-sihankor-legacy-migration-governance
+id: 2606132000-sihankor-legacy-migration-governance
 stage: 3/3
-upstream: 260613-1728-sihankor-philosophy-compendium
+upstream: 2606131728-sihankor-philosophy-compendium
 decided-by: ai-assist
 ---
 
@@ -70,7 +70,7 @@ decided-by: ai-assist
 
 **L17** `governance-plan-20260602-001.sih.md`：已迁移到 `engineering/SiHankor-Document-Conventions.sih.md`。Document-Conventions 已系统化吸收 L17 核心内容。
 
-**L18** `review-mechanism-20260602-001.sih.md`：废弃。[已完成]提取一条原则补入 `On-SiHankor-Canon.sih.md` $2.1：归纳合成必须保持可追溯的 resolve_ref 路径。
+**L18** `review-mechanism-20260602-001.sih.md`：废弃。[已完成]提取一条原则补入 `On-SiHankor-Canon.sih.md` $2.1：归纳合成必须保持可追溯的 upstream 路径。
 
 ### E 类：保留待工程化
 

@@ -1,8 +1,7 @@
 ---
-id: 260613-2000-sihankor-external-validation
+id: 2606132000-sihankor-external-validation
 stage: 2/3
-upstream: 260613-1728-sihankor-philosophy-compendium
-participants: [sihankor-builder, external-validator, sihankor-ai-instance]
+upstream: 2606131728-sihankor-philosophy-compendium
 decided-by: ai-assist
 ---
 
@@ -82,7 +81,7 @@ decided-by: ai-assist
 
 ## 四、已识别并处理的间隙
 
-本次验证新发现的间隙：Note 类型的"自动"晋升路径（`1/3 -> 2/3(自动)`）可能与道一"收敛必-为"存在张力。处理方式是在文档状态机的说明中补充："自动"是指引擎检测到人为预定义的条件满足后执行晋升，人为介入发生在条件定义之时，而非每次晋升之时。
+本次验证新发现的间隙：Note 的"自动"晋升路径（`1/3 -> 2/3(自动)`）可能与道一"收敛必-为"存在张力。处理方式是在文档状态机的说明中补充："自动"是指引擎检测到人为预定义的条件满足后执行晋升，人为介入发生在条件定义之时，而非每次晋升之时。
 
 ## 五、自指声明
 
