@@ -1,5 +1,6 @@
 ---
-id: 2606161216-id-timestamp-automation
+id: 260616-1216-id-timestamp-automation
+stage: 1/3
 verified: 260616
 ---
 
@@ -25,5 +26,5 @@ impl:   chrono::Local::now() → format
 
 ## 关联
 
-- MVP parser proposal: `2606161214-engine-mvp-parser`
+- MVP parser proposal: `260616-1214-engine-mvp-parser`
 - 可作为 engine 启动后第一个实现的 MCP tool（比 parser 更简单）

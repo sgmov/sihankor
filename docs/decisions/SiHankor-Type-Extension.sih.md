@@ -1,7 +1,7 @@
 ---
-id: 2606140000-sihankor-type-extension
+id: 260614-0000-sihankor-type-extension
 stage: 0/260615-1500-docs-restructure-v2-decision
-upstream: 2406101500-sihankor-document-conventions
+upstream: 240610-1500-sihankor-document-conventions
 decided-by: ai-assist
 ---
 

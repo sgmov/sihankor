@@ -1,9 +1,7 @@
 ---
-id: 2606161200-engine-dev-governance-chain
+id: 260616-1200-engine-dev-governance-chain
 stage: 3/3
-upstream:
-  - 2606110000-sihankor-engine-design-summary
-  - 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡引擎开发治理链

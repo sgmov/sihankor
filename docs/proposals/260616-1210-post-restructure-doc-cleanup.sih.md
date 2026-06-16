@@ -1,12 +1,12 @@
 ---
-id: 2606161210-post-restructure-doc-cleanup
+id: 260616-1210-post-restructure-doc-cleanup
 stage: 3/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 重构后文档残余引用清理
 
-> 本次重构（2606151430-docs-restructure-v2）废除了 type 字段、引入了目录即身份、修正了 stage 语义和 notes 生命周期。三份非 3/3 文档中残留旧引用需同步清理。
+> 本次重构（260615-1430-docs-restructure-v2）废除了 type 字段、引入了目录即身份、修正了 stage 语义和 notes 生命周期。三份非 3/3 文档中残留旧引用需同步清理。
 
 ## 变更清单
 

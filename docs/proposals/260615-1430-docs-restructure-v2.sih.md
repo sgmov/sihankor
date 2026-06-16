@@ -1,12 +1,12 @@
 ---
-id: 2606151430-docs-restructure-v2
+id: 260615-1430-docs-restructure-v2
 stage: 3/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡文档体系重构 v2
 
-> 基于道层重新推导 docs/ 目录结构、frontmatter 字段与治理流程的完整方案。替代 2406110100-sihankor-philosophy-restructure（旧重构计划，stage 1/3）。
+> 基于道层重新推导 docs/ 目录结构、frontmatter 字段与治理流程的完整方案。替代 240611-0100-sihankor-philosophy-restructure（旧重构计划，stage 1/3）。
 
 ## 一、背景与间隙证据
 
@@ -78,7 +78,7 @@ docs/
       SiHankor-Engine-Design-Summary.sih.md
       SiHankor-Document-Conventions.sih.md
   proposals/                          # 治理侧：变更提议
-    2606151430-docs-restructure-v2.sih.md
+    260615-1430-docs-restructure-v2.sih.md
   decisions/                          # 治理侧：决策记录
     SiHankor-External-Validation.sih.md
     SiHankor-Legacy-Migration-Governance.sih.md
@@ -102,7 +102,7 @@ docs/
 删除 `type` 字段。必填字段：
 
 ```yaml
-id: 2406020900-on-sihankor
+id: 240602-0900-on-sihankor
 stage: 3/3
 upstream: <文档id>       # note 可选，其余必填
 successor: <文档id>      # 仅 stage 为 0 时出现
@@ -179,5 +179,3 @@ successor: <文档id>      # 仅 stage 为 0 时出现
 - 正向：为后续引擎实现 semantic 索引和间隙检测提供明确的规约基础
 - 负向：Canon $3.2 和 $6 需实质性修改，需 Reopen 流程
 - 负向：交叉引用批量更新存在遗漏风险
-
-decided-by: ai-assist

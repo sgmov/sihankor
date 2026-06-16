@@ -1,13 +1,13 @@
 ---
-id: 2606151500-docs-restructure-v2-decision
+id: 260615-1500-docs-restructure-v2-decision
 stage: 3/3
-upstream: 2606151430-docs-restructure-v2
+upstream: 260615-1430-docs-restructure-v2
 decided-by: ai-assist
 ---
 
 # 司衡文档体系重构 v2 决策记录
 
-> 采纳 2606151430-docs-restructure-v2 提案。记录决策理由与后果。
+> 采纳 260615-1430-docs-restructure-v2 提案。记录决策理由与后果。
 
 ## 背景
 

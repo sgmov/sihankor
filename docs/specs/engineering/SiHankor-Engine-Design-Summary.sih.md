@@ -1,7 +1,7 @@
 ---
-id: 2606110000-sihankor-engine-design-summary
+id: 260611-0000-sihankor-engine-design-summary
 stage: 2/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡引擎设计摘要

@@ -1,7 +1,7 @@
 ---
-id: 2606131650-sihankor-mind-design
+id: 260613-1650-sihankor-mind-design
 stage: 2/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡思维核心（Mind）设计规范
@@ -37,7 +37,7 @@ upstream: 2406101030-on-sihankor-canon
 | 道/法 | 依据                                                                               | 对 Mind 的约束                                                                                             |
 | ----- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | 道一  | [《道论》$2.1](../philosophy/On-SiHankor-Tao.sih.md#21-定义)：发散自-然，收敛必-为 | 文档体系必然发散——Mind 必须做跨文档关系照见，不能只做单文档检查                                            |
-| 道二  | [《道论》$2.2](../philosophy/On-SiHankor-Tao.sih.md#22-道二)：意图先于代码         | 分析必须先理解意图元数据（type/stage/upstream）。对 propose 文档做 ratify 级检查是违道                     |
+| 道二  | [《道论》$2.2](../philosophy/On-SiHankor-Tao.sih.md#22-道二)：意图先于代码         | 分析必须先理解意图元数据（nature/stage/upstream）。nature 由引擎从文档所在目录推断（目录即身份）。对 propose 文档做 ratify 级检查是违道                     |
 | 道三  | [《道论》$2.3](../philosophy/On-SiHankor-Tao.sih.md#23-道三)：代码自晦，意图必复   | 文档字面不揭示其关系——Mind 的立身之本是照见单文档看不到的跨文档关系（引用/重复/冲突/空白）                 |
 | 道四  | [《道论》$2.4](../philosophy/On-SiHankor-Tao.sih.md#24-道四)：规约与实现必有间隙   | Mind 的分析报告也是规约——必含 `@limitations`、`self_question`、`confidence`。不输出"确定正确"的结论        |
 | 顺因  | [《法论》$2.1](../philosophy/On-SiHankor-Canon.sih.md#21-顺因尊重因果方向)         | 三机流转不可逆序：iCL→iWW→iCT 严格顺序。分析未完成时，不生成建议                                           |

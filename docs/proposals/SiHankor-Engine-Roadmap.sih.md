@@ -1,7 +1,7 @@
 ---
-id: 2606131800-sihankor-engine-roadmap
+id: 260613-1800-sihankor-engine-roadmap
 stage: 1/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 
 # 司衡引擎下一步方向与任务计划
@@ -396,13 +396,7 @@ Mind 的输出（`AnalysisResult` JSON）通过引擎的写入工具执行。引
 
 推进原则：ratify（3/3）意味着"此规范已被实践证明合道"。因此 2/3→3/3 必须在对应的引擎实现完成并通过验证之后。实现 → 验证 → ratify，顺因之法的因果方向。
 
-### 5.2 翻译流水线
-
-目标：启动 glossary 的中英双语翻译流水线。
-
-- `glossary/po/messages.pot`：从 `zh.yml` 自动提取翻译模板
-- `glossary/po/en.po`：英文翻译
-- 翻译流水线脚本：`sihankor i18n extract` / `sihankor i18n compile`
+翻译流水线（po/ 目录已废除，此计划已取消）
 - 翻译覆盖率检查作为 `project_status` 的一个指标
 
 ### 5.3 测试与 CI

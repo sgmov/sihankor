@@ -36,9 +36,10 @@ Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory field
 
 | Field | Required | Format | Description |
 |-------|----------|--------|-------------|
-| `id` | all | `YYMMDDHHMM[-NNN]-语义短名` | Unique document identifier. Date and time (YYMMDDHHMM) without separator, followed by a semantic short name. Example: `2406020900-on-sihankor` |
-| `stage` | spec/proposal/decision/reference | `1/3`, `2/3`, `3/3`, `0/<successor-id>`, `X` | Document lifecycle stage. Notes have no stage. |
-| `upstream` | spec/proposal/decision/reference | document id | Governance authorization source. Notes: optional. |
+| `id` | all | `YYMMDD-HHMM[-NNN]-语义短名` | Unique document identifier. Date and time (YYMMDD-HHMM) with mandatory hyphen separator, followed by a semantic short name. Example: `240602-0900-on-sihankor` |
+| `stage` | all | `1/3`, `2/3`, `3/3`, `0/<successor-id>`, `X` | Document lifecycle stage. spec/proposal/decision/reference: governance confidence. note: lifecycle maturity (same encoding). Stage value `0/<successor-id>` encodes successor id directly — no separate successor field. |
+| `upstream` | spec/proposal/decision/reference | document id | Governance authorization source (single value). Notes: optional. Root docs point to own id. |
+| `decided-by` | decision only | human identifier | Who decided this decision. Only allowed in decisions/ directory. |
 | `verified` | note only | `YYMMDD` | Date the note's insight was last confirmed as valid. |
 
 `type` field is abolished. Document identity (nature) is determined by directory: `specs/` → spec, `proposals/` → proposal, `decisions/` → decision, `reference/` → reference, `knowledge/notes/` → note.
@@ -51,7 +52,7 @@ Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory field
 | `proposals/` | proposal | 1/3→2/3→3/3 | Change proposals: what we propose to change |
 | `decisions/` | decision | 2/3→3/3 | Decision records (ADR): why we chose this |
 | `reference/` | reference | typically 3/3 | Reference standards: what terms mean |
-| `knowledge/notes/` | note | none (verified only) | Practice insights: what we learned |
+| `knowledge/notes/` | note | 1/3→2/3→3/3 | Practice insights: what we learned. Stage expresses lifecycle maturity. |
 | `knowledge/drafts/` | — | none | Idea fragments, not .sih.md |
 | `archive/` | — | X or 0 | Deprecated documents |
 

@@ -1,5 +1,6 @@
 ---
-id: 2606161350-id-format-hyphen-drift
+id: 260616-1350-id-format-hyphen-drift
+stage: 1/3
 verified: 260616
 ---
 

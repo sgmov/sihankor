@@ -1,7 +1,7 @@
 ---
-id: 2606131728-arche-the-one-above-being
+id: 260613-1728-arche-the-one-above-being
 stage: 3/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 
 # 元
@@ -397,25 +397,25 @@ flowchart LR
 - 正向：为四道提供元层依据
 - 风险：无已知风险
 
-decided-by: ai-assist
+> 本附录的设计决策由 AI 辅助生成，人类审核确认。
 
 ### DEPS
 
-- 2406020900-on-sihankor
+- 240602-0900-on-sihankor
   - 总纲：司衡全貌，元在 $三中首次系统定义
   - [司衡论](./On-SiHankor.sih.md)
-- 2406020930-on-sihankor-tao
+- 240602-0930-on-sihankor-tao
   - 四道的系统阐述，元为道的构成性条件
   - [司衡道论](./On-SiHankor-Tao.sih.md)
-- 2406021000-on-sihankor-assay
+- 240602-1000-on-sihankor-assay
   - 认识论条件：元四的工程展开
   - [司衡鉴论](./On-SiHankor-Assay.sih.md)
 
 ### SEE-ALSO
 
-- 2406101030-on-sihankor-canon
+- 240610-1030-on-sihankor-canon
   - 法从道生，元三为生命周期修正机制提供元层依据
   - [司衡法论](./On-SiHankor-Canon.sih.md)
-- 2606131728-sihankor-philosophy-compendium
+- 260613-1728-sihankor-philosophy-compendium
   - 术语速查：四元与公理体系的定义
   - [司衡哲学纲要](../../reference/SiHankor-Philosophy-Compendium.sih.md)

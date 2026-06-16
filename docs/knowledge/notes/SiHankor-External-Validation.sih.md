@@ -1,8 +1,7 @@
 ---
-id: 2606132000-sihankor-external-validation
-stage: 2/3
-upstream: 2606131728-sihankor-philosophy-compendium
-decided-by: ai-assist
+id: 260613-2000-sihankor-external-validation
+stage: 3/3
+verified: 260613
 ---
 
 # 司衡外部验证与元治理对话

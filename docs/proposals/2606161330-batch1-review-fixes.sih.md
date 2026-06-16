@@ -1,7 +1,7 @@
 ---
-id: 2606161330-batch1-review-fixes
+id: 260616-1330-batch1-review-fixes
 stage: 3/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 第一批审阅修复：核心文档同步已确认决策
@@ -12,9 +12,9 @@ upstream: 2406101030-on-sihankor-canon
 
 ### B-02：id 格式统一（全项目）
 
-**当前**：所有文档 id 使用 `YYMMDD-HHMM-`（日期与时间之间有连字符）。例：`2406020900-on-sihankor`（修正后）。
+**当前**：所有文档 id 使用 `YYMMDD-HHMM-`（日期与时间之间有连字符）。例：`240602-0900-on-sihankor`（修正后）。
 
-**已确认格式**：`YYMMDDHHMM[-NNN]-语义短名`，日期与时间之间无连字符。例：`2406020900-on-sihankor`。
+**已确认格式**：`YYMMDDHHMM[-NNN]-语义短名`，日期与时间之间无连字符。例：`240602-0900-on-sihankor`。
 
 **变更**：
 
@@ -32,11 +32,11 @@ upstream: 2406101030-on-sihankor-canon
 
 | 文件                                      | 当前 upstream | 修正后 upstream        | 理由                   |
 | ----------------------------------------- | ------------- | ---------------------- | ---------------------- |
-| On-SiHankor.sih.md                        | PHILOSOPHY    | 2406020900-on-sihankor | 哲学体系根文档，自指向 |
-| On-SiHankor-Tao.sih.md                    | PHILOSOPHY    | 2406020900-on-sihankor | 道论从总纲出           |
-| On-SiHankor-Canon.sih.md                  | PHILOSOPHY    | 2406020900-on-sihankor | 法论从总纲出           |
-| On-SiHankor-Assay.sih.md                  | PHILOSOPHY    | 2406020900-on-sihankor | 鉴论从总纲出           |
-| docs/archive/proposals/SiHankor-Philosophy-Restructure-Plan.X.md | PHILOSOPHY    | 2406020900-on-sihankor | archive 文档不例外     |
+| On-SiHankor.sih.md                        | PHILOSOPHY    | 240602-0900-on-sihankor | 哲学体系根文档，自指向 |
+| On-SiHankor-Tao.sih.md                    | PHILOSOPHY    | 240602-0900-on-sihankor | 道论从总纲出           |
+| On-SiHankor-Canon.sih.md                  | PHILOSOPHY    | 240602-0900-on-sihankor | 法论从总纲出           |
+| On-SiHankor-Assay.sih.md                  | PHILOSOPHY    | 240602-0900-on-sihankor | 鉴论从总纲出           |
+| docs/archive/proposals/SiHankor-Philosophy-Restructure-Plan.X.md | PHILOSOPHY    | 240602-0900-on-sihankor | archive 文档不例外     |
 
 **额外**：同样检查 `upstream:` 为空的文档（proposals/ 中有 3 处空 upstream），为空与 PHILOSOPHY 不同，属于尚未填写，不在此次修改范围。
 
@@ -188,5 +188,3 @@ Canon §6.2 当前写 "stage X 的文档迁移至 `docs/archive/{原目录}/{nam
 
 - 正向：核心文档与已确认决策一致，后续审阅基于正确基线
 - 风险：B-02 id 格式变更为全项目机械替换，遗漏一处会导致引用断裂。必须逐文件验证
-
-decided-by: ai-assist

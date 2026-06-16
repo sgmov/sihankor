@@ -1,7 +1,7 @@
 ---
-id: 2606131728-sihankor-philosophy-compendium
+id: 260613-1728-sihankor-philosophy-compendium
 stage: 2/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 # 司衡哲学纲要
 
@@ -385,7 +385,7 @@ flowchart LR
 | "1/3" | 提案（Propose）   | 想法提出，开放讨论，不可引用             |
 | "2/3" | 决议（Resolve）   | 结构化讨论，绑定 ADR，可引用但须注明阶段 |
 | "3/3" | 定稿（Ratify）    | 收敛完成，可引为可靠依据                 |
-| "0"   | 替换（Supersede） | 已被新版本取代，stage 编码后继文档 ID（如 0/new-id）       |
+| "0/"   | 替换（Supersede） | 已被新版本取代，stage 编码后继文档 ID（如 0/new-id）       |
 | "X"   | 废弃（Deprecate） | 概念或方向被放弃，无后继                 |
 
 **主流程**：propose -> resolve -> ratify，力度递增，不可跳过。propose 可以死亡，resolve 必须有 ADR，只有 ratify 可被下游权威引用。阶段推进不产生新文件，同一文件 stage 字段变化。
@@ -534,7 +534,7 @@ flowchart LR
 | 元四         | 方法论之元——"诗与理"的区分                                         | 元                 |
 | 废弃归档     | archive/ — 存放 stage X 或 stage 0 的文档                         | 术（目录治理）     |
 | 构思碎片     | knowledge/drafts/ — 非 .sih.md 格式，无固定身份，不在治理范围     | 术（目录治理）     |
-| 实践洞察     | knowledge/notes/ — .sih.md 格式的工程洞察，有 id 无 stage         | 术（目录治理）     |
+| 实践洞察     | knowledge/notes/ — .sih.md 格式的工程洞察，有 id 有 stage         | 术（目录治理）     |
 | 术语翻译表   | glossary/ — 跨人类语言的术语精确翻译（zh.yml + en.yml）           | 术（目录治理）     |
 | 文档身份     | nature — 由文档所在目录唯一确定，引擎从路径第一层推断              | 术（目录治理）     |
 | 语义映射     | semantic.yml — 意图与代码符号的对应关系，engine 内建能力          | 几层               |

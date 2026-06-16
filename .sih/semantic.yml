@@ -1,6 +1,17 @@
 # 意图与代码的语义翻译映射。
 # 引擎维护。人类通过 engine MCP 工具查看和编辑。
 # 每个条目的 derives-from 指向 specs/ 或 reference/ 中的一个文档 id。
-# 
+#
 # 当前司衡引擎代码尚未实现，此文件为初始占位。
 # 待 engine 实现后由 iCL 解析代码并填充。
+#
+# 预期 schema 示例：
+# mappings:
+#   - symbol: "Stage::propose"
+#     intent: "文档从 1/3 推进到 2/3"
+#     derives-from: "240610-1030-on-sihankor-canon"
+#     confidence: 0.9
+#   - symbol: "validate_governance"
+#     intent: "Governance 域验证：upstream、decided-by、自指向"
+#     derives-from: "240610-1500-sihankor-document-conventions"
+#     confidence: 0.8

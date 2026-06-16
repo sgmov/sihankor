@@ -144,8 +144,11 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
         });
     }
 
-    // G-01: upstream 全大写域标识检查已移除
+    // G-10: upstream 自指向检查 — root docs should point to self
     // root docs 应自指向自身 id，不再使用 PHILOSOPHY 等大写域标识
+    if doc.frontmatter.upstream.as_deref() == Some(&doc.id) {
+        // Self-referencing: valid for root documents
+    }
 
     result
 }
@@ -326,6 +329,23 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                 rule_id: "F-06".to_string(),
                 severity: ViolationSeverity::Fatal,
                 message: "'ai-auto' is a forbidden decided-by value".to_string(),
+                location: "frontmatter.decided-by".to_string(),
+            });
+        }
+    }
+
+    // F-07: 非 decisions/ 目录文档不得有 decided-by
+    if doc.frontmatter.decided_by.is_some() {
+        let nature = file_path.and_then(|p| infer_nature(p));
+        if nature != Some("decision") {
+            result.violations.push(Violation {
+                rule_id: "F-07".to_string(),
+                severity: ViolationSeverity::Fatal,
+                message: format!(
+                    "document '{}' (nature: {}) has decided-by field, which is only allowed for decisions/",
+                    doc.id,
+                    nature.unwrap_or("unknown")
+                ),
                 location: "frontmatter.decided-by".to_string(),
             });
         }

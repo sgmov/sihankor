@@ -1,9 +1,9 @@
 ---
-id: 2606161214-gap-entity-definition
+id: 260616-1214-gap-entity-definition
 stage: 1/3
 upstream:
-  - 2406101030-on-sihankor-canon
-  - 2606161200-sihankor-dev-governance
+  - 240610-1030-on-sihankor-canon
+  - 260616-1200-sihankor-dev-governance
 ---
 
 # gap 实体定义

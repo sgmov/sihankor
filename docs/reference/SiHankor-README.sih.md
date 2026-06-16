@@ -1,7 +1,7 @@
 ---
-id: 2606151500-sihankor-readme
+id: 260615-1500-sihankor-readme
 stage: 2/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 
 # 司衡（SiHankor）
@@ -57,11 +57,14 @@ docs/
     drafts/       # 构思碎片
     notes/        # 实践洞察
   archive/        # 废弃文档
-  glossary/       # 中英术语映射
 
 .sih/
   config.yml      # 引擎配置
   semantic.yml    # 意图↔代码语义映射
   events/         # 自动事件记录
   index.db        # SQLite 文档索引
+
+glossary/
+  zh.yml          # 中文术语定义
+  en.yml          # 英文翻译映射
 ```

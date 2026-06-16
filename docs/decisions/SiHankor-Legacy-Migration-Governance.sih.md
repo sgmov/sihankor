@@ -1,7 +1,7 @@
 ---
-id: 2606132000-sihankor-legacy-migration-governance
+id: 260613-2000-sihankor-legacy-migration-governance
 stage: 3/3
-upstream: 2606131728-sihankor-philosophy-compendium
+upstream: 260613-1728-sihankor-philosophy-compendium
 decided-by: ai-assist
 ---
 
@@ -130,7 +130,7 @@ decided-by: ai-assist
 | 2026-06-13 | P3: Engineering-Mapping       | 补充不确定性元数据 + 软阈值分级                   | `Engineering-Mapping.sih.md` $七.5, $七.6       |
 | 2026-06-13 | P4: Assay 三种偏见            | 补入反证偏见/精确性偏见/片断化偏见                | `On-SiHankor-Assay.sih.md` $五末尾              |
 | 2026-06-13 | P5: Document-Conventions      | 补入可读性约定子节                                | `Document-Conventions.sih.md` $八.10            |
-| 2026-06-13 | P6: po/README                 | 创建翻译流水线 README                             | `docs/glossary/po/README.md`                    |
+| 2026-06-13 | P6: po/README                 | 创建翻译流水线 README（注：po/ 目录已在后续重构中废除） | `docs/glossary/po/README.md`                    |
 | 2026-06-13 | 12 项决策批量决议             | 全部确认                                          | 见 $二 已决议事项表                             |
 | 2026-06-13 | cc-v2 + glm-v2 决策决议       | 15 项全部决议                                     | 见 $二 增量决策表                               |
 | 2026-06-13 | P7: 迁移完成审计              | 19 个待删文件全部通过                             | legacy/ 目录                                    |

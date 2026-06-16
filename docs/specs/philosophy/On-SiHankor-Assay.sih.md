@@ -1,7 +1,7 @@
 ---
-id: 2406021000-on-sihankor-assay
+id: 240602-1000-on-sihankor-assay
 stage: 3/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 
 # 司衡鉴论
@@ -806,19 +806,19 @@ flowchart TD
 - 正向：道层主张可依赖此框架进行反推检验
 - 风险：无已知风险
 
-decided-by: ai-assist
+> 本附录的设计决策由 AI 辅助生成，人类审核确认。
 
 ### DEPS
 
-- 2406020900-on-sihankor
+- 240602-0900-on-sihankor
   - 总纲：鉴在六层脉络中的定位
   - [司衡论](./On-SiHankor.sih.md)
-- 2406020930-on-sihankor-tao
+- 240602-0930-on-sihankor-tao
   - 道论：鉴检验的对象
   - [司衡道论](./On-SiHankor-Tao.sih.md)
 
 ### SEE-ALSO
 
-- 2406101030-on-sihankor-canon
+- 240610-1030-on-sihankor-canon
   - 法论，方法论与鉴的边界
   - [司衡法论](./On-SiHankor-Canon.sih.md)

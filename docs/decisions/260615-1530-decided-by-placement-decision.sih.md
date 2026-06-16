@@ -1,7 +1,7 @@
 ---
-id: 2606151530-decided-by-placement-decision
+id: 260615-1530-decided-by-placement-decision
 stage: 3/3
-upstream: 2606151530-decided-by-placement
+upstream: 260615-1530-decided-by-placement
 decided-by: ai-assist
 ---
 
@@ -13,7 +13,7 @@ decided-by: ai-assist
 
 ## 决策
 
-采纳提案 2606151530-decided-by-placement。
+采纳提案 260615-1530-decided-by-placement。
 
 1. decisions/ 下的文档：`decided-by` 在 frontmatter 中，F 级
 2. stage 变更（人为触发）：`decided-by` 在 `.sih/events/` 对应事件记录中，F 级

@@ -1,7 +1,7 @@
 ---
-id: 2606131728-sihankor-engineering-mapping
+id: 260613-1728-sihankor-engineering-mapping
 stage: 2/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 # 司衡工程映射
 
@@ -164,7 +164,7 @@ propose 可以死亡——不是所有提议都值得推进。这是知止之法
 
 ### 6.3 propose→resolve→ratify 与顺因之法
 
-propose→resolve→ratify 单向流动，修正通过叠加而非覆盖——这是顺因之法的体现：因果方向不可逆，只能向前。
+propose→resolve→ratify 顺序流动。修正通过 Reopen（回归决议阶段重新检验）而非叠加——这是顺因之法的体现：因果方向不可逆，修正也必须回到决议阶段（见 Canon $3.1 修正模型）。
 
 ## 七、道家思想调和的工程建议
 

@@ -73,11 +73,13 @@ impl SqliteBackend {
                 frontmatter_json TEXT NOT NULL,
                 content         TEXT NOT NULL,
                 status          TEXT NOT NULL DEFAULT 'Ok',
-                indexed_at      TEXT NOT NULL
+                indexed_at      TEXT NOT NULL,
+                nature          TEXT NOT NULL DEFAULT ''
             );
 
             CREATE INDEX IF NOT EXISTS idx_documents_stage ON documents(stage);
             CREATE INDEX IF NOT EXISTS idx_documents_upstream ON documents(upstream);
+            CREATE INDEX IF NOT EXISTS idx_documents_nature ON documents(nature);
             CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
             ",
         )?;
@@ -95,8 +97,8 @@ impl SihDatabase for SqliteBackend {
 
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute(
-            "INSERT OR REPLACE INTO documents (id, stage, title, upstream, frontmatter_json, content, status, indexed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT OR REPLACE INTO documents (id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 doc.id,
                 stage,
@@ -106,6 +108,7 @@ impl SihDatabase for SqliteBackend {
                 doc.content,
                 status,
                 indexed_at,
+                "",  // nature: populated by indexer from file path via infer_nature()
             ],
         )?;
         Ok(())
@@ -130,18 +133,15 @@ impl SihDatabase for SqliteBackend {
         }
     }
 
-    async fn search_by_nature(&self, _nature: &str) -> Result<Vec<Document>, DatabaseError> {
+    async fn search_by_nature(&self, nature: &str) -> Result<Vec<Document>, DatabaseError> {
         let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
-        // Nature is inferred from directory path at indexing time, stored as metadata
-        // For now, search all documents and filter by path-based nature
-        // TODO: store nature as indexed column for efficient query
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at
-             FROM documents",
+             FROM documents WHERE nature = ?1",
         )?;
 
         let docs = stmt
-            .query_map([], |row| Ok(row_to_document(row)))?
+            .query_map(params![nature], |row| Ok(row_to_document(row)))?
             .filter_map(|r| r.ok())
             .filter_map(|r| r.ok())
             .collect();

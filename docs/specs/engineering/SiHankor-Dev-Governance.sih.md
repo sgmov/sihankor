@@ -1,7 +1,7 @@
 ---
-id: 2606161200-sihankor-dev-governance
+id: 260616-1200-sihankor-dev-governance
 stage: 1/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡引擎开发治理

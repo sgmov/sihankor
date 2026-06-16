@@ -1,7 +1,7 @@
 ---
-id: 2406020930-on-sihankor-tao
+id: 240602-0930-on-sihankor-tao
 stage: 3/3
-upstream: 2406020900-on-sihankor
+upstream: 240602-0900-on-sihankor
 ---
 
 # 司衡道论
@@ -487,19 +487,19 @@ flowchart TD
 - 正向：法论和工程映射的推导可据此展开
 - 风险：无已知风险
 
-decided-by: ai-assist
+> 本附录的设计决策由 AI 辅助生成，人类审核确认。
 
 ### DEPS
 
-- 2406020900-on-sihankor
+- 240602-0900-on-sihankor
   - 总纲：六层脉络定位
   - [司衡论](./On-SiHankor.sih.md)
-- 2406021000-on-sihankor-assay
+- 240602-1000-on-sihankor-assay
   - 鉴论：道层主张的反推检验
   - [司衡鉴论](./On-SiHankor-Assay.sih.md)
 
 ### SEE-ALSO
 
-- 2406101030-on-sihankor-canon
+- 240610-1030-on-sihankor-canon
   - 法论，法从道生
   - [司衡法论](./On-SiHankor-Canon.sih.md)

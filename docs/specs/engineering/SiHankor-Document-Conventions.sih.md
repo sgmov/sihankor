@@ -1,7 +1,7 @@
 ---
-id: 2406101500-sihankor-document-conventions
+id: 240610-1500-sihankor-document-conventions
 stage: 2/3
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ---
 
 # 司衡文档约定
@@ -152,7 +152,7 @@ paths:
 `upstream` 对 note 可选，对 spec/proposal/decision/reference 必填。格式为文档 id：
 
 ```yaml
-upstream: 2406101030-on-sihankor-canon
+upstream: 240610-1030-on-sihankor-canon
 ```
 
 引擎沿 upstream 链向上追溯授权源头。领域通过 upstream 链末端推断。
@@ -167,7 +167,7 @@ upstream: 2406101030-on-sihankor-canon
 | `proposals/` | proposal | 可信度（1/3=提案中，2/3=决议中，3/3=已决议） |
 | `decisions/` | decision | 可信度（1/3=草拟，2/3=审查中，3/3=定稿） |
 | `reference/` | reference | 可信度（1/3=起草中，2/3=审查中，3/3=定稿） |
-| `knowledge/notes/` | note | 无 stage。note 有 id 与 verified 字段，不受生命周期治理 |
+| `knowledge/notes/` | note | 1/3→2/3→3/3。note 的 stage 表达生命周期成熟度 |
 
 完整语义定义见[《司衡法论》$3.2](../philosophy/On-SiHankor-Canon.sih.md#32-状态定义)。
 
@@ -209,7 +209,7 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 引擎自动触发的操作不生成 ADR，但生成事件记录。存储于 `.sih/events/{doc-id}.yml`，每文档一个文件，append-only。事件类型包括 stage 变更、检测标记、晋升建议、停滞告警等。
 
 ```yaml
-# .sih/events/2406101030-on-sihankor-canon.yml
+# .sih/events/240610-1030-on-sihankor-canon.yml
 - event: stage-change
   stage: 1/3→2/3
   decided-by: alice
@@ -241,7 +241,7 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 - event: stall-warning
   rule: Canon$L-13
   evidence:
-    successor_id: 2406101030-new-doc
+    successor_id: 240610-1030-new-doc
     inactive_days: 31
     threshold: 30
   timestamp: 2026-06-10T17:00:00Z
@@ -268,20 +268,20 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 #### frontmatter
 
 ```yaml
-id: 2406101500-auth-edge
+id: 240610-1500-auth-edge
 verified: 240610
 ```
 
-notes 位于 `knowledge/notes/`，nature 为 note。无需 `type` 和 `stage` 字段。核心字段为 id 与 verified。
+notes 位于 `knowledge/notes/`，nature 为 note。核心字段为 id、stage 与 verified。stage 表达洞察成熟度。
 
 #### 生命周期
 
-note 无 stage。其状态由 verified 字段管理：
+note 的 stage 表达生命周期成熟度：
 
 - **创建**：AI 或人类创建草稿，verified 为空或初始日期
 - **确认**：人类审视后更新 verified 字段为确认日期（格式 YYMMDD）
 - **衰退**：verified 超过 `review_after_days` 未更新 → engine 标记衰退警告，降权检索。人可重新审视并更新 verified 解除衰退
-- **成熟转化**：当 note 的洞察足够成熟时，人创建新的 spec/proposal/decision 文档（有 stage）承载其核心内容。原 note 不变：不是 stage 推进，而是身份变更（note→spec/decision）
+- **成熟转化**：当 note 的洞察足够成熟（达到 3/3）时，人创建新的 spec/proposal/decision 文档（有 stage）承载其核心内容。原 note 的 stage 推进至 3/3 表示洞察已充分验证。身份变更（note→spec/decision）创建新文档
 - **终止**：人类主动标记 X，迁移至 `docs/archive/notes/{name}.X.md`
 
 详细定义见[《司衡法论》$6.2](../philosophy/On-SiHankor-Canon.sih.md#62-目录结构定义)。
@@ -337,11 +337,11 @@ glossary/ 为可选——无多语言需求的项目不创建此目录。
 
 ### 5.2 zh.yml（源语言权威定义）
 
-每个条目的 `derives-from` 指向 reference/ 中的文档 id，建立概念溯源链。engine 通过此链做 join，不需要独立的 `_concepts.yml`。
+每个条目的 `derives-from` 指向 reference/ 中的文档 id，建立概念溯源链。engine 通过此链做 join，直接解析 glossary 条目与 reference 文档之间的引用关系。
 
 ```yaml
 法:
-  derives-from: 2406101030-on-sihankor-canon
+  derives-from: 240610-1030-on-sihankor-canon
   term: 法
   definition: 从道推导的方法论原则。收敛五法：顺因、有度、知止、损补、顺势。
   verified: 240610
@@ -569,16 +569,16 @@ flowchart TD
 - 正向：文档可作为决议供后续引用和实现参考；引擎 开发可据此文档编码
 - 风险：部分规约（glossary 引擎 校验、事件记录格式、几层检测规则）尚未经实现验证，可能在 引擎 实现过程中触发 reopen
 
-decided-by: ai-assist
+> 本附录的设计决策由 AI 辅助生成，人类审核确认。
 
 ### DEPS
 
-- 2406101030-on-sihankor-canon
+- 240610-1030-on-sihankor-canon
   - 法层授权文档，本文所有规约从法层展开
   - [司衡法论](../philosophy/On-SiHankor-Canon.sih.md)
 
 ### SEE-ALSO
 
-- 2406020900-on-sihankor
+- 240602-0900-on-sihankor
   - 总纲：六层脉络定位
   - [司衡论](../philosophy/On-SiHankor.sih.md)
