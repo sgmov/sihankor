@@ -1,6 +1,5 @@
 ---
 id: 260613-1800-sihankor-engine-roadmap
-type: plan
 stage: 1/3
 upstream: 240602-0900-on-sihankor
 ---
@@ -223,12 +222,12 @@ pub trait SihDatabase: Send + Sync {
 
 | 域          | 验证内容                                                 | 对应法 |
 | ----------- | -------------------------------------------------------- | ------ |
-| frontmatter | id/type/stage 必填、格式校验、upstream 对 treatise 必填  | 顺因   |
-| structure   | 目录位置与 type 匹配（F-08）、子目录深度 ≤3              | 有度   |
+| frontmatter | id/stage 必填、格式校验、upstream 对 spec/proposal/decision/reference 必填  | 顺因   |
+| structure   | 子目录深度 ≤3                                            | 有度   |
 | content     | 字符约束（AGENTS.md）、代码块语言标签、表格列数 ≤3       | 有度   |
 | reference   | resolve_ref 指向有效文档、不可引用 1/3 或 X 文档（G-02） | 顺因   |
 | lifecycle   | stage 转移合法性、不可逆向（ratify→reopen→ratify 除外）  | 有度   |
-| governance  | upstream 链完整、无循环引用、decided-by 签认存在         | 顺因   |
+| governance  | upstream 链完整、无循环引用                              | 顺因   |
 
 关键交付：
 

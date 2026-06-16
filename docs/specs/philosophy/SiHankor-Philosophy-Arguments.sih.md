@@ -1,8 +1,7 @@
 ---
 id: 260613-1728-sihankor-philosophy-arguments
-type: treatise
-stage: 1/3
-upstream: PHILOSOPHY
+stage: 2/3
+upstream: 240602-0900-on-sihankor
 ---
 # 司衡哲学论证集
 

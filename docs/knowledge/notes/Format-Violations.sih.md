@@ -1,7 +1,6 @@
 ---
 id: 240611-0115-format-violations
-type: note
-stage: 1/3
+stage: 2/3
 ---
 
 # 重构中的格式违规记录

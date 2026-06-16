@@ -1,8 +1,7 @@
 ---
 id: 260614-0000-sihankor-type-extension
-type: decision
 stage: 2/3
-upstream: SiHankor-Document-Conventions
+upstream: 240610-1500-sihankor-document-conventions
 decided-by: ai-assist
 ---
 
@@ -47,6 +46,5 @@ decided-by: ai-assist
 
 | 字段 | 值 |
 |------|-----|
-| decided-by | ai-assist |
 | 日期 | 2026-06-14 |
 | 依据 | 司衡顺因之法：规范先行于实现，代码暴露的间隙需在规范层面修正 |

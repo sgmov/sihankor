@@ -1,15 +1,68 @@
-terms:
-  - id: tao
-    layer: 道
-    attributes:
-      nature: discovery
-    relations:
-      synonyms: [自然之道]
-      antonyms: []
-      contains: [发散, 收敛]
-      contained_by: [六层脉络]
-    code_concepts:
-      - concept: Invariants
-        mapping: direct
-      - concept: First Principles
-        mapping: direct
+# 源语言权威定义。概念定义以本文为唯一权威源。
+# 每个条目的 derives-from 指向 reference/ 中的文档 id。
+
+道:
+  derives-from: 2406020930-on-sihankor-tao
+  term: 道
+  definition: 代码工程的因果必然性。四条：发散自-然收敛必-为、意图先于代码、代码自晦意图必复、规约与实现必有间隙。道是"被发现的"而非"被发明的"。
+  verified: 240602
+
+法:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 法
+  definition: 从道推导的方法论原则。收敛五法：顺因、有度、知止、损补、顺势。
+  verified: 240610
+
+术:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 术
+  definition: 法的工程化展开。Spec-Coding、三机体系、F/G/J 法则体系。
+  verified: 240610
+
+鉴:
+  derives-from: 2406021000-on-sihankor-assay
+  term: 鉴
+  definition: 检验道层主张的方法论。反推九段式、诗与理区分、可证伪条件设定。鉴是衡得以成立的保障。
+  verified: 240610
+
+元:
+  derives-from: 2606131728-arche-the-one-above-being
+  term: 元
+  definition: 道之所由立。使道得以被发现、被检验、被确立的构成性条件之总和。四元：存在论之元、生成论之元、认识论之元、方法论之元。
+  verified: 240610
+
+顺因:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 顺因
+  definition: 尊重因果方向。意图先于规范，规范先于实现。任何逆因果方向的操作都是违道。
+  verified: 240610
+
+有度:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 有度
+  definition: 收敛恰到好处。规约不多不少。过度规约=刻意有为=违道；不足规约=放任发散=无收。
+  verified: 240610
+
+知止:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 知止
+  definition: 知道不做什么。不是所有东西都需要规约，不是所有问题都能通过治理解决。知道治理的边界比知道治理的方法更难。
+  verified: 240610
+
+损补:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 损补
+  definition: 损有余补不足。去冗余、减发散、填空白、补缺失。定向调节，不笼统。
+  verified: 240610
+
+顺势:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 顺势
+  definition: 力度适配场景。治理有节奏：早期宽松保护探索，后期严格保护稳定。
+  verified: 240610
+
+司衡:
+  derives-from: 2406020900-on-sihankor
+  term: 司衡
+  definition: 一个承认治理自身也不完备的代码工程收敛引擎。司职称量、驱动持平之治理器官。
+  verified: 240610

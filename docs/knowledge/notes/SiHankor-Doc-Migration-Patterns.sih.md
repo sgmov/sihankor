@@ -1,7 +1,6 @@
 ---
 id: 260613-1728-sihankor-doc-migration-patterns
-type: note
-stage: 1/3
+stage: 2/3
 ---
 
 # 文档重构模式：Legacy → Docs

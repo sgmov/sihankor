@@ -1,6 +1,5 @@
 ---
 id: 240610-1500-sihankor-document-conventions
-type: treatise
 stage: 2/3
 upstream: 240610-1030-on-sihankor-canon
 ---
@@ -83,98 +82,118 @@ let now = Local::now();
 
 ## 三、目录结构
 
-### 3.1 五目录命名
+### 3.1 目录命名
 
-| 目录         | 中文对照 | 用途                 |
-| ------------ | -------- | -------------------- |
-| `specs/`     | 系统规范 | 定义系统是什么       |
-| `proposals/` | 方向提案 | 论证我们该往哪走     |
-| `decisions/` | 架构决策 | 记录为什么这样选     |
-| `reference/` | 参照标准 | 术语定义与编码标准   |
-| `notes/`     | 知识沉淀 | 工作中自然积累的洞察 |
+| 目录 | 中文 | 用途 |
+| ---- | ---- | ---- |
+| `specs/` | 系统定义 | 定义系统是什么 |
+| `proposals/` | 变更提议 | 论证我们该往哪走 |
+| `decisions/` | 决策记录 | 记录为什么这样选 |
+| `reference/` | 参照标准 | 术语定义与概念纲要 |
+| `knowledge/` | 集体知识 | 未规约化的构思碎片与洞察 |
+| `archive/` | 废弃归档 | 已废弃的历史文档 |
 
-每个目录的详细内容边界（放什么、不放什么）、格式要求及不同角色的使用方式见[《司衡法论》$6.2](../philosophy/On-SiHankor-Canon.sih.md#62-五目录定义)。
+`knowledge/` 下分两个子目录：
+- `knowledge/drafts/`：构思碎片（非 .sih.md，无 frontmatter，无固定身份）
+- `knowledge/notes/`：实践洞察（.sih.md，nature 为 note）
+
+每个目录的详细内容边界见[《司衡法论》$6.2](../philosophy/On-SiHankor-Canon.sih.md#62-目录结构定义)。
 
 ### 3.2 目录自定义
 
-五类文档的语义边界（追问、stage 范围、type、upstream 语义）是法层定义：新增或删除一个类别意味着治理模型的变更，需走法层修正流程。目录名是术层约定：在 `.sih/config.yml` 中声明映射即可。
+文档的语义边界（追问、stage 范围、upstream 语义）是法层定义。目录名是术层约定——在 `.sih/config.yml` 中声明映射即可。引擎从路径第一层推断文档 nature，不依赖目录名硬编码。
 
-目录映射的存在理由：引擎通过 frontmatter 的 `type` 字段识别文档类别，不依赖目录名。目录仅是人类的浏览路径。当团队已有根深蒂固的目录命名惯例（如用 `design/` 而非 `specs/`、用 `rfcs/` 而非 `proposals/`），映射使司衡治理可以适配现有目录结构，无需强制重命名。
+```yaml
+# .sih/config.yml
+paths:
+  docs: docs/
+  glossary: docs/glossary/
+  dirs:
+    specs: design
+    proposals: rfcs
+    decisions: decisions
+    reference: reference
+    knowledge: knowledge
+    archive: archive
+```
+
+映射值必须是单层目录名（不含 `/`）。`knowledge/` 和 `archive/` 不建议自定义。
 
 ### 3.3 子目录规则
 
-- 所有目录（specs/proposals/decisions/reference）均允许子目录，最多三层。notes 不建议子目录。
+- 所有目录（specs/proposals/decisions/reference/knowledge）均允许子目录，最多三层。knowledge/notes/ 不建议子目录。
 - 拆分时机：单目录文件数 > 30。
 - 拆分维度：
 
-| 目录         | 维度 | 示例                            |
-| ------------ | ---- | ------------------------------- |
-| `specs/`     | 领域 | `specs/payment/`                |
-| `proposals/` | 时间 | `proposals/2026/`               |
-| `decisions/` | 领域 | `decisions/payment/`            |
+| 目录 | 维度 | 示例 |
+| ---- | ---- | ---- |
+| `specs/` | 领域 | `specs/payment/` |
+| `proposals/` | 时间 | `proposals/2026/` |
+| `decisions/` | 领域 | `decisions/payment/` |
 | `reference/` | 领域 | `reference/payment/glossary.md` |
-| `notes/`     | —    | 不拆                            |
+| `knowledge/notes/` | — | 不拆 |
 
 ### 3.4 终止文档与归档
 
-- **终止文档（stage X）**：所有目录（specs/proposals/decisions/reference）中 stage X 的文档，迁移至 `docs/archived/{原目录}/{name}.X.md`。文件名把`.sih`修改为 `.X` 后缀以释放语义命名
-- **notes 归档**：note 的 0/（衰减）→ `notes/archived/`；X（终止）→ `docs/archived/notes/{name}.X.md`。note 的 3/3（晋升）→ 迁移为 specs/ 或 decisions/ 文档，原 note 清退
+- **终止文档（stage X）**：所有目录中 stage X 的文档，迁移至 `docs/archive/{原目录}/{name}.X.md`
+- **notes 归档**：note 的 0/（衰减）→ 标记 decayed 并排除常规检索；X（终止）→ `docs/archive/notes/{name}.X.md`。note 的 3/3（晋升）→ 迁移为 specs/ 或 decisions/ 文档，原 note 清退
 
 ## 四、frontmatter 字段
 
 ### 4.1 必填字段
 
-| 字段    | 格式                               | 说明         |
-| ------- | ---------------------------------- | ------------ |
-| `id`    | 见 [$二、id格式](#二id-格式)       | 文档唯一标识 |
-| `type`  | 见 [$4.3、文档类型](#43-文档类型)  | 文档写作意图 |
-| `stage` | 见 [$一、stage编码](#一stage-编码) | 生命周期状态 |
+| 字段 | 格式 | 说明 |
+| ---- | ---- | ---- |
+| `id` | 见 [$二、id格式](#二id-格式) | 文档唯一标识 |
+| `stage` | 见 [$一、stage编码](#一stage-编码) | 治理可信度或生命周期状态 |
+
+无需 `type` 字段。文档身份（nature）由所在目录唯一确定：引擎从路径第一层推断。`specs/` 下为 spec，`proposals/` 下为 proposal，`decisions/` 下为 decision，`reference/` 下为 reference，`knowledge/notes/` 下为 note。
 
 ### 4.2 upstream 字段
 
-`upstream` 对 note 类型可选，对 treatise/compendium/mapping 必填。格式为文档 id 或全大写域标识：
+`upstream` 对 note 可选，对 spec/proposal/decision/reference 必填。格式为文档 id：
 
-- **文档 id**（如 `2406101030-on-sihankor-canon`）：上游授权文档，引擎沿链向上追溯
-- **全大写域标识**（如 `PHILOSOPHY`、`ENGINEERING`）：根级文档的领域声明，匹配 `[A-Z]+` 时引擎停止追溯
+```yaml
+upstream: 2406101030-on-sihankor-canon
+```
 
-领域通过 `upstream` 链末端唯一确定，无需独立 `domain` 字段。
+引擎沿 upstream 链向上追溯授权源头。领域通过 upstream 链末端推断。
 
-### 4.3 文档类型
+### 4.3 文档身份（nature）
 
-七种 type，回答"文档的写作意图是什么"：不是文档的内容层级（道/法/术），而是写作意图的形态。
+文档身份由所在目录唯一确定。无需 `type` 字段。引擎从路径第一层推断 nature。
 
-| type       | 中文对 | 英文对     | 定义                                   |
-| ---------- | ------ | ---------- | -------------------------------------- |
-| treatise   | 论     | Treatise   | 哲学论证：提出主张、展开推导、记录检验 |
-| compendium | 纲     | Compendium | 参照标准：定义术语、建立对照、供查阅   |
-| mapping    | 映     | Mapping    | 工程映射：哲学概念到工程实践的投射     |
-| note       | 记     | Note       | 经验沉淀：工作过程中产生的洞察         |
-| plan       | 策     | Plan       | 规划文档：目标分解、任务拆解、路线图   |
-| decision   | 决     | Decision   | 架构决策：权衡利弊、选定方案、记录理由 |
-| proposal   | 议     | Proposal   | 方向提案：论证提案、评估影响、请求确认 |
+| 目录 | nature | stage 语义 |
+|------|--------|-----------|
+| `specs/` | spec | 可信度（1/3=起草，2/3=审查中，3/3=定稿） |
+| `proposals/` | proposal | 可信度（1/3=提案中，2/3=决议中，3/3=已决议） |
+| `decisions/` | decision | 可信度（1/3=草拟，2/3=审查中，3/3=定稿） |
+| `reference/` | reference | 可信度（1/3=起草中，2/3=审查中，3/3=定稿） |
+| `knowledge/notes/` | note | 生命周期（1/3=草稿，2/3=活跃，3/3=已晋升，0=已衰减） |
 
-七种 type 的法层定义（追问、stage 范围、上游语义、与目录的关系）见[《司衡法论》$3.2、type定义](../philosophy/On-SiHankor-Canon.sih.md#type-定义)。七类不可增删：新增 type 意味着治理模型的变更，需走法层修正流程。
+完整语义定义见[《司衡法论》$3.2](../philosophy/On-SiHankor-Canon.sih.md#32-状态定义)。
 
 ### 4.4 ADR 签认
 
 ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份 ADR 必须附带签认字段，记录意图源头：
 
-| 字段         | 格式              | 说明                                             |
-| ------------ | ----------------- | ------------------------------------------------ |
+| 字段 | 格式 | 说明 |
+| ---- | ---- | ---- |
 | `decided-by` | 人名或`ai-assist` | 决策的意图源头。`ai-auto` 不得用于人需决策的 ADR |
 
 签认的两种有效值：
 
-| 值          | 含义                           | 顺因链                    |
-| ----------- | ------------------------------ | ------------------------- |
-| 人名        | 人类做出判断，AI 仅辅助记录    | 意图→决策→ADR，完整       |
+| 值 | 含义 | 顺因链 |
+| --- | ---- | ------ |
+| 人名 | 人类做出判断，AI 仅辅助记录 | 意图→决策→ADR，完整 |
 | `ai-assist` | AI 起草 ADR 建议，人类审核签发 | 意图→AI 表达→人类确认→ADR |
-| `ai-auto`   | AI 自主决策（**违例**）        | 意图缺失，ADR 不应存在    |
+| `ai-auto` | AI 自主决策（**违例**） | 意图缺失，ADR 不应存在 |
 
 签认出现位置：
 
-- 独立 ADR 文档（decisions/）：frontmatter 字段
+- 独立 ADR 文档（decisions/）：frontmatter 字段。`decided-by` 仅在 decisions/ 目录下的文档 frontmatter 中出现
 - 文档内 ADR（Reopen 声明、Supersede 说明）：ADR 正文尾部一行 `decided-by: {值}`
+- specs/、proposals/、reference/、knowledge/notes/ 下的文档：frontmatter 不声明 `decided-by`。`decided-by` 是状态变迁属性，不属于文档状态本身
 
 **几层检测规则。**引擎对 ADR 签认执行以下模式检测，标记可疑但不阻断（检测本身可错：道四）
 
@@ -195,7 +214,8 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 # .sih/events/240610-1030-on-sihankor-canon.yml
 - event: stage-change
   stage: 1/3→2/3
-  rule: Canon$6.5
+  decided-by: alice
+  rule: Canon$3.3
   evidence:
     refs: [doc-a-id, doc-b-id, doc-c-id]
     dirs: [specs, decisions]
@@ -204,7 +224,8 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 - event: stage-change
   stage: →0/decayed
-  rule: Canon$6.5
+  decided-by: sihankor-engine
+  rule: Canon$6.2
   evidence:
     exceeded_days: 95
     threshold: 90
@@ -231,15 +252,16 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 字段说明：
 
-| 字段        | 必填 | 说明                                                                           |
-| ----------- | ---- | ------------------------------------------------------------------------------ |
-| `event`     | 是   | 事件类型：`stage-change`、`detection`、`promotion-suggestion`、`stall-warning` |
-| `stage`     | 否   | 仅 `stage-change` 事件：变更描述，格式 `原stage→新stage` 或 `→新stage`         |
-| `detection` | 否   | 仅 `detection` 事件：检测到的模式标识                                          |
-| `rule`      | 是   | 授权此操作的规则引用（Canon 条款或 config.yml 键）                             |
-| `evidence`  | 是   | 触发条件的具体证据，随事件类型而异                                             |
-| `timestamp` | 是   | ISO 8601 时间戳                                                                |
-| `commit`    | 否   | 触发此操作的 Git commit SHA                                                    |
+| 字段 | 必填 | 说明 |
+| ---- | ---- | ---- |
+| `event` | 是 | 事件类型：`stage-change`、`detection`、`promotion-suggestion`、`stall-warning` |
+| `stage` | 否 | 仅 `stage-change` 事件：变更描述，格式 `原stage→新stage` 或 `→新stage` |
+| `decided-by` | 仅 stage-change 人工触发 | 状态变更的决策者。`sihankor-engine` 表示引擎自动触发 |
+| `detection` | 否 | 仅 `detection` 事件：检测到的模式标识 |
+| `rule` | 是 | 授权此操作的规则引用（Canon 条款或 config.yml 键） |
+| `evidence` | 是 | 触发条件的具体证据，随事件类型而异 |
+| `timestamp` | 是 | ISO 8601 时间戳 |
+| `commit` | 否 | 触发此操作的 Git commit SHA |
 
 事件文件与文档同生命周期：文档晋升清退或 X 归档时，对应事件文件同步移至 `docs/archived/` 下。Git commit message 附简要摘要（`[sihankor] event: stage-change 1/3→2/3 rule: Canon$6.5`），但以事件文件为权威来源。
 
@@ -249,32 +271,30 @@ ADR 正文为三段式（见 [$4.7、附录格式](#47-附录格式)）。每份
 
 ```yaml
 id: 240610-1500-auth-edge
-type: note
 stage: 1/3
 ```
 
-notes 与受治文档共享同一套 frontmatter schema（id + type + stage），差异仅在 type 值和 stage 语义。
+notes 位于 `knowledge/notes/`，nature 为 note。无需 `type` 字段。
 
 #### 生命周期
 
 ```mermaid
 flowchart TD
-    DRAFT["1/3"] -->|"引用>=3 且 跨>=2目录"| MATURED["2/3"]
-    MATURED -->|"引擎建议 + 人确认"| PROMOTED["3/3"]
+    DRAFT["1/3 草稿"] -->|"人类确认"| ACTIVE["2/3 活跃"]
+    ACTIVE -->|"引擎建议 + 人确认"| PROMOTED["3/3 已晋升"]
     PROMOTED -->|"迁移"| CLEAR["specs/ 或 decisions/<br/>note 自身清退"]
-    DRAFT -->|"逾期"| DECAYED["0/"]
-    MATURED -->|"逾期"| DECAYED
-    DECAYED --> ARCHIVE1["notes/archived/"]
-    DRAFT -->|"人类主动"| X1["X"]
-    MATURED -->|"人类主动"| X2["X"]
-    X1 --> ARCHIVE2["docs/archived/notes/{name}.X.md"]
-    X2 --> ARCHIVE2
+    DRAFT -->|"逾期"| DECAYED["0/ 衰减"]
+    ACTIVE -->|"逾期"| DECAYED
+    DRAFT -->|"人类主动"| X1["X 终止"]
+    ACTIVE -->|"人类主动"| X2["X 终止"]
+    X1 --> ARCHIVE["docs/archive/notes/{name}.X.md"]
+    X2 --> ARCHIVE
 ```
 
-- **1/3→2/3**：引擎 自动推进，不需人类干预。判据：引用计数 >=3 且来源跨 >=2 目录
-- **2/3→3/3**：引擎 建议晋升，人类确认后执行迁移
-- **0/ 衰减**：停留超过 `review_after_days` 未晋升 → 引擎 自动标记 stage 为 `0/decayed`
-- **逾期判定**：引擎 通过 Git 时间戳和引用链确定有效验证时间。排空格式/空白变更。基础性文档（被 >=10 份下游文档引用）的引用视为永久验证
+- **1/3→2/3**：人类确认后推进。engine 不自动推进 note 的 stage
+- **2/3→3/3**：engine 检测到引用计数 >=3 且跨 >=2 目录时建议晋升。人类确认后执行迁移
+- **0/ 衰减**：停留超过 `review_after_days` 未晋升 → engine 标记 stage 为 `0/decayed`，排除常规检索
+- **逾期判定**：engine 通过 Git 时间戳确定有效验证时间
 
 ### 4.7 附录格式
 
@@ -319,25 +339,27 @@ decided-by: {值}
 
 ```text
 docs/glossary/
-  _concepts.yml     # 注册表：概念级字段（derives-from, related）
-  zh.yml            # 源语言：definition + term + verified
-  en.yml            # 工程通用语：mapping + rejected + disambiguation + verified
-  ja.yml            # 社区语言（示例）
+  zh.yml            # 源语言权威定义（term + definition + derives-from + verified）
+  en.yml            # 工程通用语映射（mapping + rejected + disambiguation + verified）
 ```
 
-### 5.2 _concepts.yml
+glossary/ 为可选——无多语言需求的项目不创建此目录。
 
-YAML 键即为概念标识，引擎引用格式为 `glossary:{键}`（如 `glossary:法`）。`derives-from` 指向该概念定义的权威源文档 id：glossary 不定义概念，只做跨语言映射，定义权在源文档。此链同时驱动 引擎 的 `stale` 检测：源文档修改日期晚于条目 `verified` 时标记过期。
+### 5.2 zh.yml（源语言权威定义）
+
+每个条目的 `derives-from` 指向 reference/ 中的文档 id，建立概念溯源链。engine 通过此链做 join，不需要独立的 `_concepts.yml`。
 
 ```yaml
-道:
-  derives-from: 2406020930-on-sihankor-tao
-  related: [元, 法, 术]
+法:
+  derives-from: 2406101030-on-sihankor-canon
+  term: 法
+  definition: 从道推导的方法论原则。收敛五法：顺因、有度、知止、损补、顺势。
+  verified: 240610
 ```
 
-### 5.3 语言文件（以 en.yml 为例）
+### 5.3 en.yml（工程通用语映射）
 
-`rejected` 为键值对（被拒词即键，理由即值），结构自洽：
+`rejected` 为键值对（被拒词即键，理由即值）。en.yml 不声明 `derives-from`——通过概念键关联到 zh.yml，再通过 zh.yml 的 derives-from 到达 reference/。
 
 ```yaml
 法:
@@ -345,9 +367,26 @@ YAML 键即为概念标识，引擎引用格式为 `glossary:{键}`（如 `gloss
   rejected:
     Law: "暗示立法起源，法是被推导的而非被制定的"
     Rule: "暗示机械遵守，法需要合道性判断"
-    Method: "偏术层，术回答具体怎么操作"
-  disambiguation: "Canon as canonical rules derived from Tao, not cannon (weapon)"
+  disambiguation: "Canon as canonical rules derived from Tao, not cannon"
   verified: 240610
+```
+
+### 5.4 治理模型
+
+#### 因果方向
+
+`specs/` → `reference/` → `glossary/zh.yml` → `glossary/en.yml`。reference 变更必须传播到 glossary，glossary 变更不反向影响 reference。
+
+#### stale 检测
+
+engine 通过 derives-from 链检测过期：zh.yml 条目声明的 derives-from 指向的文档若修改日期晚于条目的 verified，标记 "stale"。
+
+#### 变更分级
+
+| 变更等级 | 触发条件 | 治理流程 |
+| -------- | -------- | -------- |
+| 映射调整 | 修改 `mapping`、`disambiguation`、`rejected` | 轻量：直接修改 |
+| 概念变更 | 修改 `definition`（zh.yml） | 完整：proposals/ → decisions/ |
 ```
 
 ### 5.4 拆分机制

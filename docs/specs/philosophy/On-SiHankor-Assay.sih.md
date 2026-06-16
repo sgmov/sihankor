@@ -1,6 +1,5 @@
 ---
 id: 240602-1000-on-sihankor-assay
-type: treatise
 stage: 3/3
 upstream: PHILOSOPHY
 ---

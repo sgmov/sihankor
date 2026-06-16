@@ -1,8 +1,7 @@
 ---
 id: 260613-1728-sihankor-onomastic-philosophy
-type: compendium
-stage: 2/3
-upstream: PHILOSOPHY
+stage: 3/3
+upstream: 240602-0900-on-sihankor
 ---
 
 # 司衡的命名哲思

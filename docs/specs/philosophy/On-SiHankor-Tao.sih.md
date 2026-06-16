@@ -1,6 +1,5 @@
 ---
 id: 240602-0930-on-sihankor-tao
-type: treatise
 stage: 3/3
 upstream: PHILOSOPHY
 ---

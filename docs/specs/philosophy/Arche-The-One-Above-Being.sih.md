@@ -1,9 +1,7 @@
 ---
 id: 260613-1728-arche-the-one-above-being
-type: treatise
 stage: 3/3
 upstream: 240602-0900-on-sihankor
-decided-by: ai-assist
 ---
 
 # 元
