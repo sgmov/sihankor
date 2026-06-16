@@ -1,7 +1,7 @@
 ---
-id: 260613-1728-arche-the-one-above-being
+id: 2606131728-arche-the-one-above-being
 stage: 3/3
-upstream: 240602-0900-on-sihankor
+upstream: 2406020900-on-sihankor
 ---
 
 # 元
@@ -86,7 +86,7 @@ flowchart TB
 - 公理一：意图先于代码。任何代码被写出之前，写它的人一定先有一个意图。投射自元一（存在论：代码工程世界的实在性）和元二（生成论：意图是代码得以生成的源头）。
 - 公理二：层级不可越。治理链中的因果关系不可逆转：上游决定下游，下游不逆定上游。投射自元二（自-然：发散的因果方向不可逆）和道二的因果方向。
 
-**衍生原则**：从法层推导，是工程经验的凝练，修改需工程验证。以下原则不属于元层，此处仅列不展开：力度有别、单向不可逆（已被 Canon $三修正模型取代）、三机分权。
+**衍生原则**：从法层推导，是工程经验的凝练，修改需工程验证。以下原则不属于元层，此处仅列不展开：力度有别、三机分权。
 
 公理体系与道层的关系：公理一"意图先于代码"同时也是道二的另一种表述——这是公理体系与道层重叠之处。重叠不是冗余：公理是体系自身的构成性约束，道是被发现的因果必然性。同一命题从两个角度被锚定——公理角度说"体系必须这样构造"，道角度说"世界本来就是这样"。
 
@@ -401,21 +401,21 @@ decided-by: ai-assist
 
 ### DEPS
 
-- 240602-0900-on-sihankor
+- 2406020900-on-sihankor
   - 总纲：司衡全貌，元在 $三中首次系统定义
   - [司衡论](./On-SiHankor.sih.md)
-- 240602-0930-on-sihankor-tao
+- 2406020930-on-sihankor-tao
   - 四道的系统阐述，元为道的构成性条件
   - [司衡道论](./On-SiHankor-Tao.sih.md)
-- 240602-1000-on-sihankor-assay
+- 2406021000-on-sihankor-assay
   - 认识论条件：元四的工程展开
   - [司衡鉴论](./On-SiHankor-Assay.sih.md)
 
 ### SEE-ALSO
 
-- 240610-1030-on-sihankor-canon
+- 2406101030-on-sihankor-canon
   - 法从道生，元三为生命周期修正机制提供元层依据
   - [司衡法论](./On-SiHankor-Canon.sih.md)
-- 260613-1728-sihankor-philosophy-compendium
+- 2606131728-sihankor-philosophy-compendium
   - 术语速查：四元与公理体系的定义
   - [司衡哲学纲要](../../reference/SiHankor-Philosophy-Compendium.sih.md)
