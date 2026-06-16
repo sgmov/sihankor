@@ -1,7 +1,7 @@
 ---
-id: 260615-1530-decided-by-placement
+id: 2606151530-decided-by-placement
 stage: 3/3
-upstream: 240610-1030-on-sihankor-canon
+upstream: 2406101030-on-sihankor-canon
 ---
 
 # decided-by 字段定位修正

@@ -1,6 +1,6 @@
 ---
-id: 260613-1728-sihankor-doc-migration-patterns
-stage: 2/3
+id: 2606131728-sihankor-doc-migration-patterns
+verified: 260613
 ---
 
 # 文档重构模式：Legacy → Docs

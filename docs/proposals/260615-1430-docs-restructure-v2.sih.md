@@ -1,12 +1,12 @@
 ---
-id: 260615-1430-docs-restructure-v2
+id: 2606151430-docs-restructure-v2
 stage: 3/3
-upstream: 240610-1030-on-sihankor-canon
+upstream: 2406101030-on-sihankor-canon
 ---
 
 # 司衡文档体系重构 v2
 
-> 基于道层重新推导 docs/ 目录结构、frontmatter 字段与治理流程的完整方案。替代 240611-0100-sihankor-philosophy-restructure（旧重构计划，stage 1/3）。
+> 基于道层重新推导 docs/ 目录结构、frontmatter 字段与治理流程的完整方案。替代 2406110100-sihankor-philosophy-restructure（旧重构计划，stage 1/3）。
 
 ## 一、背景与间隙证据
 
@@ -16,7 +16,7 @@ upstream: 240610-1030-on-sihankor-canon
 
 **问题二：stage 承载三层语义。** 当前 stage 同时表达文档成熟度、治理流程位置、下游引用权限。三层语义混在一个字段中，导致 `1/3 → 2/3 → 3/3` 既表达信心增长又表达流程推进又表达可用性提升。对 note 而言，`1/3` 复用 `n/3` 编码但语义完全不同（生命周期 vs 可信度）。
 
-**问题三：type 定义不一致。** Canon $3.2 定义 4 种 type，Document-Conventions $4.3 扩展为 7 种。SiHankor-Type-Extension 决策（260614-0000）记录了这是实现先于规约暴露的间隙，但修复方向是"扩展 type"——在根因上叠加而非修正。
+**问题三：type 定义不一致。** Canon $3.2 定义 4 种 type，Document-Conventions $4.3 扩展为 7 种。SiHankor-Type-Extension 决策（2606140000）记录了这是实现先于规约暴露的间隙，但修复方向是"扩展 type"——在根因上叠加而非修正。
 
 **问题四：治理元层与被治理内容混放。** brainstorming 产物、notes、specs 共享同一套目录浏览流。人在 `notes/` 或 `specs/philosophy/` 中无法快速区分"这是构思碎片""这是实践洞察""这是系统规范"。
 
@@ -78,7 +78,7 @@ docs/
       SiHankor-Engine-Design-Summary.sih.md
       SiHankor-Document-Conventions.sih.md
   proposals/                          # 治理侧：变更提议
-    260615-1430-docs-restructure-v2.sih.md
+    2606151430-docs-restructure-v2.sih.md
   decisions/                          # 治理侧：决策记录
     SiHankor-External-Validation.sih.md
     SiHankor-Legacy-Migration-Governance.sih.md

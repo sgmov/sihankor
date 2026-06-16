@@ -1,7 +1,7 @@
 ---
-id: 260616-1200-engine-dev-governance-chain-decision
+id: 2606161200-engine-dev-governance-chain-decision
 stage: 3/3
-upstream: 260616-1200-engine-dev-governance-chain
+upstream: 2606161200-engine-dev-governance-chain
 decided-by: ai-assist
 ---
 
@@ -13,7 +13,7 @@ decided-by: ai-assist
 
 ## 决策
 
-采纳提案 260616-1200-engine-dev-governance-chain。引擎开发遵循五阶段链：
+采纳提案 2606161200-engine-dev-governance-chain。引擎开发遵循五阶段链：
 
 1. 意图孵化（knowledge/drafts/ → proposals/）——grill-me 追问 + 三条转化门槛
 2. 提案流转（proposals/ 1/3→2/3→3/3）——方案对比 + 验收标准

@@ -1,6 +1,6 @@
 ---
-id: 240611-0115-format-violations
-stage: 2/3
+id: 2406110115-format-violations
+verified: 240611
 ---
 
 # 重构中的格式违规记录

@@ -1,9 +1,9 @@
 ---
-id: 260616-1214-engine-mvp-parser
+id: 2606161214-engine-mvp-parser
 stage: 1/3
 upstream:
-  - 260611-0000-sihankor-engine-design-summary
-  - 260616-1200-sihankor-dev-governance
+  - 2606110000-sihankor-engine-design-summary
+  - 2606161200-sihankor-dev-governance
 ---
 
 # Engine MVP: frontmatter 解析器
@@ -61,7 +61,7 @@ src/
 
 ```yaml
 frontmatter-parser:
-  derives-from: 260616-1214-engine-mvp-parser
+  derives-from: 2606161214-engine-mvp-parser
   code:
     - symbol: parse_frontmatter
       location: src/parser/frontmatter.rs

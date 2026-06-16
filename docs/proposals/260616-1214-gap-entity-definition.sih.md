@@ -1,9 +1,9 @@
 ---
-id: 260616-1214-gap-entity-definition
+id: 2606161214-gap-entity-definition
 stage: 1/3
 upstream:
-  - 240610-1030-on-sihankor-canon
-  - 260616-1200-sihankor-dev-governance
+  - 2406101030-on-sihankor-canon
+  - 2606161200-sihankor-dev-governance
 ---
 
 # gap 实体定义
@@ -15,6 +15,7 @@ upstream:
 gap 是司衡治理体系中的一等实体：**spec 声明的意图与代码实现之间的可验证不一致**。
 
 gap 的构成性条件：
+
 - **可引用**：gap 必须声明在 specs/ 文档中，有确定的位置（文档 id + 锚点）
 - **可验证**：gap 必须是可被 engine 或人类检验的——"可能存在 bug"不是 gap，"refund_timeout 在 spec 中声明为 24h 但在代码中为 48h"是 gap
 - **有所有者**：gap 归属于某个 spec 文档
@@ -29,12 +30,12 @@ open ──→ in-progress ──→ closed
   └──→ invalidated
 ```
 
-| 状态 | 含义 | 触发 |
-|------|------|------|
-| `open` | gap 已被识别并记录，尚未有人处理 | 初始创建 |
-| `in-progress` | 有 proposal 正在处理此 gap | proposal stage ≥ 2/3 且引用了此 gap |
-| `closed` | gap 已被验证解决 | engine 验证通过，或人类确认 |
-| `invalidated` | gap 不再适用（spec 已变更、代码已删除等） | 相关文档变更时标记 |
+| 状态          | 含义                                      | 触发                                |
+| ------------- | ----------------------------------------- | ----------------------------------- |
+| `open`        | gap 已被识别并记录，尚未有人处理          | 初始创建                            |
+| `in-progress` | 有 proposal 正在处理此 gap                | proposal stage ≥ 2/3 且引用了此 gap |
+| `closed`      | gap 已被验证解决                          | engine 验证通过，或人类确认         |
+| `invalidated` | gap 不再适用（spec 已变更、代码已删除等） | 相关文档变更时标记                  |
 
 ## 二、术层格式（Conventions 新增）
 
@@ -74,11 +75,11 @@ gap 闭合由 engine 在 semantic.yml 验证通过后自动执行，或由人类
 
 ## 三、与现有机制的关系
 
-| 机制 | 定位 | 与 gap 的关系 |
-|------|------|-------------|
-| `@limitations` | spec 作者声明"这份规约已知不完备" | limitations 是 gap 的潜在来源——一个 limitation 可能衍生出多个 gap |
-| `@deviation` | 单次执行的故意偏离 | deviation 是 gap 的实例——某次执行故意制造了一个 gap |
-| `fidelity`（semantic.yml） | 单个语义映射的精度 | fidelity: broken 对应的就是一个 gap |
+| 机制                       | 定位                              | 与 gap 的关系                                                     |
+| -------------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| `@limitations`             | spec 作者声明"这份规约已知不完备" | limitations 是 gap 的潜在来源——一个 limitation 可能衍生出多个 gap |
+| `@deviation`               | 单次执行的故意偏离                | deviation 是 gap 的实例——某次执行故意制造了一个 gap               |
+| `fidelity`（semantic.yml） | 单个语义映射的精度                | fidelity: broken 对应的就是一个 gap                               |
 
 ## 四、引导阶段 gap 占位
 
