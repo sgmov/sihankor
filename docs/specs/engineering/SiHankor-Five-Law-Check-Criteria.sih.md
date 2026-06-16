@@ -1,6 +1,6 @@
 ---
 id: 260616-2000-five-law-check-criteria
-stage: 1/3
+stage: 2/3
 upstream: 260613-1650-sihankor-mind-design
 ---
 
@@ -308,6 +308,10 @@ overall_verdict(checks: Vec<LawCheck>) -> Verdict:
 
 当 overall = Fail 时，decision_proposal 被引擎拒绝执行，标记 `human_review_required`。当 overall = Conditional 时，引擎执行但附加警告，仍需人类确认。
 
+### 设计决策：stage 2/3 的 Conditional 模式
+
+顺势 §六 将 stage 2/3（resolve）设为系统性的 Conditional 触发条件。这意味着多数活跃文档的决策都会产生 Conditional 标记——这不是缺陷，而是对 2/3 作为过渡阶段的正确反映：resolve 阶段的措辞本就不应像 propose 那样宽松，也不应像 ratify 那样严格。Conditional 在此处的作用是提醒人类确认措辞力度，而非暗示 criteria 有问题。
+
 ## 八、dao_trace 生成
 
 每条返回 Fail 或 Conditional 的法检验，需在 `dao_trace` 中记录对应道的依据：
@@ -319,3 +323,31 @@ overall_verdict(checks: Vec<LawCheck>) -> Verdict:
 | 知止 | 道一 + 道四 | `"逾矩：{action} 超出治理边界，违反道四（治理不完备）"` |
 | 损补 | 道一 + 道四 | `"方向错误：{action} 对 {div_type} 执行了错误的损补方向，违反道一（定向调节）"` |
 | 顺势 | 道一 | `"力度失时：{action} 在 {stage} 阶段力度不匹配，违反道一（治理有节奏）"` |
+
+## 九、自指局限性（道四声明）
+
+本评判标准自身受道四约束。以下盲区为结构性限制，不可通过细化规则消除：
+
+### 9.1 iCL 依赖
+
+iCT 的检验建立在 iCL 认知产出（`cognition`）之上。如果 iCL 误诊发散类型或遗漏 relation_graph 中的 gap，iCT 将基于错误输入做判断。**iCT 不校验 iCL 的准确性**——这是 Mind 内部的分层信任模型：iCL 负责认知，iCT 负责验证决策，两者边界清晰，但信任链的断裂风险需声明。
+
+### 9.2 NLP 不确定性
+
+顺势 §六 R1（措辞匹配）依赖对中文描述的自然语言判断（`contains_weak_hedging` / `contains_mandatory_language`）。中文措辞的"可能"与"应"之间没有明确算法边界——关键词匹配（如检测"必须"/"应当"/"不可"）只能作为近似，无法替代语义理解。实现时需：
+- 用关键词匹配作为 first-pass（高 precision，低 recall）
+- 将 NLP 不确定性纳入 confidence 字段
+- 标记所有 NLP-based Fail 为"建议确认"
+
+### 9.3 gap→divergence 边界
+
+`relation_graph.gaps` 记录被引用但缺失的文档 id。**gap 是客观事实（observation），divergence 是主观判断（judgment）**。只有被 iCL 判定为 `DivergenceType::ReferenceBreak` 的 gap 才会触发五法检验。这意味着：
+- 一个 gap 被 iCL 忽略 = iCT 不会对 gap 做出反应
+- 这是正确的分层设计（iCL 判断相关性，iCT 不越权替代 iCL），但需显式声明
+
+### 9.4 无法机械验证的约束
+
+以下约束不在 iCT 的可机械验证范围内，标记为 `[human-review]`：
+- 损补的"损比补更难"非对称性（需人类判断 损 的 justification 是否充分）
+- 知止的"哲学否定性判断"（需语义理解，无法关键词匹配）
+- 有度的"action.alternatives 至少 1 个力度不同"（需比较语义而非枚举 ActionKind）
