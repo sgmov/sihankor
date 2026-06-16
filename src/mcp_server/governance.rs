@@ -11,6 +11,7 @@ use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
 use crate::core::validator::{self, ValidationConfig, ValidationResult};
+use crate::mind::icl::ICL;
 
 /// 司衡引擎治理 MCP 服务
 #[derive(Clone)]
@@ -266,6 +267,42 @@ impl SihankorService {
             report.warnings.len(),
             errors,
         )
+    }
+
+    /// 文档认知分析：意图定位 + 关系照见 + 发散诊断
+    #[tool(description = "Analyze a document through iCL cognition: governance position, relation graph, divergence diagnosis")]
+    pub async fn analyze_document(
+        &self,
+        Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+
+        // 先按 id 查找，再按路径查找
+        let doc = match self.db.get_document(&target).await {
+            Ok(Some(doc)) => doc,
+            Ok(None) => {
+                // 尝试按路径解析
+                let file_path = PathBuf::from(&target);
+                match parser::parse_file(&file_path) {
+                    Ok(mut doc) => {
+                        // 路径解析的文档需补 nature
+                        doc.nature = validator::infer_nature(&file_path)
+                            .unwrap_or("")
+                            .to_string();
+                        doc
+                    }
+                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                }
+            }
+            Err(e) => return format!("Database error: {}", e),
+        };
+
+        let cognition = icl.analyze(&doc).await;
+
+        match serde_json::to_string_pretty(&cognition) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
     }
 }
 

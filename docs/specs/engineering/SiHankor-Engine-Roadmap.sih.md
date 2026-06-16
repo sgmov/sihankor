@@ -18,7 +18,7 @@ upstream: 240602-0900-on-sihankor
 | 哲学五论           | 总纲/道论/鉴论/法论/元：全部 3/3                                   | 定稿，不可逆      |
 | Legacy 迁移        | 21 个 legacy 文件已审计、迁移、删除                                | 完成              |
 | 第一阶段：引擎核心 | parser + validator（13 规则）+ indexer + orchestrator + 6 MCP 工具 | 已完成，~1800 LOC |
-| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 1/3，术层设计完成 |
+| Mind 设计          | 四步分析法 + 三机流转 + MCP 工具定义                               | 2/3，术层设计完成，iCL 已实现 |
 | 工程映射           | 道→法→术→几完整映射 + 三域边界 + 道家调和                          | 1/3，映射框架完成 |
 | 文档约定           | stage/id/目录/frontmatter/格式约束                                 | 2/3，规则体系完整 |
 | 开发治理           | 治理六域 + CI/RFC 流程 + 提案/决策体系                             | 2/3               |
@@ -26,6 +26,7 @@ upstream: 240602-0900-on-sihankor
 | decided-by 清理    | 全局 decided-by 清理，G-14 反向校验上线                            | 完成              |
 | 第一-A 修复合道    | nature 列修复 + 40 tests + CI workflow + README 引导               | 完成              |
 | plan 语义拆分      | roadmap → specs/engineering/，plan 拆为 proposal+spec              | 完成              |
+| T2.1 iCL 明晰机    | types + ICL 认知分析 + analyze_document MCP 工具                   | 完成，38 tests    |
 
 ### 1.2 当前 Docs 成熟度矩阵
 
@@ -395,7 +396,7 @@ gantt
     测试 + CI                    :done, a8, 2026-06-17, 0d
     Core README                  :done, a9, 2026-06-17, 0d
     section 第二阶段：思维核心
-    T2.1 iCL 明晰机              :b1, after a9, 7d
+    T2.1 iCL 明晰机              :done, b1, 2026-06-17, 0d
     T2.2 iWW 消息机              :b2, after b1, 5d
     T2.3 iCT 方圆机              :b3, after b2, 4d
     T2.4 Mind MCP 工具           :b4, after b3, 4d
@@ -409,21 +410,20 @@ gantt
 | 第零阶段 | 4-7d   | 0      | 4-7d   |
 | 第一阶段 | 14-18d | 0      | 18-25d |
 | 第一-A   | 3-5d   | 0      | 21-30d |
-| 第二阶段 | 0      | 15-20d | 36-50d |
+| 第二阶段 | 1d     | 10-15d | 22-31d |
 | 第三阶段 | 0      | 10-15d | 46-65d |
 
 > 第一阶段实际工期 14d（单人 + AI 协作），与乐观估（18-23d）对比，AI 协作将效率提升了约 25%。
 
 ## 八、当前第一步（2026-06-16 更新）
 
-第一-A 阶段已完成。当前进入第二阶段：思维核心（Mind）。
+T2.1 iCL 明晰机已完成。下一步：
 
-按 E3（Mind MVP 范围）和风险应对，建议先实现 `analyze_document`（iCL only）：
+1. **T2.2 iWW 消息机**：从 cognition 生成 decision_proposal（推荐行动 + 方案对比），预估 3-5d
+2. **或扩展 iCL 测试覆盖**：增加跨文档关系照见、冲突检测的集成测试
+3. **或分析结果消费**：将 `analyze_document` 的输出接入 grill-me 追问流程
 
-1. **T2.1 iCL 明晰机**：四步分析法前三步（意图定位/关系照见/发散诊断），预估 5-7d
-2. **Mind MCP 工具**：`analyze_document` 作为首发工具，`propose_decision` + `verify_decision` + `full_analysis` 后续补全
-
-前置条件已满足：第一-A 完成（nature 列/测试/README），Dev-Governance 2/3。
+前置条件全部满足，可并行推进 iWW 实现和测试增强。
 
 ## 九、体系审查附录（2026-06-16 snapshot）
 
