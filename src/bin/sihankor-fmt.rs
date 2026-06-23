@@ -84,6 +84,9 @@ fn main() {
         warnings.len()
     );
 
+    // 治理追溯标记
+    println!("{}", sihankor::fmt::governance_trailer(&all_violations));
+
     if !errors.is_empty() {
         std::process::exit(1);
     }

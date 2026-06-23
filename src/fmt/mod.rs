@@ -90,6 +90,10 @@ pub struct Violation {
     pub code: String,
     pub level: Level,
     pub message: String,
+    /// 修复建议（面向开发者的可操作指引）
+    pub fix_suggestion: Option<String>,
+    /// 道法追溯：此规则对应哪个司衡道法维度
+    pub dao_trace: Option<String>,
 }
 
 impl Violation {
@@ -104,6 +108,21 @@ impl Violation {
             self.level.as_str(),
             self.message
         )
+    }
+
+    /// Output as JSON for CI integration.
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "file": self.file,
+            "line": self.line,
+            "col": self.col,
+            "code": self.code,
+            "level": self.level.as_str(),
+            "message": self.message,
+            "fix_suggestion": self.fix_suggestion,
+            "dao_trace": self.dao_trace,
+        }))
+        .unwrap_or_else(|_| "{}".to_string())
     }
 }
 
@@ -175,6 +194,8 @@ pub fn check_c01(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 code: "C01".to_string(),
                 level: Level::Error,
                 message: format!("emoji character found: '{}' (U+{:04X})", c, c as u32),
+                fix_suggestion: Some("Replace emoji with text description".to_string()),
+                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -210,6 +231,8 @@ pub fn check_c01a(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 c,
                 c as u32
             ),
+            fix_suggestion: Some("Replace with ASCII equivalent or permitted CJK character".to_string()),
+            dao_trace: Some("损补".to_string()),
         });
     }
     violations
@@ -228,6 +251,8 @@ pub fn check_c02(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 code: "C02".to_string(),
                 level: Level::Error,
                 message: "em-dash (U+2014) should be fullwidth colon (U+FF1A)".to_string(),
+                fix_suggestion: Some("Replace with fullwidth colon (：) or ASCII hyphen (-)".to_string()),
+                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -250,6 +275,8 @@ pub fn check_c03(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     "curly quote (U+{:04X}) should be straight double quote",
                     c as u32
                 ),
+                fix_suggestion: Some("Replace with straight double quote (\")".to_string()),
+                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -270,6 +297,8 @@ pub fn check_c04(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     code: "C04".to_string(),
                     level: Level::Error,
                     message: "right arrow (U+2192) should be '->'".to_string(),
+                    fix_suggestion: Some("Replace -> with ASCII '->'".to_string()),
+                    dao_trace: Some("损补".to_string()),
                 });
             }
             '\u{2190}' => {
@@ -280,6 +309,8 @@ pub fn check_c04(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     code: "C04".to_string(),
                     level: Level::Error,
                     message: "left arrow (U+2190) should be '<-'".to_string(),
+                    fix_suggestion: Some("Replace with ASCII '<-'".to_string()),
+                    dao_trace: Some("损补".to_string()),
                 });
             }
             _ => {}
@@ -310,6 +341,8 @@ pub fn check_c05(lines: &[&str], file: &str, doc_start: usize) -> Vec<Violation>
                 code: "C05".to_string(),
                 level: Level::Error,
                 message: "horizontal rule in body; use '##' headings instead".to_string(),
+                fix_suggestion: Some("Use level-2 headings (## ) for section separation instead of ---".to_string()),
+                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -348,6 +381,8 @@ pub fn check_c06(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                         "list nesting depth {} exceeds maximum 2; use paragraphs instead",
                         depth
                     ),
+                    fix_suggestion: Some("Flatten deeply nested lists: use paragraphs or subsections instead".to_string()),
+                    dao_trace: Some("有度".to_string()),
                 });
             }
         }
@@ -386,6 +421,8 @@ pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                     code: "C07".to_string(),
                     level: Level::Warning,
                     message: "suspected ASCII art diagram (≥3 consecutive lines); use Mermaid flowchart instead".to_string(),
+                    fix_suggestion: Some("Replace ASCII art with a Mermaid flowchart diagram".to_string()),
+                    dao_trace: Some("有度".to_string()),
                 });
                 run_start = None; // Reset to avoid duplicate reports
             }
@@ -419,6 +456,8 @@ pub fn check_c08(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                 code: "C08".to_string(),
                 level: Level::Warning,
                 message: "mixed Chinese/English in same paragraph".to_string(),
+                fix_suggestion: Some("Separate CJK and English into distinct paragraphs or wrap English terms in code spans".to_string()),
+                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -446,6 +485,8 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                         code: "C09".to_string(),
                         level: Level::Error,
                         message: "code block missing language tag".to_string(),
+                        fix_suggestion: Some("Add a language tag: ```rust, ```mermaid, ```text".to_string()),
+                        dao_trace: Some("有度".to_string()),
                     });
                 } else if !VALID_LANG_TAGS.contains(&tag) {
                     violations.push(Violation {
@@ -455,6 +496,8 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                         code: "C09".to_string(),
                         level: Level::Warning,
                         message: format!("unknown language tag '{}'; permitted: {:?}", tag, VALID_LANG_TAGS),
+                        fix_suggestion: Some(format!("Use one of the permitted tags: {}", VALID_LANG_TAGS.join(", "))),
+                        dao_trace: Some("有度".to_string()),
                     });
                 }
             }
@@ -488,6 +531,8 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                         code: "C10".to_string(),
                         level: Level::Error,
                         message: format!("table has {} columns; maximum is 3", count),
+                        fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                        dao_trace: Some("有度".to_string()),
                     });
                     last_table_violation = true;
                 }
@@ -499,6 +544,8 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                     code: "C10".to_string(),
                     level: Level::Error,
                     message: format!("table has {} columns; maximum is 3", cols.len()),
+                    fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                    dao_trace: Some("有度".to_string()),
                 });
                 last_table_violation = true;
             }
@@ -576,14 +623,51 @@ pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Vi
             for v in &mut c10_violations {
                 v.level = Level::Warning;
                 v.message = format!(
-                    "table has >3 columns (spec/decision docs: warning only; split if narrative purpose)",
+                    "table has >3 columns (spec/decision docs: warning only; split if for narrative purpose)",
                 );
+                v.fix_suggestion = Some("Consider splitting this table if it serves narrative rather than structural purpose".to_string());
             }
         }
         violations.extend(c10_violations);
     }
 
     violations
+}
+
+/// 产出格式 lint 的治理追溯标记（与 validator 的 trailer 格式一致）
+///
+/// 格式错误映射：Error -> Fatal（阻断），Warning -> Guideline（警告）
+pub fn governance_trailer(violations: &[Violation]) -> String {
+    let errors = violations.iter().filter(|v| v.level == Level::Error).count();
+    let warnings = violations.iter().filter(|v| v.level == Level::Warning).count();
+
+    let mut dao_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+    for v in violations {
+        if let Some(ref dao) = v.dao_trace {
+            *dao_counts.entry(dao.as_str()).or_insert(0) += 1;
+        }
+    }
+
+    let status = if errors > 0 { "blocked" } else { "pass" };
+    let dao_parts: Vec<String> = ["知止", "顺因", "有度", "损补", "顺势"]
+        .iter()
+        .filter_map(|d| {
+            let count = dao_counts.get(d).copied().unwrap_or(0);
+            if count > 0 {
+                Some(format!("{}={}", d, count))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    format!(
+        "SiHankor-Governance: {} (E={} W={}; {})",
+        status,
+        errors,
+        warnings,
+        dao_parts.join(" ")
+    )
 }
 
 #[cfg(test)]
@@ -842,6 +926,8 @@ mod tests {
             code: "C01".to_string(),
             level: Level::Error,
             message: "emoji found".to_string(),
+            fix_suggestion: Some("remove emoji".to_string()),
+            dao_trace: Some("损补".to_string()),
         };
         assert_eq!(v.format(), "test.sih.md:5:3: C01 error: emoji found");
     }

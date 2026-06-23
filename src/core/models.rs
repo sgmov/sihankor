@@ -117,6 +117,12 @@ pub struct Violation {
     pub severity: ViolationSeverity,
     pub message: String,
     pub location: String,
+    /// 修复建议（面向开发者的可操作指引）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fix_suggestion: Option<String>,
+    /// 道法追溯：此规则对应哪个司衡道法维度（知止/顺因/有度/损补/顺势）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dao_trace: Option<String>,
 }
 
 /// 违规力度级别：F（戒）/ G（规）/ J（矩）

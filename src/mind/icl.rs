@@ -18,6 +18,11 @@ impl ICL {
         Self { db }
     }
 
+    /// 暴露数据库引用（供术层编排工具使用）
+    pub fn db(&self) -> &Arc<dyn SihDatabase> {
+        &self.db
+    }
+
     /// 对单个文档执行认知分析
     pub async fn analyze(&self, doc: &Document) -> Cognition {
         let governance_position = self.governance_position(doc).await;

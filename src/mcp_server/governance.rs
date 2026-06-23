@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use rmcp::{
-    ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_handler, tool_router,
+    ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_router,
 };
 
 use crate::core::database::SihDatabase;
@@ -53,10 +53,25 @@ fn default_depth() -> u32 {
     10
 }
 
+/// Empty parameters for parameterless tools (schema: type=object, no required properties)
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+struct EmptyParams {}
+
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
 pub struct AnalyzeDocumentRequest {
     /// 文档路径或 ID
     pub target: String,
+}
+
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct GenerateDocumentPlanRequest {
+    /// 目标文档类型：spec / proposal / decision / note / reference
+    pub target_nature: String,
+    /// 上游文档 ID（root 文档不填）
+    #[serde(default)]
+    pub upstream_id: Option<String>,
+    /// 主题提示，用于生成文档 ID 语义短名和内容大纲
+    pub topic_hint: String,
 }
 
 #[tool_router]
@@ -69,7 +84,7 @@ impl SihankorService {
     }
 
     /// 验证 .sih.md 文档合规性
-    #[tool(description = "Validate a .sih.md document for compliance with SiHankor governance rules")]
+    #[tool(description = "[SiHankor] Validate a .sih.md document for compliance with SiHankor governance rules")]
     pub async fn validate_sihmd(
         &self,
         Parameters(ValidateRequest { path }): Parameters<ValidateRequest>,
@@ -89,7 +104,7 @@ impl SihankorService {
     }
 
     /// 搜索已索引文档
-    #[tool(description = "Search indexed documents by content query")]
+    #[tool(description = "[SiHankor] Search indexed documents by content query")]
     pub async fn search_docs(
         &self,
         Parameters(SearchRequest { query }): Parameters<SearchRequest>,
@@ -116,7 +131,7 @@ impl SihankorService {
     }
 
     /// 获取文档元数据和结构
-    #[tool(description = "Get document metadata and structure by ID")]
+    #[tool(description = "[SiHankor] Get document metadata and structure by ID")]
     pub async fn get_document(
         &self,
         Parameters(GetDocumentRequest { id }): Parameters<GetDocumentRequest>,
@@ -146,7 +161,7 @@ impl SihankorService {
     }
 
     /// 追溯授权链
-    #[tool(description = "Trace the governance authorization chain (upstream) for a document")]
+    #[tool(description = "[SiHankor] Trace the governance authorization chain (upstream) for a document")]
     pub async fn resolve_chain(
         &self,
         Parameters(ResolveChainRequest { id, depth }): Parameters<ResolveChainRequest>,
@@ -177,10 +192,10 @@ impl SihankorService {
     }
 
     /// 项目治理概览
-    #[tool(description = "Get project governance overview: document counts, stage distribution, alerts")]
+    #[tool(description = "[SiHankor] Get project governance overview: document counts, stage distribution, alerts")]
     pub async fn project_status(
         &self,
-        Parameters(_): Parameters<serde_json::Value>,
+        Parameters(_): Parameters<EmptyParams>,
     ) -> String {
         let total = self.db.count_documents().await.unwrap_or(0);
         let by_stage = self.db.count_by_stage().await.unwrap_or_default();
@@ -236,10 +251,10 @@ impl SihankorService {
     }
 
     /// 触发全量索引重建
-    #[tool(description = "Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents")]
+    #[tool(description = "[SiHankor] Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents")]
     pub async fn index_rebuild(
         &self,
-        Parameters(_): Parameters<serde_json::Value>,
+        Parameters(_): Parameters<EmptyParams>,
     ) -> String {
         let docs_dir = PathBuf::from(&self.config.docs_dir);
         let report = indexer::rebuild_index(self.db.as_ref(), &docs_dir, &self.config.validation).await;
@@ -272,7 +287,7 @@ impl SihankorService {
     }
 
     /// 文档认知分析：意图定位 + 关系照见 + 发散诊断
-    #[tool(description = "Analyze a document through iCL cognition: governance position, relation graph, divergence diagnosis")]
+    #[tool(description = "[SiHankor] Analyze a document through iCL cognition: governance position, relation graph, divergence diagnosis")]
     pub async fn analyze_document(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -308,7 +323,7 @@ impl SihankorService {
     }
 
     /// 文档决策建议：iCL 认知 → iWW 生成决策建议
-    #[tool(description = "Generate a decision proposal from document cognition: recommended action with alternatives, rationale, and affected documents")]
+    #[tool(description = "[SiHankor] Generate a decision proposal from document cognition: recommended action with alternatives, rationale, and affected documents")]
     pub async fn propose_decision(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -349,7 +364,7 @@ impl SihankorService {
     }
 
     /// 决策验证：对已有的 decision_proposal 执行五法检验（iCT only）
-    #[tool(description = "Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace")]
+    #[tool(description = "[SiHankor] Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace")]
     pub async fn verify_decision(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -390,7 +405,7 @@ impl SihankorService {
     }
 
     /// 完整三机流转分析：iCL → iWW → iCT
-    #[tool(description = "Full three-machine flow: iCL cognition → iWW decision proposal → iCT verification. Returns complete AnalysisResult.")]
+    #[tool(description = "[SiHankor] Full three-machine flow: iCL cognition → iWW decision proposal → iCT verification. Returns complete AnalysisResult.")]
     pub async fn full_analysis(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -496,6 +511,56 @@ impl SihankorService {
             Err(e) => format!("Serialization error: {}", e),
         }
     }
+
+    /// 生成项目看板：治理链阶段列、文档和代码卡片、阻塞检测
+    #[tool(description = "[SiHankor] Generate a kanban board: governance chain columns with document and code task cards, blocker detection")]
+    pub async fn generate_kanban(
+        &self,
+        Parameters(_): Parameters<EmptyParams>,
+    ) -> String {
+        let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
+        match serde_json::to_string_pretty(&kanban) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 生成自包含 HTML 可视化看板（浏览器直接打开）
+    #[tool(description = "[SiHankor] Generate a self-contained HTML kanban board viewable in any browser")]
+    pub async fn kanban_html(
+        &self,
+        Parameters(_): Parameters<EmptyParams>,
+    ) -> String {
+        let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
+        crate::core::kanban::render_html(&kanban)
+    }
+
+    /// 术层编排：生成文档蓝图
+    ///
+    /// 编排 iCL 认知 + iWW 决策，产出一份结构化的文档生成蓝图(GenerationPlan)。
+    /// Agent 拿到蓝图后用 LLM 写出文档内容，再通过 validate_sihmd 和 full_analysis 校验。
+    #[tool(description = "[SiHankor] Techne orchestration: generate a document GenerationPlan by coordinating iCL cognition and iWW decision")]
+    pub async fn generate_document_plan(
+        &self,
+        Parameters(GenerateDocumentPlanRequest {
+            target_nature,
+            upstream_id,
+            topic_hint,
+        }): Parameters<GenerateDocumentPlanRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+        let plan = build_generation_plan(
+            &icl,
+            &target_nature,
+            upstream_id.as_deref(),
+            &topic_hint,
+        )
+        .await;
+        match serde_json::to_string_pretty(&plan) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
 }
 
 fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
@@ -526,5 +591,365 @@ fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
     }
 }
 
-#[tool_handler(instructions = "SiHankor governance engine: document validation, search, indexing, and chain resolution")]
-impl ServerHandler for SihankorService {}
+// ---------------------------------------------------------------------------
+// Techne 术层：编排工具
+// ---------------------------------------------------------------------------
+
+/// 术层产出：文档生成蓝图
+#[derive(Debug, Clone, serde::Serialize)]
+struct GenerationPlan {
+    plan_id: String,
+    plan_type: String,
+    context: GenerationContext,
+    frontmatter_template: FrontmatterTemplate,
+    sections: Vec<SectionOutline>,
+    required_references: Vec<String>,
+    tone_constraints: Vec<String>,
+    issues_to_address: Vec<String>,
+    success_criteria: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct GenerationContext {
+    target_nature: String,
+    target_stage: String,
+    upstream: Option<UpstreamContext>,
+    governance_chain: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct UpstreamContext {
+    id: String,
+    title: String,
+    nature: String,
+    stage: String,
+    role_in_chain: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct FrontmatterTemplate {
+    id_format: String,
+    stage: String,
+    nature: String,
+    title_hint: String,
+    upstream: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct SectionOutline {
+    heading: String,
+    points: Vec<String>,
+}
+
+/// 编排 iCL 认知 + 上下文，生成文档蓝图
+async fn build_generation_plan(
+    icl: &ICL,
+    target_nature: &str,
+    upstream_id: Option<&str>,
+    topic_hint: &str,
+) -> GenerationPlan {
+    let now = chrono::Utc::now();
+    let date_part = now.format("%y%m%d-%H%M").to_string();
+    let slug = topic_hint
+        .to_lowercase()
+        .split_whitespace()
+        .take(4)
+        .collect::<Vec<_>>()
+        .join("-");
+    let plan_id = format!("plan-{}-{}-{}", date_part, target_nature, slug);
+
+    let mut governance_chain = Vec::new();
+    let mut upstream_ctx: Option<UpstreamContext> = None;
+    let mut references = Vec::new();
+    let mut issues = Vec::new();
+
+    // 分析上游文档
+    if let Some(up_id) = upstream_id {
+        governance_chain.push(up_id.to_string());
+        if let Ok(Some(up_doc)) = icl.db().get_document(up_id).await {
+            let cognition = icl.analyze(&up_doc).await;
+            upstream_ctx = Some(UpstreamContext {
+                id: up_doc.id.clone(),
+                title: up_doc.title.clone(),
+                nature: up_doc.nature.clone(),
+                stage: up_doc.stage.0.clone(),
+                role_in_chain: format!("{:?}", cognition.governance_position.role_in_chain)
+                    .to_lowercase(),
+            });
+            governance_chain.extend(cognition.governance_position.upstream_chain.clone());
+            references = cognition.relation_graph.references.clone();
+            references.push(up_id.to_string());
+
+            for div in &cognition.divergence_diagnosis {
+                if let Some(ref suggestion) = div.suggestion {
+                    issues.push(format!("[{:?}] {} → {}", div.severity, div.description, suggestion));
+                } else {
+                    issues.push(format!("[{:?}] {}", div.severity, div.description));
+                }
+            }
+        } else {
+            issues.push(format!("上游文档 '{}' 在索引中不存在，请确认 id 是否正确", up_id));
+        }
+    }
+
+    // 确定 stage
+    let stage = match target_nature {
+        "note" => "1/3",
+        _ => "1/3",
+    };
+
+    // 构建大纲
+    let sections = build_section_outline(target_nature, upstream_ctx.as_ref(), topic_hint);
+
+    // 措辞约束
+    let tone_constraints = build_tone_constraints(target_nature, stage);
+
+    // 成功标准
+    let success_criteria = build_success_criteria(target_nature);
+
+    GenerationPlan {
+        plan_id,
+        plan_type: "generate".to_string(),
+        context: GenerationContext {
+            target_nature: target_nature.to_string(),
+            target_stage: stage.to_string(),
+            upstream: upstream_ctx,
+            governance_chain,
+        },
+        frontmatter_template: FrontmatterTemplate {
+            id_format: format!("{}-{}", date_part, slug),
+            stage: stage.to_string(),
+            nature: target_nature.to_string(),
+            title_hint: topic_hint.to_string(),
+            upstream: upstream_id.map(String::from),
+        },
+        sections,
+        required_references: references,
+        tone_constraints,
+        issues_to_address: issues,
+        success_criteria,
+    }
+}
+
+fn build_section_outline(
+    nature: &str,
+    upstream: Option<&UpstreamContext>,
+    topic_hint: &str,
+) -> Vec<SectionOutline> {
+    let mut sections = Vec::new();
+
+    match nature {
+        "spec" => {
+            sections.push(SectionOutline {
+                heading: format!("一、正名：{}是什么", topic_hint),
+                points: vec![
+                    "定义核心概念及其在司衡体系中的位置".into(),
+                    "与相邻概念的边界".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: format!("二、顺因：{}在治理链中的定位", topic_hint),
+                points: vec![
+                    "法源追溯：本规范的授权来源".into(),
+                    "下游影响：本规范的约束范围".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: format!("三、有度：{}的边界", topic_hint),
+                points: vec![
+                    "纳入范围".into(),
+                    "不纳入范围".into(),
+                ],
+            });
+        }
+        "proposal" => {
+            sections.push(SectionOutline {
+                heading: "一、正名：提议对象".into(),
+                points: vec![
+                    format!("明确要变更的内容：{}", topic_hint),
+                    "变更的动机和背景".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: "二、顺因：治理依据".into(),
+                points: vec![
+                    "上游文档的授权".into(),
+                    "变更的因果必要性".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: "三、方案".into(),
+                points: vec![
+                    "推荐方案".into(),
+                    "替代方案及取舍".into(),
+                    "实施步骤".into(),
+                ],
+            });
+        }
+        "decision" => {
+            sections.push(SectionOutline {
+                heading: "一、背景".into(),
+                points: vec!["提议摘要".into(), "审阅过程".into()],
+            });
+            sections.push(SectionOutline {
+                heading: "二、方案选择".into(),
+                points: vec![
+                    "| 维度 | 决策 | 法依据 |".into(),
+                    "每条决策一行".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: "三、ADR".into(),
+                points: vec![
+                    "decided-by".into(),
+                    "DEPS".into(),
+                ],
+            });
+        }
+        "reference" => {
+            sections.push(SectionOutline {
+                heading: format!("一、{}的定义", topic_hint),
+                points: vec![
+                    "中文对、英文对、词源".into(),
+                    "命名理据".into(),
+                    "在体系中的定位".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: "二、规则".into(),
+                points: vec![
+                    "本条目的规则或约定".into(),
+                ],
+            });
+        }
+        "note" => {
+            sections.push(SectionOutline {
+                heading: format!("一、关于{}", topic_hint),
+                points: vec![
+                    "实践背景".into(),
+                    "核心发现".into(),
+                ],
+            });
+            sections.push(SectionOutline {
+                heading: "二、启示".into(),
+                points: vec![
+                    "可迁移的经验".into(),
+                    "注意事项".into(),
+                ],
+            });
+        }
+        _ => {
+            sections.push(SectionOutline {
+                heading: format!("一、{}", topic_hint),
+                points: vec!["内容待 Agent 根据上下文填充".into()],
+            });
+        }
+    }
+
+    // 如果有上游，添加上游相关提示
+    if let Some(up) = upstream {
+        sections.push(SectionOutline {
+            heading: "附录：上游文档上下文".into(),
+            points: vec![
+                format!("上游文档：{} ({} {})", up.id, up.nature, up.stage),
+                "请确保本文档的声明与上游一致".into(),
+            ],
+        });
+    }
+
+    sections
+}
+
+fn build_tone_constraints(nature: &str, stage: &str) -> Vec<String> {
+    let mut constraints = Vec::new();
+
+    match nature {
+        "spec" => {
+            if stage == "3/3" {
+                constraints.push("使用确定性措辞：应使用'是'、'必须'、'不可'，避免'可能'、'或许'".into());
+            } else {
+                constraints.push("使用规范性措辞：使用'应'、'建议'，避免'必须'".into());
+            }
+        }
+        "proposal" => {
+            constraints.push("使用开放性措辞：使用'建议'、'考虑'，避免'必须'、'不可不'".into());
+            constraints.push("明确标注方案的取舍理由".into());
+        }
+        "decision" => {
+            constraints.push("使用确定性措辞：使用'决定'、'确认'，每条决策有法依据".into());
+        }
+        "reference" => {
+            constraints.push("使用定义性措辞：使用'是'、'指'，力求精确".into());
+        }
+        "note" => {
+            constraints.push("使用描述性措辞：记录实践，不做规范性断言".into());
+        }
+        _ => {}
+    }
+
+    constraints
+}
+
+fn build_success_criteria(nature: &str) -> Vec<String> {
+    let mut criteria = vec![
+        "validate_sihmd 通过（无 Error 级违规）".into(),
+        "full_analysis 五法检验无 Fail".into(),
+    ];
+
+    match nature {
+        "proposal" => {
+            criteria.push("上游 stage 在可引用范围内（2/3 或 3/3）".into());
+            criteria.push("方案包含至少一个替代方案".into());
+        }
+        "decision" => {
+            criteria.push("包含 decided-by 字段".into());
+            criteria.push("每条决策有对应的法依据".into());
+        }
+        "spec" => {
+            criteria.push("正名/顺因/有度三节完整".into());
+        }
+        _ => {}
+    }
+
+    criteria
+}
+
+impl ServerHandler for SihankorService {
+    async fn call_tool(
+        &self,
+        request: rmcp::model::CallToolRequestParams,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        let mut result = SihankorService::tool_router().call(tcc).await?;
+        result.content.insert(0, rmcp::model::Content::text("[SiHankor]"));
+        Ok(result)
+    }
+
+    async fn list_tools(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::ListToolsResult, rmcp::ErrorData> {
+        Ok(rmcp::model::ListToolsResult {
+            tools: SihankorService::tool_router().list_all(),
+            meta: None,
+            next_cursor: None,
+        })
+    }
+
+    fn get_tool(&self, name: &str) -> Option<rmcp::model::Tool> {
+        SihankorService::tool_router().get(name).cloned()
+    }
+
+    fn get_info(&self) -> rmcp::model::ServerInfo {
+        rmcp::model::ServerInfo::new(
+            rmcp::model::ServerCapabilities::builder()
+                .enable_tools()
+                .build(),
+        )
+        .with_instructions(
+            "[SiHankor] SiHankor governance engine: document validation, search, indexing, and chain resolution",
+        )
+    }
+}

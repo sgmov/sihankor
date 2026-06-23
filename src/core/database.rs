@@ -18,6 +18,7 @@ pub trait SihDatabase: Send + Sync {
     async fn count_by_stage(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
     async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
     async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError>;
+    async fn get_all_documents(&self) -> Result<Vec<Document>, DatabaseError>;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -275,6 +276,22 @@ impl SihDatabase for SqliteBackend {
 
         let docs = stmt
             .query_map(params![status_str], |row| Ok(row_to_document(row)))?
+            .filter_map(|r| r.ok())
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(docs)
+    }
+
+    async fn get_all_documents(&self) -> Result<Vec<Document>, DatabaseError> {
+        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let mut stmt = conn.prepare(
+            "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
+             FROM documents ORDER BY nature, stage DESC",
+        )?;
+
+        let docs = stmt
+            .query_map([], |row| Ok(row_to_document(row)))?
             .filter_map(|r| r.ok())
             .filter_map(|r| r.ok())
             .collect();

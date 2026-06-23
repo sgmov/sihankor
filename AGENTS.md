@@ -63,3 +63,15 @@ Full governance rules: see `docs/specs/philosophy/On-SiHankor-Canon.sih.md`
 - Adopt `flowchart` for all flow and relationship diagrams.
 - Keep node labels brief. Use `<br/>` for line breaks within labels.
 - Keep edge labels under 10 characters in length.
+
+## SiHankor MCP Tools Convention
+
+When calling any `mcp__sihankor__*` tool, announce the call explicitly before the tool invocation. Use the phrase **"Calling SiHankor..."** followed by the specific tool name and purpose. This makes SiHankor tool usage visible in the conversation flow.
+
+Example:
+
+```
+Calling SiHankor: validate_sihmd to check document compliance.
+```
+
+All SiHankor tool names start with `mcp__sihankor__`. Every tool response includes a `[SiHankor]` content marker and every tool description is prefixed with `[SiHankor]` for easy identification in the tool list.

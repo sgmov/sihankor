@@ -47,6 +47,134 @@ impl ValidationResult {
     pub fn merge(&mut self, other: ValidationResult) {
         self.violations.extend(other.violations);
     }
+
+    /// 按 F > G > J 分级分组，产出 CI 守护结构化报告
+    ///
+    /// F 级：阻断项，无 F 级违规时报告为空
+    /// G 级：警告项，有 G 级违规时报告列出
+    /// J 级：静默项，仅计数，不列明细
+    pub fn to_structured_report(&self) -> String {
+        let fatal: Vec<_> = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Fatal)
+            .collect();
+        let guidelines: Vec<_> = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Guideline)
+            .collect();
+        let judgments: Vec<_> = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Judgment)
+            .collect();
+
+        let mut report = String::new();
+
+        if !fatal.is_empty() {
+            report.push_str(&format!("## F 级阻断 ({} items)\n\n", fatal.len()));
+            for v in &fatal {
+                report.push_str(&format!(
+                    "- **{}** ({}) [{}]: {}\n",
+                    v.rule_id,
+                    v.dao_trace.as_deref().unwrap_or("-"),
+                    v.location,
+                    v.message
+                ));
+                if let Some(ref fix) = v.fix_suggestion {
+                    report.push_str(&format!("  -> Fix: {}\n", fix));
+                }
+            }
+            report.push('\n');
+        }
+
+        if !guidelines.is_empty() {
+            report.push_str(&format!("## G 级警告 ({} items)\n\n", guidelines.len()));
+            for v in &guidelines {
+                report.push_str(&format!(
+                    "- **{}** ({}) [{}]: {}\n",
+                    v.rule_id,
+                    v.dao_trace.as_deref().unwrap_or("-"),
+                    v.location,
+                    v.message
+                ));
+                if let Some(ref fix) = v.fix_suggestion {
+                    report.push_str(&format!("  -> Fix: {}\n", fix));
+                }
+            }
+            report.push('\n');
+        }
+
+        if !judgments.is_empty() {
+            report.push_str(&format!(
+                "## J 级静默记录 ({} items, details suppressed)\n",
+                judgments.len()
+            ));
+        }
+
+        if report.is_empty() {
+            report.push_str("No violations found.\n");
+        }
+
+        report
+    }
+
+    /// 输出为 JSON（用于 CI 集成/机器解析）
+    pub fn to_json(&self) -> String {
+        serde_json::to_string_pretty(&self.violations).unwrap_or_else(|_| "[]".to_string())
+    }
+
+    /// 输出治理追溯标记（git trailer 格式），CI 可追加到 commit message
+    ///
+    /// 产出格式: `SiHankor-Governance: pass|blocked (F=N G=N J=N; 知止=N 顺因=N 有度=N 损补=N)`
+    /// 可通过 `git log --grep="SiHankor-Governance:"` 检索
+    pub fn to_governance_trailer(&self) -> String {
+        let fatal = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Fatal)
+            .count();
+        let guidelines = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Guideline)
+            .count();
+        let judgments = self
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Judgment)
+            .count();
+
+        let mut dao_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+        for v in &self.violations {
+            if let Some(ref dao) = v.dao_trace {
+                *dao_counts.entry(dao.as_str()).or_insert(0) += 1;
+            }
+        }
+
+        let status = if fatal > 0 { "blocked" } else { "pass" };
+        let dao_parts: Vec<String> = ["知止", "顺因", "有度", "损补", "顺势"]
+            .iter()
+            .filter_map(|d| {
+                let count = dao_counts.get(d).copied().unwrap_or(0);
+                if count > 0 {
+                    Some(format!("{}={}", d, count))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        format!(
+            "SiHankor-Governance: {} (F={} G={} J={}; {})",
+            status,
+            fatal,
+            guidelines,
+            judgments,
+            dao_parts.join(" ")
+        )
+    }
 }
 
 /// 验证配置：控制哪些域启用
@@ -112,6 +240,8 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
             severity: ViolationSeverity::Fatal,
             message: format!("id '{}' does not match format YYMMDD-HHMM[-NNN]-slug", doc.id),
             location: "frontmatter.id".to_string(),
+            fix_suggestion: Some("Rename id to match YYMMDD-HHMM[-NNN]-semantic-name, e.g. 260613-1800-my-doc".to_string()),
+            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -125,6 +255,8 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
             severity: ViolationSeverity::Fatal,
             message: format!("invalid stage: {}", doc.stage.0),
             location: "frontmatter.stage".to_string(),
+            fix_suggestion: Some("Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string()),
+            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -141,6 +273,8 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
             severity: ViolationSeverity::Fatal,
             message: "upstream is required for this document nature".to_string(),
             location: "frontmatter.upstream".to_string(),
+            fix_suggestion: Some("Add upstream field with the id of the document that authorizes this one. For root docs, set upstream to own id.".to_string()),
+            dao_trace: Some("顺因".to_string()),
         });
     }
 
@@ -172,6 +306,8 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
                     doc.id
                 ),
                 location: path.to_string_lossy().to_string(),
+                fix_suggestion: Some("Move document to the correct directory matching its nature: specs/, proposals/, decisions/, reference/, or knowledge/notes/".to_string()),
+                dao_trace: Some("有度".to_string()),
             });
         }
 
@@ -184,6 +320,8 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
                 severity: ViolationSeverity::Guideline,
                 message: format!("directory depth exceeds 3 levels (found {} components)", depth),
                 location: path.to_string_lossy().to_string(),
+                fix_suggestion: Some("Flatten directory structure to max 3 subdirectory levels under docs/".to_string()),
+                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -192,7 +330,7 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
 }
 
 /// 域三：Content 验证
-fn validate_content(doc: &super::models::Document) -> ValidationResult {
+pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
     let mut result = ValidationResult::new();
 
     // G-04: 表格列数 <= 3
@@ -205,6 +343,8 @@ fn validate_content(doc: &super::models::Document) -> ValidationResult {
                     severity: ViolationSeverity::Guideline,
                     message: format!("table has {} columns, maximum is 3", col_count),
                     location: format!("line {}", line_num + 1),
+                    fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                    dao_trace: Some("有度".to_string()),
                 });
             }
         }
@@ -224,6 +364,8 @@ fn validate_content(doc: &super::models::Document) -> ValidationResult {
                         severity: ViolationSeverity::Guideline,
                         message: "code block must declare a language tag".to_string(),
                         location: format!("line {}", line_num + 1),
+                        fix_suggestion: Some("Add a language tag after the opening fence: ```mermaid, ```rust, ```text".to_string()),
+                        dao_trace: Some("有度".to_string()),
                     });
                 }
             } else {
@@ -241,6 +383,8 @@ fn validate_content(doc: &super::models::Document) -> ValidationResult {
                 severity: ViolationSeverity::Fatal,
                 message: "horizontal rule (---) is forbidden in document body".to_string(),
                 location: format!("line {}", line_num + 1),
+                fix_suggestion: Some("Use level-2 headings (## ) for section separation instead of horizontal rules".to_string()),
+                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -253,6 +397,8 @@ fn validate_content(doc: &super::models::Document) -> ValidationResult {
                 severity: ViolationSeverity::Guideline,
                 message: "emoji characters are forbidden".to_string(),
                 location: format!("line {}", line_num + 1),
+                fix_suggestion: Some("Remove emoji characters from narrative text".to_string()),
+                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -271,6 +417,8 @@ fn validate_content(doc: &super::models::Document) -> ValidationResult {
             severity: ViolationSeverity::Judgment,
             message: format!("list nesting exceeds 2 levels (found {})", max_indent),
             location: "content".to_string(),
+            fix_suggestion: Some("Flatten deeply nested lists: use paragraphs or subsections instead".to_string()),
+            dao_trace: Some("有度".to_string()),
         });
     }
 
@@ -291,6 +439,8 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
             severity: ViolationSeverity::Guideline,
             message: "deprecated (X) document should not be referenced".to_string(),
             location: format!("document {}", doc.id),
+            fix_suggestion: Some("Archive or update the referencing document to point to a valid upstream".to_string()),
+            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -317,6 +467,8 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                         doc.id, doc.stage.0
                     ),
                     location: "frontmatter.decided-by".to_string(),
+                    fix_suggestion: Some("Add decided-by with the identifier of the person who made this decision".to_string()),
+                    dao_trace: Some("顺因".to_string()),
                 });
             }
         }
@@ -330,6 +482,8 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                 severity: ViolationSeverity::Fatal,
                 message: "'ai-auto' is a forbidden decided-by value".to_string(),
                 location: "frontmatter.decided-by".to_string(),
+                fix_suggestion: Some("Replace 'ai-auto' with a human identifier (e.g. 'moc')".to_string()),
+                dao_trace: Some("知止".to_string()),
             });
         }
     }
@@ -347,6 +501,8 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                     nature.unwrap_or("unknown")
                 ),
                 location: "frontmatter.decided-by".to_string(),
+                fix_suggestion: Some("Remove the decided-by field from this non-decision document".to_string()),
+                dao_trace: Some("知止".to_string()),
             });
         }
     }

@@ -11,12 +11,12 @@ upstream: 240610-1500-sihankor-document-conventions
 
 ## 方案选择
 
-| 维度 | 决策 | 法依据 |
-|------|------|--------|
-| 架构 | 独立 binary `sihankor-fmt` | 有度：格式域与语义域术层分离 |
-| 规则 | C-01~C-10（含 C-01a）11 条 | 法源 Document-Conventions $八 |
+| 维度       | 决策                               | 法依据                                          |
+| ---------- | ---------------------------------- | ----------------------------------------------- |
+| 架构       | 独立 binary `sihankor-fmt`         | 有度：格式域与语义域术层分离                    |
+| 规则       | C-01~C-10（含 C-01a）11 条         | 法源 Document-Conventions $八                   |
 | pre-commit | 默认开启，`.sih/config.yml` 可关闭 | 顺因（不执行=无约束）+ 知止（人类保有最终权限） |
-| 中英混合 | Warning only | $8.9 原文精神 |
+| 中英混合   | Warning only                       | $8.9 原文精神                                   |
 
 ## ADR
 
