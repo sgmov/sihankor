@@ -236,6 +236,65 @@ async fn api_correct(
     }))
 }
 
+/// Push correction to Agent — saves to .sih/corrections/ for suggest_next_action
+async fn api_push_correction(
+    State(state): State<AppState>,
+    axum::extract::Json(req): axum::extract::Json<ActionRequest>,
+) -> Json<serde_json::Value> {
+    let doc = match state.db.get_document(&req.doc_id).await {
+        Ok(Some(d)) => d,
+        Ok(None) => {
+            return Json(serde_json::json!({"ok": false, "message": "文档未找到"}));
+        }
+        Err(e) => return Json(serde_json::json!({"ok": false, "message": e.to_string()})),
+    };
+
+    use crate::mind::grilling::GrillingEngine;
+    use crate::mind::icl::ICL;
+    use crate::mind::ict::ICT;
+    use crate::mind::iww::IWW;
+
+    let icl = ICL::new(state.db.clone());
+    let cognition = icl.analyze(&doc).await;
+    let proposal = IWW::propose(&cognition);
+    let verification = ICT::verify(&cognition, &proposal);
+
+    let mut issues: Vec<String> = Vec::new();
+    for check in &verification.five_law_check {
+        if check.result != crate::mind::types::LawCheckResult::Pass {
+            issues.push(format!("[{}] {}", check.law, check.note));
+        }
+    }
+
+    let engine = GrillingEngine::new(None);
+    let answers = vec![
+        crate::mind::grilling::Answer { question_id: "dao-er".into(), content: doc.nature.clone() },
+        crate::mind::grilling::Answer { question_id: "shun-yin".into(), content: doc.upstream.clone().unwrap_or_default() },
+        crate::mind::grilling::Answer { question_id: "you-du".into(), content: doc.stage.0.clone() },
+        crate::mind::grilling::Answer { question_id: "zhi-zhi".into(), content: "仅修正合道检查不通过的部分".into() },
+    ];
+    let prompt = engine.build_prompt(&answers, &format!("修正 {}", doc.id));
+
+    let corr_dir = std::path::Path::new(".sih").join("corrections");
+    std::fs::create_dir_all(&corr_dir).ok();
+    let task = serde_json::json!({
+        "doc_id": req.doc_id,
+        "doc_title": doc.title,
+        "issues": issues,
+        "correction_prompt": prompt,
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let task_path = corr_dir.join(format!("{}.json", req.doc_id));
+    std::fs::write(&task_path, serde_json::to_string_pretty(&task).unwrap_or_default()).ok();
+
+    Json(serde_json::json!({
+        "ok": true,
+        "doc_id": req.doc_id,
+        "message": format!("修正任务已推送: .sih/corrections/{}.json", req.doc_id),
+        "correction_prompt": prompt,
+    }))
+}
+
 // ---- Helpers ----
 
 /// Parse document from actual disk file and run fresh validation
@@ -297,6 +356,7 @@ pub async fn start(db: Arc<dyn SihDatabase>, port: u16) -> Result<(), Box<dyn st
         .route("/api/actions/stage", post(api_stage))
         .route("/api/actions/assay", post(api_assay))
         .route("/api/actions/correct", post(api_correct))
+        .route("/api/actions/push-correction", post(api_push_correction))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
