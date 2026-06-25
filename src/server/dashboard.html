@@ -334,9 +334,10 @@ async function doCorrect(docId){
         const r=await fetch('/api/actions/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
         const d=await r.json();
         if(d.ok){
-            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:200px;overflow-y:auto">'+d.correction_prompt+'</pre>'+
+            const promptText=d.correction_prompt||'';
+            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre id="prompt-text" style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:200px;overflow-y:auto">'+promptText+'</pre>'+
                 '<div style="display:flex;gap:6px;margin-top:8px">'+
-                '<button class="act-btn act-copy" onclick="navigator.clipboard.writeText(this.parentElement.previousElementSibling.textContent)">复制</button>'+
+                '<button class="act-btn act-copy" onclick="navigator.clipboard.writeText(document.getElementById(\'prompt-text\').textContent)">复制</button>'+
                 '<button class="act-btn act-push" onclick="doPush(\''+docId+'\')">直接发送给 Agent</button>'+
                 '<button class="act-btn" onclick="doAssay(\''+docId+'\')">重新检查</button>'+
                 '</div>';
