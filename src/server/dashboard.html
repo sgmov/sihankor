@@ -22,6 +22,16 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .sidebar-foot{flex-shrink:0;padding:10px 14px;border-top:1px solid #0f3460;font-size:10px;color:#555}
 .sidebar-foot div{padding:1px 0}
 
+/* filter */
+.sidebar-filter{flex-shrink:0;padding:8px 12px;border-top:1px solid #0f3460;border-bottom:1px solid #0f3460}
+.filter-label{font-size:9px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.f-btn{font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid #0f3460;background:#1a1a2e;color:#888;cursor:pointer;margin:2px 2px 2px 0;transition:.15s}
+.f-btn:hover{border-color:#e94560;color:#e0e0e0}
+.f-btn.active{background:#16213e;color:#e0e0e0;border-color:#e94560}
+.f-err.active{background:#e94560;border-color:#e94560;color:#fff}
+.f-warn.active{background:#f0a500;border-color:#f0a500;color:#000}
+.f-live.active{background:#4fc3f7;border-color:#4fc3f7;color:#000}
+
 /* ---- main area ---- */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
 .top-bar{flex-shrink:0;background:#16213e;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
@@ -99,6 +109,13 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 <nav class="sidebar">
 <h1>SiHankor</h1>
 <div class="sidebar-nav" id="sidebar-nav"></div>
+<div class="sidebar-filter" id="sidebar-filter">
+<div class="filter-label">筛选</div>
+<button class="f-btn active" onclick="setFilter('all')">全部</button>
+<button class="f-btn f-err" onclick="setFilter('error')">Error</button>
+<button class="f-btn f-warn" onclick="setFilter('warning')">Warning</button>
+<button class="f-btn f-live" onclick="setFilter('in_progress')">进行中</button>
+</div>
 <div class="sidebar-foot" id="sidebar-foot"></div>
 </nav>
 
@@ -133,7 +150,7 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 </div>
 
 <script>
-let idx=0,cols=[],data=null,selCard=null;
+let idx=0,cols=[],data=null,selCard=null,filter='all';
 
 async function fetchData(){
     try{
@@ -183,9 +200,10 @@ function render(){
 }
 
 function showColumn(){
-    const col=cols[idx];const cards=col.cards||[];
+    const col=cols[idx];let cards=col.cards||[];
+    cards=filterCards(cards);
     const live=cards.some(c=>c.status==='in_progress');
-    document.getElementById('phase-title').textContent=col.label;
+    document.getElementById('phase-title').textContent=col.label+(filter!=='all'?' ['+filter+']':'');
     document.getElementById('phase-title').style.color=live?'#e94560':'#e0e0e0';
 
     document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',i===idx));
