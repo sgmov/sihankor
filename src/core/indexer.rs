@@ -5,7 +5,7 @@ use walkdir::WalkDir;
 use super::database::SihDatabase;
 use super::models::{DocStatus, Document};
 use super::parser;
-use super::validator::{validate_document, ValidationConfig};
+use super::validator::{ValidationConfig, validate_document};
 
 /// 索引结果报告
 #[derive(Debug, Clone)]
@@ -74,10 +74,12 @@ pub async fn index_document(
     doc.nature = nature;
 
     // 写入数据库
-    db.upsert_document(doc.clone()).await.map_err(|e| IndexError::DatabaseError {
-        path: file_path.to_string_lossy().to_string(),
-        error: e.to_string(),
-    })?;
+    db.upsert_document(doc.clone())
+        .await
+        .map_err(|e| IndexError::DatabaseError {
+            path: file_path.to_string_lossy().to_string(),
+            error: e.to_string(),
+        })?;
 
     Ok(doc)
 }

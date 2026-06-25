@@ -1,4 +1,7 @@
-use super::types::{Cognition, DecisionProposal, Action, ActionKind, Rationale, Alternative, AffectedDocs, DivergenceSeverity, DivergenceType, Divergence, GovPosition, ChainRole, RelationGraph};
+use super::types::{
+    Action, ActionKind, AffectedDocs, Alternative, Cognition, DecisionProposal, Divergence,
+    DivergenceSeverity, DivergenceType, Rationale,
+};
 
 /// iWW 消息机 —— 三机第二机
 ///
@@ -23,13 +26,11 @@ impl IWW {
                     dao_basis: "道一：发散归向自然收敛".into(),
                     fa_basis: "有度：不加多余的修复建议".into(),
                 },
-                alternatives: vec![
-                    Alternative {
-                        action: ActionKind::HumanReview,
-                        pros: "人工复核确认无遗漏".into(),
-                        cons: "不必要的审查成本".into(),
-                    },
-                ],
+                alternatives: vec![Alternative {
+                    action: ActionKind::HumanReview,
+                    pros: "人工复核确认无遗漏".into(),
+                    cons: "不必要的审查成本".into(),
+                }],
                 affected_documents: AffectedDocs {
                     direct: vec![],
                     indirect: vec![],
@@ -49,9 +50,15 @@ impl IWW {
         affected_direct.dedup();
 
         // 判断主导发散类型来决定推荐行动
-        let has_critical = divs.iter().any(|d| d.severity == DivergenceSeverity::Critical);
-        let has_gap = divs.iter().any(|d| d.div_type == DivergenceType::ReferenceBreak);
-        let has_dup = divs.iter().any(|d| d.div_type == DivergenceType::Duplication);
+        let has_critical = divs
+            .iter()
+            .any(|d| d.severity == DivergenceSeverity::Critical);
+        let has_gap = divs
+            .iter()
+            .any(|d| d.div_type == DivergenceType::ReferenceBreak);
+        let has_dup = divs
+            .iter()
+            .any(|d| d.div_type == DivergenceType::Duplication);
 
         let (action_kind, desc) = if has_critical && has_gap {
             (
@@ -68,13 +75,21 @@ impl IWW {
                 format!(
                     "检测到 {} 个高重叠文档，建议合并。重叠文档：{:?}",
                     duplicates.len(),
-                    duplicates.iter().map(|d| d.doc_id.clone()).collect::<Vec<_>>()
+                    duplicates
+                        .iter()
+                        .map(|d| d.doc_id.clone())
+                        .collect::<Vec<_>>()
                 ),
             )
         } else if has_critical {
             (
                 ActionKind::HumanReview,
-                format!("{} 个临界级发散需人工决策", divs.iter().filter(|d| d.severity == DivergenceSeverity::Critical).count()),
+                format!(
+                    "{} 个临界级发散需人工决策",
+                    divs.iter()
+                        .filter(|d| d.severity == DivergenceSeverity::Critical)
+                        .count()
+                ),
             )
         } else {
             (
@@ -140,7 +155,10 @@ impl IWW {
                     pros: "归档旧版，保留最新版".into(),
                     cons: "丧失历史多视角".into(),
                 });
-                if divs.iter().any(|d| d.div_type == DivergenceType::IntentDrift) {
+                if divs
+                    .iter()
+                    .any(|d| d.div_type == DivergenceType::IntentDrift)
+                {
                     alts.push(Alternative {
                         action: ActionKind::HumanReview,
                         pros: "让人类判断哪个版本是正确的意图".into(),
@@ -168,13 +186,16 @@ impl IWW {
     }
 
     fn dao_basis_for(divs: &[Divergence]) -> String {
-        let types: Vec<&str> = divs.iter().map(|d| match d.div_type {
-            DivergenceType::IntentDrift => "道二（意图先于代码）",
-            DivergenceType::ReferenceBreak => "道三（代码自晦，意图必复）",
-            DivergenceType::Duplication => "道一（发散自-然，收敛必-为）",
-            DivergenceType::Gap => "道三（跨文档关系不可见）",
-            DivergenceType::BenignDivergence => "道一（自然发散无需强制收敛）",
-        }).collect();
+        let types: Vec<&str> = divs
+            .iter()
+            .map(|d| match d.div_type {
+                DivergenceType::IntentDrift => "道二（意图先于代码）",
+                DivergenceType::ReferenceBreak => "道三（代码自晦，意图必复）",
+                DivergenceType::Duplication => "道一（发散自-然，收敛必-为）",
+                DivergenceType::Gap => "道三（跨文档关系不可见）",
+                DivergenceType::BenignDivergence => "道一（自然发散无需强制收敛）",
+            })
+            .collect();
         let mut unique: Vec<&str> = types.into_iter().collect();
         unique.sort();
         unique.dedup();
@@ -182,8 +203,12 @@ impl IWW {
     }
 
     fn fa_basis_for(divs: &[Divergence]) -> String {
-        let has_critical = divs.iter().any(|d| d.severity == DivergenceSeverity::Critical);
-        let has_dup = divs.iter().any(|d| d.div_type == DivergenceType::Duplication);
+        let has_critical = divs
+            .iter()
+            .any(|d| d.severity == DivergenceSeverity::Critical);
+        let has_dup = divs
+            .iter()
+            .any(|d| d.div_type == DivergenceType::Duplication);
 
         if has_critical {
             "损补（损有余补不足）".into()
@@ -198,6 +223,7 @@ impl IWW {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mind::types::{ChainRole, GovPosition, RelationGraph};
 
     fn make_test_cognition(divs: Vec<Divergence>) -> Cognition {
         Cognition {

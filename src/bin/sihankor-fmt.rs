@@ -60,7 +60,10 @@ fn main() {
     }
 
     if files_scanned == 0 {
-        println!("sihankor-fmt: no .sih.md files found under {}", root.display());
+        println!(
+            "sihankor-fmt: no .sih.md files found under {}",
+            root.display()
+        );
         std::process::exit(0);
     }
 

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use crate::core::database::SihDatabase;
 use crate::core::models::Document;
 
-use super::types::{Cognition, GovPosition, ChainRole, RelationGraph, DuplicateInfo, OverlapDegree, ConflictInfo, Divergence, DivergenceType, DivergenceSeverity};
+use super::types::{
+    ChainRole, Cognition, ConflictInfo, Divergence, DivergenceSeverity, DivergenceType,
+    DuplicateInfo, GovPosition, OverlapDegree, RelationGraph,
+};
 
 /// iCL 明晰机 —— 三机第一机
 ///
@@ -27,7 +30,8 @@ impl ICL {
     pub async fn analyze(&self, doc: &Document) -> Cognition {
         let governance_position = self.governance_position(doc).await;
         let relation_graph = self.relation_graph(doc).await;
-        let divergence_diagnosis = self.diagnose_divergences(doc, &governance_position, &relation_graph);
+        let divergence_diagnosis =
+            self.diagnose_divergences(doc, &governance_position, &relation_graph);
 
         Cognition {
             governance_position,
@@ -63,7 +67,7 @@ impl ICL {
         match self.db.resolve_chain(id, 20).await {
             Ok(nodes) => nodes
                 .iter()
-                .filter(|n| n.id != id)  // 排除自引用
+                .filter(|n| n.id != id) // 排除自引用
                 .map(|n| n.id.clone())
                 .collect(),
             Err(_) => vec![],
@@ -75,7 +79,7 @@ impl ICL {
         match self.db.search_content(id).await {
             Ok(results) => results
                 .iter()
-                .filter(|r| r.id != id)  // 排除自身
+                .filter(|r| r.id != id) // 排除自身
                 .map(|r| r.id.clone())
                 .collect(),
             Err(_) => vec![],
@@ -159,35 +163,37 @@ impl ICL {
         // 检查上游文档 stage 是否可引用
         if let Some(ref upstream) = doc.upstream
             && let Ok(Some(up_doc)) = self.db.get_document(upstream).await
-                && !up_doc.stage.is_referenceable() {
-                    conflicts.push(ConflictInfo {
-                        doc_id: upstream.clone(),
-                        claim: format!("stage {} 是有效的引用来源", up_doc.stage.0),
-                        counter_claim: format!(
-                            "stage {} 不在可引用范围内（需 2/3 或 3/3）",
-                            up_doc.stage.0
-                        ),
-                    });
-                }
+            && !up_doc.stage.is_referenceable()
+        {
+            conflicts.push(ConflictInfo {
+                doc_id: upstream.clone(),
+                claim: format!("stage {} 是有效的引用来源", up_doc.stage.0),
+                counter_claim: format!(
+                    "stage {} 不在可引用范围内（需 2/3 或 3/3）",
+                    up_doc.stage.0
+                ),
+            });
+        }
 
         // 检查 nature 一致性：上游与下游 nature 是否构成合法治理链
         // 合法链：spec → proposal → decision → spec → ...
         // 简化版：上游为 spec 时下游应为 proposal/decision/spec
         //         上游为 proposal 时下游应为 decision
         if let Some(ref upstream) = doc.upstream
-            && let Ok(Some(up_doc)) = self.db.get_document(upstream).await {
-                let legal = Self::is_legal_chain(&up_doc.nature, &doc.nature);
-                if !legal {
-                    conflicts.push(ConflictInfo {
-                        doc_id: upstream.clone(),
-                        claim: format!("nature '{}' 是 '{}' 的合法上游", up_doc.nature, doc.nature),
-                        counter_claim: format!(
-                            "nature '{}' 不能直接下游到 '{}'",
-                            up_doc.nature, doc.nature
-                        ),
-                    });
-                }
+            && let Ok(Some(up_doc)) = self.db.get_document(upstream).await
+        {
+            let legal = Self::is_legal_chain(&up_doc.nature, &doc.nature);
+            if !legal {
+                conflicts.push(ConflictInfo {
+                    doc_id: upstream.clone(),
+                    claim: format!("nature '{}' 是 '{}' 的合法上游", up_doc.nature, doc.nature),
+                    counter_claim: format!(
+                        "nature '{}' 不能直接下游到 '{}'",
+                        up_doc.nature, doc.nature
+                    ),
+                });
             }
+        }
 
         conflicts
     }
@@ -198,7 +204,10 @@ impl ICL {
             ("spec", vec!["proposal", "decision", "spec", "reference"]),
             ("proposal", vec!["decision"]),
             ("decision", vec!["spec", "reference"]),
-            ("note", vec!["proposal", "decision", "spec", "reference", "note"]),
+            (
+                "note",
+                vec!["proposal", "decision", "spec", "reference", "note"],
+            ),
             ("reference", vec!["spec", "proposal", "decision"]),
         ]
         .into_iter()
@@ -281,7 +290,10 @@ impl ICL {
                 div_type: DivergenceType::IntentDrift,
                 severity: DivergenceSeverity::Critical,
                 confidence: 0.80,
-                description: format!("与 '{}' 冲突：{} vs {}", conflict.doc_id, conflict.claim, conflict.counter_claim),
+                description: format!(
+                    "与 '{}' 冲突：{} vs {}",
+                    conflict.doc_id, conflict.claim, conflict.counter_claim
+                ),
                 suggestion: Some("review 治理链合法性，修正 upstream 或 nature".into()),
             });
         }
@@ -297,7 +309,9 @@ mod tests {
     #[test]
     fn test_extract_references() {
         let icl = ICL {
-            db: std::sync::Arc::new(crate::core::database::SqliteBackend::open_in_memory().unwrap()),
+            db: std::sync::Arc::new(
+                crate::core::database::SqliteBackend::open_in_memory().unwrap(),
+            ),
         };
 
         let content = "参考 [240610-1030-on-sihankor-canon] 和 260616-1800-plan-semantic-split-decision 的内容。";

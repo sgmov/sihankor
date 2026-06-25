@@ -45,23 +45,20 @@ impl ProjectState {
         if !path.exists() {
             return Ok(Self::new());
         }
-        let content = std::fs::read_to_string(&path)
-            .map_err(|e| format!("read project.json: {}", e))?;
-        serde_json::from_str(&content)
-            .map_err(|e| format!("parse project.json: {}", e))
+        let content =
+            std::fs::read_to_string(&path).map_err(|e| format!("read project.json: {}", e))?;
+        serde_json::from_str(&content).map_err(|e| format!("parse project.json: {}", e))
     }
 
     /// 保存到 .sih/project.json
     pub fn save(&mut self, project_root: &Path) -> Result<(), String> {
         let dir = project_root.join(".sih");
-        std::fs::create_dir_all(&dir)
-            .map_err(|e| format!("create .sih dir: {}", e))?;
+        std::fs::create_dir_all(&dir).map_err(|e| format!("create .sih dir: {}", e))?;
         let path = dir.join("project.json");
         self.last_updated = Utc::now();
         let content = serde_json::to_string_pretty(self)
             .map_err(|e| format!("serialize project.json: {}", e))?;
-        std::fs::write(&path, content)
-            .map_err(|e| format!("write project.json: {}", e))
+        std::fs::write(&path, content).map_err(|e| format!("write project.json: {}", e))
     }
 
     /// 添加待确认检查点
@@ -111,7 +108,7 @@ impl Default for ProjectState {
 /// 操作建议
 #[derive(Debug, Clone, Serialize)]
 pub struct ActionSuggestion {
-    pub priority: u8,       // 1 = 立即, 2 = 建议, 3 = 可选
+    pub priority: u8, // 1 = 立即, 2 = 建议, 3 = 可选
     pub action: String,
     pub reason: String,
     pub target_id: Option<String>,
@@ -125,7 +122,9 @@ pub fn suggest_next_action(
     let mut suggestions = Vec::new();
 
     // Rule 1: pending checkpoints — highest priority
-    let pending: Vec<_> = state.pending_checkpoints.iter()
+    let pending: Vec<_> = state
+        .pending_checkpoints
+        .iter()
         .filter(|cp| cp.decision.is_none())
         .collect();
     if !pending.is_empty() {
@@ -201,7 +200,10 @@ mod tests {
 
         let cp_id = state.pending_checkpoints[0].id.clone();
         state.confirm_checkpoint(&cp_id);
-        assert_eq!(state.pending_checkpoints[0].decision, Some("confirmed".into()));
+        assert_eq!(
+            state.pending_checkpoints[0].decision,
+            Some("confirmed".into())
+        );
     }
 
     #[test]

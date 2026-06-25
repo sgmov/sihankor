@@ -1,7 +1,7 @@
 use sihankor::core::database::{SihDatabase, SqliteBackend};
 use sihankor::core::indexer;
 use sihankor::core::parser;
-use sihankor::core::validator::{validate_document, ValidationConfig};
+use sihankor::core::validator::{ValidationConfig, validate_document};
 use sihankor::mind::icl::ICL;
 use sihankor::mind::ict::ICT;
 use sihankor::mind::iww::IWW;
@@ -105,7 +105,10 @@ fn test_parse_philosophy_docs() {
     for (path, error) in &errors {
         eprintln!("Parse error for {}: {}", path, error);
     }
-    assert!(errors.is_empty(), "All philosophy docs should parse successfully");
+    assert!(
+        errors.is_empty(),
+        "All philosophy docs should parse successfully"
+    );
 }
 
 #[test]
@@ -132,7 +135,13 @@ fn test_validate_all_docs() {
                     if !result.violations.is_empty() {
                         println!("\n[{}] {} violations:", doc.id, result.violations.len());
                         for v in &result.violations {
-                            println!("  [{}] {} ({}): {}", v.severity.as_str(), v.rule_id, v.location, v.message);
+                            println!(
+                                "  [{}] {} ({}): {}",
+                                v.severity.as_str(),
+                                v.rule_id,
+                                v.location,
+                                v.message
+                            );
                         }
                         total_violations += result.violations.len();
                     }
@@ -161,21 +170,38 @@ async fn test_mind_full_flow() {
     // 找一个 spec 文档做分析
     let specs = db.search_by_nature("spec").await.unwrap();
     let target = specs.first().expect("At least one spec document needed");
-    let full_doc = db.get_document(&target.id).await.unwrap().expect("Document should exist");
+    let full_doc = db
+        .get_document(&target.id)
+        .await
+        .unwrap()
+        .expect("Document should exist");
 
     // iCL 认知
     let icl = ICL::new(db.clone());
     let cognition = icl.analyze(&full_doc).await;
-    assert!(!cognition.governance_position.nature.is_empty(), "Cognition should have nature");
-    assert!(!cognition.governance_position.stage.is_empty(), "Cognition should have stage");
+    assert!(
+        !cognition.governance_position.nature.is_empty(),
+        "Cognition should have nature"
+    );
+    assert!(
+        !cognition.governance_position.stage.is_empty(),
+        "Cognition should have stage"
+    );
 
     // iWW 决策
     let proposal = IWW::propose(&cognition);
-    assert!(!proposal.rationale.dao_basis.is_empty(), "Proposal should have dao basis");
+    assert!(
+        !proposal.rationale.dao_basis.is_empty(),
+        "Proposal should have dao basis"
+    );
 
     // iCT 验证
     let verification = ICT::verify(&cognition, &proposal);
-    assert_eq!(verification.five_law_check.len(), 5, "Should have 5 law checks");
+    assert_eq!(
+        verification.five_law_check.len(),
+        5,
+        "Should have 5 law checks"
+    );
 
     // 道四：输出必含 limitations 和 self_question
     let mut limitations = Vec::new();
@@ -184,13 +210,19 @@ async fn test_mind_full_flow() {
             limitations.push(sihankor::mind::types::Limitation {
                 aspect: format!("{}-check", check.law),
                 reason: check.note.clone(),
-                confidence: if check.result == sihankor::mind::types::LawCheckResult::Fail { 0.95 } else { 0.6 },
+                confidence: if check.result == sihankor::mind::types::LawCheckResult::Fail {
+                    0.95
+                } else {
+                    0.6
+                },
             });
         }
     }
     let self_question = match verification.overall {
         sihankor::mind::types::Verdict::Fail => "Decision rejected — verify iCL diagnosis".into(),
-        sihankor::mind::types::Verdict::Conditional => "Conditional — confirm human review items".into(),
+        sihankor::mind::types::Verdict::Conditional => {
+            "Conditional — confirm human review items".into()
+        }
         sihankor::mind::types::Verdict::Pass => "Pass — check for undiscovered gaps".into(),
     };
 
@@ -214,24 +246,60 @@ async fn test_mind_full_flow() {
 
     // JSON 序列化验证
     let json = serde_json::to_string_pretty(&analysis).unwrap();
-    assert!(json.contains(r#""schema_version""#), "AnalysisResult should serialize");
+    assert!(
+        json.contains(r#""schema_version""#),
+        "AnalysisResult should serialize"
+    );
     assert!(json.contains(r#""cognition""#), "Should contain cognition");
-    assert!(json.contains(r#""decision_proposal""#), "Should contain decision_proposal");
-    assert!(json.contains(r#""verification""#), "Should contain verification");
-    assert!(json.contains(r#""limitations""#), "Should contain limitations");
-    assert!(json.contains(r#""self_question""#), "Should contain self_question");
-    assert!(json.contains(r#""five_law_check""#), "Should contain five_law_check");
+    assert!(
+        json.contains(r#""decision_proposal""#),
+        "Should contain decision_proposal"
+    );
+    assert!(
+        json.contains(r#""verification""#),
+        "Should contain verification"
+    );
+    assert!(
+        json.contains(r#""limitations""#),
+        "Should contain limitations"
+    );
+    assert!(
+        json.contains(r#""self_question""#),
+        "Should contain self_question"
+    );
+    assert!(
+        json.contains(r#""five_law_check""#),
+        "Should contain five_law_check"
+    );
 
-    println!("Mind flow test passed for document: {} ({})", full_doc.id, full_doc.title);
-    println!("  Cognition: nature={}, stage={}, role={:?}",
+    println!(
+        "Mind flow test passed for document: {} ({})",
+        full_doc.id, full_doc.title
+    );
+    println!(
+        "  Cognition: nature={}, stage={}, role={:?}",
         cognition.governance_position.nature,
         cognition.governance_position.stage,
         cognition.governance_position.role_in_chain,
     );
-    println!("  Proposal: action={:?}, dao_basis={}",
-        analysis.decision_proposal.as_ref().unwrap().recommended_action.kind,
-        analysis.decision_proposal.as_ref().unwrap().rationale.dao_basis,
+    println!(
+        "  Proposal: action={:?}, dao_basis={}",
+        analysis
+            .decision_proposal
+            .as_ref()
+            .unwrap()
+            .recommended_action
+            .kind,
+        analysis
+            .decision_proposal
+            .as_ref()
+            .unwrap()
+            .rationale
+            .dao_basis,
     );
-    println!("  Verification: overall={:?}", analysis.verification.as_ref().unwrap().overall);
+    println!(
+        "  Verification: overall={:?}",
+        analysis.verification.as_ref().unwrap().overall
+    );
     println!("  JSON size: {} bytes", json.len());
 }

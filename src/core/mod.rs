@@ -1,8 +1,8 @@
-pub mod models;
 pub mod database;
-pub mod parser;
-pub mod validator;
 pub mod indexer;
-pub mod orchestrator;
 pub mod kanban;
+pub mod models;
+pub mod orchestrator;
+pub mod parser;
 pub mod project_state;
+pub mod validator;

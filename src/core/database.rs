@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension, params};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -17,7 +17,10 @@ pub trait SihDatabase: Send + Sync {
     async fn count_documents(&self) -> Result<usize, DatabaseError>;
     async fn count_by_stage(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
     async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError>;
-    async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError>;
+    async fn get_documents_by_status(
+        &self,
+        status: &DocStatus,
+    ) -> Result<Vec<Document>, DatabaseError>;
     async fn get_all_documents(&self) -> Result<Vec<Document>, DatabaseError>;
 }
 
@@ -63,7 +66,10 @@ impl SqliteBackend {
     }
 
     fn initialize_schema(&self) -> Result<(), DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute_batch(
             "
             CREATE TABLE IF NOT EXISTS documents (
@@ -96,7 +102,10 @@ impl SihDatabase for SqliteBackend {
         let stage = &doc.stage.0;
         let status = doc.status.as_str();
 
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute(
             "INSERT OR REPLACE INTO documents (id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -116,16 +125,17 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn get_document(&self, id: &str) -> Result<Option<Document>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE id = ?1",
         )?;
 
         let result = stmt
-            .query_row(params![id], |row| {
-                Ok(row_to_document(row))
-            })
+            .query_row(params![id], |row| Ok(row_to_document(row)))
             .optional()?;
 
         match result {
@@ -135,7 +145,10 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn search_by_nature(&self, nature: &str) -> Result<Vec<Document>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE nature = ?1",
@@ -152,7 +165,10 @@ impl SihDatabase for SqliteBackend {
 
     async fn search_content(&self, query: &str) -> Result<Vec<SearchResult>, DatabaseError> {
         let pattern = format!("%{}%", query);
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, content FROM documents WHERE content LIKE ?1 OR title LIKE ?1",
         )?;
@@ -182,7 +198,10 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn resolve_chain(&self, id: &str, depth: u32) -> Result<Vec<ChainNode>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
 
         // 使用递归 CTE 追溯 upstream 链
         let mut stmt = conn.prepare(
@@ -222,20 +241,29 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn delete_document(&self, id: &str) -> Result<(), DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute("DELETE FROM documents WHERE id = ?1", params![id])?;
         Ok(())
     }
 
     async fn count_documents(&self) -> Result<usize, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
-        let count: usize = conn
-            .query_row("SELECT COUNT(*) FROM documents", [], |row| row.get(0))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
+        let count: usize =
+            conn.query_row("SELECT COUNT(*) FROM documents", [], |row| row.get(0))?;
         Ok(count)
     }
 
     async fn count_by_stage(&self) -> Result<Vec<(String, usize)>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT stage, COUNT(*) as cnt FROM documents GROUP BY stage ORDER BY stage",
         )?;
@@ -251,7 +279,10 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn count_by_nature(&self) -> Result<Vec<(String, usize)>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT nature, COUNT(*) as cnt FROM documents WHERE nature != '' GROUP BY nature ORDER BY cnt DESC",
         )?;
@@ -266,9 +297,15 @@ impl SihDatabase for SqliteBackend {
         Ok(counts)
     }
 
-    async fn get_documents_by_status(&self, status: &DocStatus) -> Result<Vec<Document>, DatabaseError> {
+    async fn get_documents_by_status(
+        &self,
+        status: &DocStatus,
+    ) -> Result<Vec<Document>, DatabaseError> {
         let status_str = status.as_str();
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents WHERE status = ?1",
@@ -284,7 +321,10 @@ impl SihDatabase for SqliteBackend {
     }
 
     async fn get_all_documents(&self) -> Result<Vec<Document>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, stage, title, upstream, frontmatter_json, content, status, indexed_at, nature
              FROM documents ORDER BY nature, stage DESC",
@@ -300,9 +340,7 @@ impl SihDatabase for SqliteBackend {
     }
 }
 
-fn row_to_document(
-    row: &rusqlite::Row<'_>,
-) -> Result<Document, DatabaseError> {
+fn row_to_document(row: &rusqlite::Row<'_>) -> Result<Document, DatabaseError> {
     let id: String = row.get(0)?;
     let stage_str: String = row.get(1)?;
     let title: String = row.get(2)?;
@@ -314,7 +352,9 @@ fn row_to_document(
     let nature: String = row.get(8)?;
 
     let frontmatter: super::models::Frontmatter = serde_json::from_str(&frontmatter_json)?;
-    let indexed_at = indexed_at_str.parse::<chrono::DateTime<chrono::Utc>>().unwrap_or_else(|_| chrono::Utc::now());
+    let indexed_at = indexed_at_str
+        .parse::<chrono::DateTime<chrono::Utc>>()
+        .unwrap_or_else(|_| chrono::Utc::now());
 
     Ok(Document {
         id,

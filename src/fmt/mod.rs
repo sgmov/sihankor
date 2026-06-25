@@ -49,14 +49,18 @@ impl FormatConfig {
     pub fn load() -> Self {
         let path = std::path::Path::new(".sih/config.yml");
         if path.exists()
-            && let Ok(content) = std::fs::read_to_string(path) {
-                match serde_yaml::from_str(&content) {
-                    Ok(config) => return config,
-                    Err(e) => {
-                        eprintln!("sihankor-fmt: warning: failed to parse .sih/config.yml: {}. Using defaults.", e);
-                    }
+            && let Ok(content) = std::fs::read_to_string(path)
+        {
+            match serde_yaml::from_str(&content) {
+                Ok(config) => return config,
+                Err(e) => {
+                    eprintln!(
+                        "sihankor-fmt: warning: failed to parse .sih/config.yml: {}. Using defaults.",
+                        e
+                    );
                 }
             }
+        }
         FormatConfig::default()
     }
 }
@@ -213,7 +217,10 @@ pub fn check_c01a(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
             continue; // Explicitly permitted CJK punctuation
         }
         // Skip characters handled by more specific rules (C-02, C-03, C-04)
-        if matches!(c, '\u{201C}' | '\u{201D}' | '\u{2014}' | '\u{2190}' | '\u{2192}') {
+        if matches!(
+            c,
+            '\u{201C}' | '\u{201D}' | '\u{2014}' | '\u{2190}' | '\u{2192}'
+        ) {
             continue;
         }
         violations.push(Violation {
@@ -222,12 +229,10 @@ pub fn check_c01a(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
             col: col + 1,
             code: "C01a".to_string(),
             level: Level::Error,
-            message: format!(
-                "non-ASCII non-CJK character: '{}' (U+{:04X})",
-                c,
-                c as u32
+            message: format!("non-ASCII non-CJK character: '{}' (U+{:04X})", c, c as u32),
+            fix_suggestion: Some(
+                "Replace with ASCII equivalent or permitted CJK character".to_string(),
             ),
-            fix_suggestion: Some("Replace with ASCII equivalent or permitted CJK character".to_string()),
             dao_trace: Some("损补".to_string()),
         });
     }
@@ -247,7 +252,9 @@ pub fn check_c02(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 code: "C02".to_string(),
                 level: Level::Error,
                 message: "em-dash (U+2014) should be fullwidth colon (U+FF1A)".to_string(),
-                fix_suggestion: Some("Replace with fullwidth colon (：) or ASCII hyphen (-)".to_string()),
+                fix_suggestion: Some(
+                    "Replace with fullwidth colon (：) or ASCII hyphen (-)".to_string(),
+                ),
                 dao_trace: Some("损补".to_string()),
             });
         }
@@ -337,7 +344,9 @@ pub fn check_c05(lines: &[&str], file: &str, doc_start: usize) -> Vec<Violation>
                 code: "C05".to_string(),
                 level: Level::Error,
                 message: "horizontal rule in body; use '##' headings instead".to_string(),
-                fix_suggestion: Some("Use level-2 headings (## ) for section separation instead of ---".to_string()),
+                fix_suggestion: Some(
+                    "Use level-2 headings (## ) for section separation instead of ---".to_string(),
+                ),
                 dao_trace: Some("有度".to_string()),
             });
         }
@@ -347,7 +356,11 @@ pub fn check_c05(lines: &[&str], file: &str, doc_start: usize) -> Vec<Violation>
 
 // ── C-06: list nesting > 2 levels ──
 
-pub fn check_c06(lines: &[&str], file: &str, codeblock_lines: &std::collections::HashSet<usize>) -> Vec<Violation> {
+pub fn check_c06(
+    lines: &[&str],
+    file: &str,
+    codeblock_lines: &std::collections::HashSet<usize>,
+) -> Vec<Violation> {
     let mut violations = Vec::new();
     for (i, line) in lines.iter().enumerate() {
         if codeblock_lines.contains(&i) {
@@ -377,7 +390,10 @@ pub fn check_c06(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                         "list nesting depth {} exceeds maximum 2; use paragraphs instead",
                         depth
                     ),
-                    fix_suggestion: Some("Flatten deeply nested lists: use paragraphs or subsections instead".to_string()),
+                    fix_suggestion: Some(
+                        "Flatten deeply nested lists: use paragraphs or subsections instead"
+                            .to_string(),
+                    ),
                     dao_trace: Some("有度".to_string()),
                 });
             }
@@ -388,7 +404,11 @@ pub fn check_c06(lines: &[&str], file: &str, codeblock_lines: &std::collections:
 
 // ── C-07: suspected ASCII art (≥3 consecutive lines starting with |+/-\) ──
 
-pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections::HashSet<usize>) -> Vec<Violation> {
+pub fn check_c07(
+    lines: &[&str],
+    file: &str,
+    codeblock_lines: &std::collections::HashSet<usize>,
+) -> Vec<Violation> {
     let ascii_art_starts = ['|', '+', '-', '/', '\\'];
     let mut violations = Vec::new();
     let mut run_start: Option<usize> = None;
@@ -423,8 +443,8 @@ pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                     fix_suggestion: Some("Replace ASCII art with a Mermaid flowchart diagram".to_string()),
                     dao_trace: Some("有度".to_string()),
                 });
-                run_start = None; // Reset to avoid duplicate reports
-            }
+                    run_start = None; // Reset to avoid duplicate reports
+                }
             }
         } else {
             run_start = None;
@@ -435,7 +455,11 @@ pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections:
 
 // ── C-08: mixed CJK/English in same paragraph ──
 
-pub fn check_c08(lines: &[&str], file: &str, codeblock_lines: &std::collections::HashSet<usize>) -> Vec<Violation> {
+pub fn check_c08(
+    lines: &[&str],
+    file: &str,
+    codeblock_lines: &std::collections::HashSet<usize>,
+) -> Vec<Violation> {
     let mut violations = Vec::new();
     for (i, line) in lines.iter().enumerate() {
         if codeblock_lines.contains(&i) {
@@ -485,7 +509,9 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                         code: "C09".to_string(),
                         level: Level::Error,
                         message: "code block missing language tag".to_string(),
-                        fix_suggestion: Some("Add a language tag: ```rust, ```mermaid, ```text".to_string()),
+                        fix_suggestion: Some(
+                            "Add a language tag: ```rust, ```mermaid, ```text".to_string(),
+                        ),
                         dao_trace: Some("有度".to_string()),
                     });
                 } else if !VALID_LANG_TAGS.contains(&tag) {
@@ -495,8 +521,14 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                         col: 1,
                         code: "C09".to_string(),
                         level: Level::Warning,
-                        message: format!("unknown language tag '{}'; permitted: {:?}", tag, VALID_LANG_TAGS),
-                        fix_suggestion: Some(format!("Use one of the permitted tags: {}", VALID_LANG_TAGS.join(", "))),
+                        message: format!(
+                            "unknown language tag '{}'; permitted: {:?}",
+                            tag, VALID_LANG_TAGS
+                        ),
+                        fix_suggestion: Some(format!(
+                            "Use one of the permitted tags: {}",
+                            VALID_LANG_TAGS.join(", ")
+                        )),
                         dao_trace: Some("有度".to_string()),
                     });
                 }
@@ -519,7 +551,9 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                 .split('|')
                 .filter(|s| !s.trim().is_empty())
                 .collect();
-            let is_separator = cols.iter().all(|s| s.trim().chars().all(|c| c == '-' || c == ':' || c == ' '));
+            let is_separator = cols
+                .iter()
+                .all(|s| s.trim().chars().all(|c| c == '-' || c == ':' || c == ' '));
             if is_separator {
                 let parts: Vec<&str> = trimmed.split('|').collect();
                 let count = if parts.len() > 2 { parts.len() - 2 } else { 0 };
@@ -531,7 +565,9 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                         code: "C10".to_string(),
                         level: Level::Error,
                         message: format!("table has {} columns; maximum is 3", count),
-                        fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                        fix_suggestion: Some(
+                            "Split wide table into bullet lists or subsections".to_string(),
+                        ),
                         dao_trace: Some("有度".to_string()),
                     });
                     last_table_violation = true;
@@ -544,7 +580,9 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                     code: "C10".to_string(),
                     level: Level::Error,
                     message: format!("table has {} columns; maximum is 3", cols.len()),
-                    fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                    fix_suggestion: Some(
+                        "Split wide table into bullet lists or subsections".to_string(),
+                    ),
                     dao_trace: Some("有度".to_string()),
                 });
                 last_table_violation = true;
@@ -636,8 +674,14 @@ pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Vi
 ///
 /// 格式错误映射：Error -> Fatal（阻断），Warning -> Guideline（警告）
 pub fn governance_trailer(violations: &[Violation]) -> String {
-    let errors = violations.iter().filter(|v| v.level == Level::Error).count();
-    let warnings = violations.iter().filter(|v| v.level == Level::Warning).count();
+    let errors = violations
+        .iter()
+        .filter(|v| v.level == Level::Error)
+        .count();
+    let warnings = violations
+        .iter()
+        .filter(|v| v.level == Level::Warning)
+        .count();
 
     let mut dao_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
     for v in violations {

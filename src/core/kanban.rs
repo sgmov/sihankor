@@ -220,21 +220,20 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
 
         // 阻塞检测：Error 状态
         if doc.status == DocStatus::Error {
-            blockers.push("validation error: document has fatal validation issues"
-                .to_string());
+            blockers.push("validation error: document has fatal validation issues".to_string());
             blocked += 1;
         }
 
         // 上游依赖：非 root 文档且有 upstream
         if let Some(ref upstream) = doc.upstream
-            && upstream != &doc.id {
-                depends_on.push(upstream.clone());
-            }
+            && upstream != &doc.id
+        {
+            depends_on.push(upstream.clone());
+        }
 
         // 2/3 文档没有 upstream 视为阻塞
         if doc.stage.0 == "2/3" && doc.upstream.is_none() {
-            blockers
-                .push("stage 2/3 but no upstream defined: governance chain broken".to_string());
+            blockers.push("stage 2/3 but no upstream defined: governance chain broken".to_string());
             blocked += 1;
         }
 
@@ -326,14 +325,9 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
     }
 
     // 道四盲区
-    limitations.push(
-        "代码任务卡片来源于 Roadmap §8 手动维护，并非从 src/ 自动推导。"
-            .to_string(),
-    );
-    limitations.push(
-        "文档卡片的 blockers 仅基于 validation status 和 upstream 缺失检测，"
-            .to_string(),
-    );
+    limitations.push("代码任务卡片来源于 Roadmap §8 手动维护，并非从 src/ 自动推导。".to_string());
+    limitations
+        .push("文档卡片的 blockers 仅基于 validation status 和 upstream 缺失检测，".to_string());
     limitations.push("看板不反映跨文档语义冲突（需 Mind 阶段的 iCL 关系图谱）。".to_string());
 
     let active = total.saturating_sub(done_count);

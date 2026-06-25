@@ -86,19 +86,23 @@ impl GrillingEngine {
                 id: "dao-er".into(),
                 dao_principle: "道二：意图先于代码".into(),
                 text: format!("这份'{topic_hint}'文档的 nature 是什么?"),
-                hint: "spec（系统定义）/ proposal（变更提案）/ decision（架构决策）/ note（实践笔记）".into(),
+                hint:
+                    "spec（系统定义）/ proposal（变更提案）/ decision（架构决策）/ note（实践笔记）"
+                        .into(),
             },
             Question {
                 id: "shun-yin".into(),
                 dao_principle: "顺因：因果链可追溯".into(),
                 text: "它的上游是谁？哪个已有文档授权了这个变更?".into(),
-                hint: "上游文档 id，如 260622-1400-sihankor-core-positioning。根文档可以不填".into(),
+                hint: "上游文档 id，如 260622-1400-sihankor-core-positioning。根文档可以不填"
+                    .into(),
             },
             Question {
                 id: "you-du".into(),
                 dao_principle: "有度：力度匹配".into(),
                 text: "它的 stage 应该是 1/3 还是可以直接 2/3？".into(),
-                hint: "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进（推荐追问后选择）, 3/3 = 已定稿".into(),
+                hint: "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进（推荐追问后选择）, 3/3 = 已定稿"
+                    .into(),
             },
             Question {
                 id: "zhi-zhi".into(),
@@ -130,11 +134,7 @@ impl GrillingEngine {
             frontmatter: FrontmatterHint {
                 id_hint: {
                     let now = chrono::Utc::now();
-                    format!(
-                        "{}-{}",
-                        now.format("%y%m%d-%H%M"),
-                        build_slug(topic_hint)
-                    )
+                    format!("{}-{}", now.format("%y%m%d-%H%M"), build_slug(topic_hint))
                 },
                 stage,
                 nature,
@@ -291,7 +291,8 @@ impl GrillingEngine {
     // ---------- 道追溯 ----------
 
     fn build_dao_trace(&self, _nature: &str) -> String {
-        "本文档的声明性主张需溯源至道/法原则。道四（规约与实现必有间隙）要求声明已知的不完备之处。".into()
+        "本文档的声明性主张需溯源至道/法原则。道四（规约与实现必有间隙）要求声明已知的不完备之处。"
+            .into()
     }
 }
 
@@ -346,7 +347,11 @@ mod tests {
         let engine = GrillingEngine::new();
         let questions = engine.questions("test");
         for q in &questions {
-            assert!(!q.dao_principle.is_empty(), "question {} has empty principle", q.id);
+            assert!(
+                !q.dao_principle.is_empty(),
+                "question {} has empty principle",
+                q.id
+            );
             assert!(!q.text.is_empty(), "question {} has empty text", q.id);
             assert!(!q.hint.is_empty(), "question {} has empty hint", q.id);
         }
@@ -356,28 +361,62 @@ mod tests {
     fn test_build_prompt_spec() {
         let engine = GrillingEngine::new();
         let answers = vec![
-            Answer { question_id: "dao-er".into(), content: "spec".into() },
-            Answer { question_id: "shun-yin".into(), content: "260622-1400-core-positioning".into() },
-            Answer { question_id: "you-du".into(), content: "1/3".into() },
-            Answer { question_id: "zhi-zhi".into(), content: "不涉及代码实现".into() },
+            Answer {
+                question_id: "dao-er".into(),
+                content: "spec".into(),
+            },
+            Answer {
+                question_id: "shun-yin".into(),
+                content: "260622-1400-core-positioning".into(),
+            },
+            Answer {
+                question_id: "you-du".into(),
+                content: "1/3".into(),
+            },
+            Answer {
+                question_id: "zhi-zhi".into(),
+                content: "不涉及代码实现".into(),
+            },
         ];
         let prompt = engine.build_prompt(&answers, "factory dashboard");
         assert_eq!(prompt.frontmatter.nature, "spec");
         assert_eq!(prompt.frontmatter.stage, "1/3");
         assert!(prompt.frontmatter.upstream.is_some());
         assert!(prompt.constraints.len() > 5);
-        assert!(prompt.sections.iter().any(|s| s.heading.contains("不在范围内")));
-        assert!(prompt.sections.iter().any(|s| s.heading.contains("@limitations")));
+        assert!(
+            prompt
+                .sections
+                .iter()
+                .any(|s| s.heading.contains("不在范围内"))
+        );
+        assert!(
+            prompt
+                .sections
+                .iter()
+                .any(|s| s.heading.contains("@limitations"))
+        );
     }
 
     #[test]
     fn test_build_prompt_note() {
         let engine = GrillingEngine::new();
         let answers = vec![
-            Answer { question_id: "dao-er".into(), content: "note".into() },
-            Answer { question_id: "shun-yin".into(), content: "".into() },
-            Answer { question_id: "you-du".into(), content: "1/3".into() },
-            Answer { question_id: "zhi-zhi".into(), content: "仅记录，不做规范性断言".into() },
+            Answer {
+                question_id: "dao-er".into(),
+                content: "note".into(),
+            },
+            Answer {
+                question_id: "shun-yin".into(),
+                content: "".into(),
+            },
+            Answer {
+                question_id: "you-du".into(),
+                content: "1/3".into(),
+            },
+            Answer {
+                question_id: "zhi-zhi".into(),
+                content: "仅记录，不做规范性断言".into(),
+            },
         ];
         let prompt = engine.build_prompt(&answers, "learning");
         assert_eq!(prompt.frontmatter.nature, "note");
@@ -397,10 +436,22 @@ mod tests {
     fn test_constraints_include_all_critical_rules() {
         let engine = GrillingEngine::new();
         let answers = vec![
-            Answer { question_id: "dao-er".into(), content: "spec".into() },
-            Answer { question_id: "shun-yin".into(), content: "".into() },
-            Answer { question_id: "you-du".into(), content: "1/3".into() },
-            Answer { question_id: "zhi-zhi".into(), content: "".into() },
+            Answer {
+                question_id: "dao-er".into(),
+                content: "spec".into(),
+            },
+            Answer {
+                question_id: "shun-yin".into(),
+                content: "".into(),
+            },
+            Answer {
+                question_id: "you-du".into(),
+                content: "1/3".into(),
+            },
+            Answer {
+                question_id: "zhi-zhi".into(),
+                content: "".into(),
+            },
         ];
         let prompt = engine.build_prompt(&answers, "test");
         let all_constraints = prompt.constraints.join(" ");
@@ -416,20 +467,37 @@ mod tests {
     fn test_decision_adds_g09() {
         let engine = GrillingEngine::new();
         let answers = vec![
-            Answer { question_id: "dao-er".into(), content: "decision".into() },
-            Answer { question_id: "shun-yin".into(), content: "some-proposal".into() },
-            Answer { question_id: "you-du".into(), content: "2/3".into() },
-            Answer { question_id: "zhi-zhi".into(), content: "".into() },
+            Answer {
+                question_id: "dao-er".into(),
+                content: "decision".into(),
+            },
+            Answer {
+                question_id: "shun-yin".into(),
+                content: "some-proposal".into(),
+            },
+            Answer {
+                question_id: "you-du".into(),
+                content: "2/3".into(),
+            },
+            Answer {
+                question_id: "zhi-zhi".into(),
+                content: "".into(),
+            },
         ];
         let prompt = engine.build_prompt(&answers, "test");
         let all_constraints = prompt.constraints.join(" ");
-        assert!(all_constraints.contains("G-09"), "decision should include G-09");
+        assert!(
+            all_constraints.contains("G-09"),
+            "decision should include G-09"
+        );
     }
 
     #[test]
     fn test_slug_from_chinese_intent() {
         // 中文意图，提取 ASCII token
-        let slug = build_slug("创建一个产线看板的视觉设计规范，用于 Web 端渲染 Factorio 风格的治理装配线图");
+        let slug = build_slug(
+            "创建一个产线看板的视觉设计规范，用于 Web 端渲染 Factorio 风格的治理装配线图",
+        );
         assert_eq!(slug, "web-factorio");
     }
 
@@ -450,13 +518,33 @@ mod tests {
     fn test_slug_no_duplicate_c01() {
         let engine = GrillingEngine::new();
         let answers = vec![
-            Answer { question_id: "dao-er".into(), content: "spec".into() },
-            Answer { question_id: "shun-yin".into(), content: "".into() },
-            Answer { question_id: "you-du".into(), content: "1/3".into() },
-            Answer { question_id: "zhi-zhi".into(), content: "".into() },
+            Answer {
+                question_id: "dao-er".into(),
+                content: "spec".into(),
+            },
+            Answer {
+                question_id: "shun-yin".into(),
+                content: "".into(),
+            },
+            Answer {
+                question_id: "you-du".into(),
+                content: "1/3".into(),
+            },
+            Answer {
+                question_id: "zhi-zhi".into(),
+                content: "".into(),
+            },
         ];
         let prompt = engine.build_prompt(&answers, "test");
-        let c01_count = prompt.constraints.iter().filter(|c| c.contains("[C-01]")).count();
-        assert_eq!(c01_count, 1, "C-01 should appear exactly once, got {}", c01_count);
+        let c01_count = prompt
+            .constraints
+            .iter()
+            .filter(|c| c.contains("[C-01]"))
+            .count();
+        assert_eq!(
+            c01_count, 1,
+            "C-01 should appear exactly once, got {}",
+            c01_count
+        );
     }
 }

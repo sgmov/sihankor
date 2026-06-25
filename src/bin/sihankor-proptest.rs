@@ -1,7 +1,13 @@
 //! `sihankor-proptest` — 验码：对标注函数运行随机输入 fuzzing，仅报告硬崩溃。
 //!
 //! Usage: `sihankor-proptest`
-#![allow(clippy::print_stdout, clippy::unwrap_used, clippy::expect_used, clippy::vec_init_then_push, clippy::unnecessary_unwrap)]
+#![allow(
+    clippy::print_stdout,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::vec_init_then_push,
+    clippy::unnecessary_unwrap
+)]
 //!
 //! 对 `#[proptest]` 标注的函数生成随机输入，通过 `catch_unwind` 捕获 panic。
 //! 不判断语义正确性——只判定硬崩溃。输出结构化报告供 CI 消费。
@@ -27,8 +33,20 @@ struct FuzzResult {
 }
 
 impl FuzzResult {
-    const fn _build(target: &'static str, file: &'static str, total: usize, crashes: usize, crash_details: Vec<(String, String)>) -> Self {
-        Self { target, file, total, crashes, crash_details }
+    const fn _build(
+        target: &'static str,
+        file: &'static str,
+        total: usize,
+        crashes: usize,
+        crash_details: Vec<(String, String)>,
+    ) -> Self {
+        Self {
+            target,
+            file,
+            total,
+            crashes,
+            crash_details,
+        }
     }
 }
 
@@ -66,7 +84,10 @@ fn generate_string_inputs() -> Vec<String> {
 
     // Frontmatter 格式
     inputs.push("---\nid: bad-id\nstage: 99/99\n---\n".to_string());
-    inputs.push("---\nid: 260613-1800-ok\nstage: 1/3\nupstream: 240602-0900-x\n---\n# Title\ntext".to_string());
+    inputs.push(
+        "---\nid: 260613-1800-ok\nstage: 1/3\nupstream: 240602-0900-x\n---\n# Title\ntext"
+            .to_string(),
+    );
     inputs.push("no frontmatter at all, just plain text".to_string());
 
     // 极端长度
@@ -83,7 +104,12 @@ fn generate_string_inputs() -> Vec<String> {
 /// 生成随机 (&str, &str) 对（用于需要两个参数的函数）
 fn generate_str_pairs() -> Vec<(String, String)> {
     let mut pairs = Vec::new();
-    let files = ["test.sih.md", "docs/specs/test.sih.md", "docs/knowledge/notes/test.sih.md", ""];
+    let files = [
+        "test.sih.md",
+        "docs/specs/test.sih.md",
+        "docs/knowledge/notes/test.sih.md",
+        "",
+    ];
     for f in &files {
         for s in &generate_string_inputs() {
             pairs.push((f.to_string(), s.clone()));
@@ -98,7 +124,6 @@ where
     F: FnOnce() -> R + panic::UnwindSafe,
 {
     panic::catch_unwind(f).map_err(|e| {
-        
         if let Some(s) = e.downcast_ref::<String>() {
             s.clone()
         } else if let Some(s) = e.downcast_ref::<&str>() {
@@ -138,7 +163,7 @@ fn fuzz_parse_frontmatter() -> FuzzResult {
 
 /// Fuzz validate_content
 fn fuzz_validate_content() -> FuzzResult {
-    use sihankor::core::models::{Document, DocStatus, Frontmatter, Stage};
+    use sihankor::core::models::{DocStatus, Document, Frontmatter, Stage};
     use sihankor::core::validator::validate_content;
 
     let inputs = generate_string_inputs();
@@ -306,14 +331,19 @@ fn main() {
     }
 
     if total_crashes == 0 {
-        println!("验码通过: 0 crashes / {} total inputs across {} targets",
-            total_tests, results.len());
+        println!(
+            "验码通过: 0 crashes / {} total inputs across {} targets",
+            total_tests,
+            results.len()
+        );
     }
 
     // 治理追溯标记
     let status = if total_crashes > 0 { "blocked" } else { "pass" };
-    println!("\nSiHankor-Governance: {} (proptest: crashed={} total={})",
-        status, total_crashes, total_tests);
+    println!(
+        "\nSiHankor-Governance: {} (proptest: crashed={} total={})",
+        status, total_crashes, total_tests
+    );
 
     if total_crashes > 0 {
         std::process::exit(1);

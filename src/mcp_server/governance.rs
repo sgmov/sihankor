@@ -1,9 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use rmcp::{
-    ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_router,
-};
+use rmcp::{ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_router};
 
 use crate::core::database::SihDatabase;
 use crate::core::indexer;
@@ -109,7 +107,9 @@ impl SihankorService {
     }
 
     /// 验证 .sih.md 文档合规性
-    #[tool(description = "[SiHankor] Validate a .sih.md document for compliance with SiHankor governance rules")]
+    #[tool(
+        description = "[SiHankor] Validate a .sih.md document for compliance with SiHankor governance rules"
+    )]
     pub async fn validate_sihmd(
         &self,
         Parameters(ValidateRequest { path }): Parameters<ValidateRequest>,
@@ -141,12 +141,7 @@ impl SihankorService {
                 } else {
                     results
                         .iter()
-                        .map(|r| {
-                            format!(
-                                "[{}] {} ({}) - {}",
-                                r.id, r.title, r.stage.0, r.snippet
-                            )
-                        })
+                        .map(|r| format!("[{}] {} ({}) - {}", r.id, r.title, r.stage.0, r.snippet))
                         .collect::<Vec<_>>()
                         .join("\n")
                 }
@@ -163,11 +158,8 @@ impl SihankorService {
     ) -> String {
         match self.db.get_document(&id).await {
             Ok(Some(doc)) => {
-                let violations = validator::validate_document(
-                    &doc,
-                    None,
-                    &ValidationConfig::default(),
-                );
+                let violations =
+                    validator::validate_document(&doc, None, &ValidationConfig::default());
                 format!(
                     "ID: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
                     doc.id,
@@ -186,7 +178,9 @@ impl SihankorService {
     }
 
     /// 追溯授权链
-    #[tool(description = "[SiHankor] Trace the governance authorization chain (upstream) for a document")]
+    #[tool(
+        description = "[SiHankor] Trace the governance authorization chain (upstream) for a document"
+    )]
     pub async fn resolve_chain(
         &self,
         Parameters(ResolveChainRequest { id, depth }): Parameters<ResolveChainRequest>,
@@ -217,11 +211,10 @@ impl SihankorService {
     }
 
     /// 项目治理概览
-    #[tool(description = "[SiHankor] Get project governance overview: document counts, stage distribution, alerts")]
-    pub async fn project_status(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    #[tool(
+        description = "[SiHankor] Get project governance overview: document counts, stage distribution, alerts"
+    )]
+    pub async fn project_status(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let total = self.db.count_documents().await.unwrap_or(0);
         let by_stage = self.db.count_by_stage().await.unwrap_or_default();
         let by_nature = self.db.count_by_nature().await.unwrap_or_default();
@@ -238,8 +231,16 @@ impl SihankorService {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let error_docs = self.db.get_documents_by_status(&DocStatus::Error).await.unwrap_or_default();
-        let warning_docs = self.db.get_documents_by_status(&DocStatus::Warning).await.unwrap_or_default();
+        let error_docs = self
+            .db
+            .get_documents_by_status(&DocStatus::Error)
+            .await
+            .unwrap_or_default();
+        let warning_docs = self
+            .db
+            .get_documents_by_status(&DocStatus::Warning)
+            .await
+            .unwrap_or_default();
 
         let error_list = if error_docs.is_empty() {
             "  (none)".to_string()
@@ -269,20 +270,24 @@ impl SihankorService {
              By nature:\n{}\n\n\
              Errors ({}):\n{}\n\n\
              Warnings ({}):\n{}",
-            total, stage_summary, nature_summary,
-            error_docs.len(), error_list,
-            warning_docs.len(), warning_list
+            total,
+            stage_summary,
+            nature_summary,
+            error_docs.len(),
+            error_list,
+            warning_docs.len(),
+            warning_list
         )
     }
 
     /// 触发全量索引重建
-    #[tool(description = "[SiHankor] Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents")]
-    pub async fn index_rebuild(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    #[tool(
+        description = "[SiHankor] Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents"
+    )]
+    pub async fn index_rebuild(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let docs_dir = PathBuf::from(&self.config.docs_dir);
-        let report = indexer::rebuild_index(self.db.as_ref(), &docs_dir, &self.config.validation).await;
+        let report =
+            indexer::rebuild_index(self.db.as_ref(), &docs_dir, &self.config.validation).await;
 
         let errors = if report.errors.is_empty() {
             "None".to_string()
@@ -312,7 +317,9 @@ impl SihankorService {
     }
 
     /// 文档认知分析：意图定位 + 关系照见 + 发散诊断
-    #[tool(description = "[SiHankor] Analyze a document through iCL cognition: governance position, relation graph, divergence diagnosis")]
+    #[tool(
+        description = "[SiHankor] Analyze a document through iCL cognition: governance position, relation graph, divergence diagnosis"
+    )]
     pub async fn analyze_document(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -333,7 +340,9 @@ impl SihankorService {
                             .to_string();
                         doc
                     }
-                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                    Err(e) => {
+                        return format!("Document not found: '{}'. Parse error: {}", target, e);
+                    }
                 }
             }
             Err(e) => return format!("Database error: {}", e),
@@ -348,7 +357,9 @@ impl SihankorService {
     }
 
     /// 文档决策建议：iCL 认知 → iWW 生成决策建议
-    #[tool(description = "[SiHankor] Generate a decision proposal from document cognition: recommended action with alternatives, rationale, and affected documents")]
+    #[tool(
+        description = "[SiHankor] Generate a decision proposal from document cognition: recommended action with alternatives, rationale, and affected documents"
+    )]
     pub async fn propose_decision(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -367,7 +378,9 @@ impl SihankorService {
                             .to_string();
                         doc
                     }
-                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                    Err(e) => {
+                        return format!("Document not found: '{}'. Parse error: {}", target, e);
+                    }
                 }
             }
             Err(e) => return format!("Database error: {}", e),
@@ -389,7 +402,9 @@ impl SihankorService {
     }
 
     /// 决策验证：对已有的 decision_proposal 执行五法检验（iCT only）
-    #[tool(description = "[SiHankor] Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace")]
+    #[tool(
+        description = "[SiHankor] Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace"
+    )]
     pub async fn verify_decision(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -407,7 +422,9 @@ impl SihankorService {
                             .to_string();
                         doc
                     }
-                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                    Err(e) => {
+                        return format!("Document not found: '{}'. Parse error: {}", target, e);
+                    }
                 }
             }
             Err(e) => return format!("Database error: {}", e),
@@ -430,7 +447,9 @@ impl SihankorService {
     }
 
     /// 完整三机流转分析：iCL → iWW → iCT
-    #[tool(description = "[SiHankor] Full three-machine flow: iCL cognition → iWW decision proposal → iCT verification. Returns complete AnalysisResult.")]
+    #[tool(
+        description = "[SiHankor] Full three-machine flow: iCL cognition → iWW decision proposal → iCT verification. Returns complete AnalysisResult."
+    )]
     pub async fn full_analysis(
         &self,
         Parameters(AnalyzeDocumentRequest { target }): Parameters<AnalyzeDocumentRequest>,
@@ -448,7 +467,9 @@ impl SihankorService {
                             .to_string();
                         doc
                     }
-                    Err(e) => return format!("Document not found: '{}'. Parse error: {}", target, e),
+                    Err(e) => {
+                        return format!("Document not found: '{}'. Parse error: {}", target, e);
+                    }
                 }
             }
             Err(e) => return format!("Database error: {}", e),
@@ -491,7 +512,10 @@ impl SihankorService {
         if cognition.relation_graph.gaps.len() > 3 {
             limitations.push(crate::mind::types::Limitation {
                 aspect: "reference-gaps".into(),
-                reason: format!("{} 个引用目标缺失，关系图谱不完整", cognition.relation_graph.gaps.len()),
+                reason: format!(
+                    "{} 个引用目标缺失，关系图谱不完整",
+                    cognition.relation_graph.gaps.len()
+                ),
                 confidence: 0.85,
             });
         }
@@ -499,12 +523,20 @@ impl SihankorService {
         let self_question = if verification.overall == crate::mind::types::Verdict::Fail {
             format!(
                 "五法检验整体 Fail：决策建议被拒绝。{} 项 Fail 是否因 iCL 误诊或 criteria 过于严格？",
-                verification.five_law_check.iter().filter(|c| c.result == crate::mind::types::LawCheckResult::Fail).count()
+                verification
+                    .five_law_check
+                    .iter()
+                    .filter(|c| c.result == crate::mind::types::LawCheckResult::Fail)
+                    .count()
             )
         } else if verification.overall == crate::mind::types::Verdict::Conditional {
             format!(
                 "五法检验 Conditional：决策可执行但需确认。{} 项 Conditional 是否有误报？",
-                verification.five_law_check.iter().filter(|c| c.result == crate::mind::types::LawCheckResult::Conditional).count()
+                verification
+                    .five_law_check
+                    .iter()
+                    .filter(|c| c.result == crate::mind::types::LawCheckResult::Conditional)
+                    .count()
             )
         } else {
             format!(
@@ -538,11 +570,10 @@ impl SihankorService {
     }
 
     /// 生成项目看板：治理链阶段列、文档和代码卡片、阻塞检测
-    #[tool(description = "[SiHankor] Generate a kanban board: governance chain columns with document and code task cards, blocker detection")]
-    pub async fn generate_kanban(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    #[tool(
+        description = "[SiHankor] Generate a kanban board: governance chain columns with document and code task cards, blocker detection"
+    )]
+    pub async fn generate_kanban(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
         match serde_json::to_string_pretty(&kanban) {
             Ok(json) => json,
@@ -551,22 +582,23 @@ impl SihankorService {
     }
 
     /// 生成自包含 HTML 可视化看板（浏览器直接打开）
-    #[tool(description = "[SiHankor] Generate a self-contained HTML kanban board viewable in any browser")]
-    pub async fn kanban_html(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    #[tool(
+        description = "[SiHankor] Generate a self-contained HTML kanban board viewable in any browser"
+    )]
+    pub async fn kanban_html(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
         crate::core::kanban::render_html(&kanban)
     }
 
     /// 流程推进建议：基于项目状态和文档 stage，推导下一步应推进什么
-    #[tool(description = "[SiHankor] Suggest next action: based on project state and document stages, recommends what to advance next")]
-    pub async fn suggest_next_action(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
-        let project_root = std::path::PathBuf::from(&self.config.docs_dir).parent().map(|p| p.to_path_buf()).unwrap_or_default();
+    #[tool(
+        description = "[SiHankor] Suggest next action: based on project state and document stages, recommends what to advance next"
+    )]
+    pub async fn suggest_next_action(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let project_root = std::path::PathBuf::from(&self.config.docs_dir)
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_default();
         let state = ProjectState::load(&project_root).unwrap_or_default();
         let suggestions = project_state::suggest_next_action(&state, self.db.as_ref());
         let result = serde_json::json!({
@@ -583,7 +615,9 @@ impl SihankorService {
     ///
     /// 调用此 tool 后，用户看到四个问题（道二/顺因/有度/知止）。
     /// 用户回答后再调用 sihankor_propose_answers 获取结构化提示词。
-    #[tool(description = "[SiHankor] Grilling engine step 1: input your intent, get four Dao-driven questions to clarify the document's governance identity")]
+    #[tool(
+        description = "[SiHankor] Grilling engine step 1: input your intent, get four Dao-driven questions to clarify the document's governance identity"
+    )]
     pub async fn sihankor_propose(
         &self,
         Parameters(ProposeRequest { intent }): Parameters<ProposeRequest>,
@@ -603,7 +637,9 @@ impl SihankorService {
     ///
     /// 提示词包含 frontmatter 模板、章节结构、validator 约束注入、可证伪条件。
     /// 将该提示词发送给外部 Agent 即可生成符合治理约束的文档。
-    #[tool(description = "[SiHankor] Grilling engine step 2: submit your answers to the four questions, get a structured prompt with frontmatter template, section outline, and constraint injection")]
+    #[tool(
+        description = "[SiHankor] Grilling engine step 2: submit your answers to the four questions, get a structured prompt with frontmatter template, section outline, and constraint injection"
+    )]
     pub async fn sihankor_propose_answers(
         &self,
         Parameters(ProposeAnswersRequest { intent, answers }): Parameters<ProposeAnswersRequest>,
@@ -625,7 +661,9 @@ impl SihankorService {
     ///
     /// 编排 iCL 认知 + iWW 决策，产出一份结构化的文档生成蓝图(GenerationPlan)。
     /// Agent 拿到蓝图后用 LLM 写出文档内容，再通过 validate_sihmd 和 full_analysis 校验。
-    #[tool(description = "[SiHankor] Techne orchestration: generate a document GenerationPlan by coordinating iCL cognition and iWW decision")]
+    #[tool(
+        description = "[SiHankor] Techne orchestration: generate a document GenerationPlan by coordinating iCL cognition and iWW decision"
+    )]
     pub async fn generate_document_plan(
         &self,
         Parameters(GenerateDocumentPlanRequest {
@@ -635,13 +673,8 @@ impl SihankorService {
         }): Parameters<GenerateDocumentPlanRequest>,
     ) -> String {
         let icl = ICL::new(self.db.clone());
-        let plan = build_generation_plan(
-            &icl,
-            &target_nature,
-            upstream_id.as_deref(),
-            &topic_hint,
-        )
-        .await;
+        let plan =
+            build_generation_plan(&icl, &target_nature, upstream_id.as_deref(), &topic_hint).await;
         match serde_json::to_string_pretty(&plan) {
             Ok(json) => json,
             Err(e) => format!("Serialization error: {}", e),
@@ -656,7 +689,15 @@ fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
         let violations = result
             .violations
             .iter()
-            .map(|v| format!("[{}] {} ({}): {}", v.severity.as_str(), v.rule_id, v.location, v.message))
+            .map(|v| {
+                format!(
+                    "[{}] {} ({}): {}",
+                    v.severity.as_str(),
+                    v.rule_id,
+                    v.location,
+                    v.message
+                )
+            })
             .collect::<Vec<_>>()
             .join("\n");
 
@@ -768,13 +809,19 @@ async fn build_generation_plan(
 
             for div in &cognition.divergence_diagnosis {
                 if let Some(ref suggestion) = div.suggestion {
-                    issues.push(format!("[{:?}] {} → {}", div.severity, div.description, suggestion));
+                    issues.push(format!(
+                        "[{:?}] {} → {}",
+                        div.severity, div.description, suggestion
+                    ));
                 } else {
                     issues.push(format!("[{:?}] {}", div.severity, div.description));
                 }
             }
         } else {
-            issues.push(format!("上游文档 '{}' 在索引中不存在，请确认 id 是否正确", up_id));
+            issues.push(format!(
+                "上游文档 '{}' 在索引中不存在，请确认 id 是否正确",
+                up_id
+            ));
         }
     }
 
@@ -842,10 +889,7 @@ fn build_section_outline(
             });
             sections.push(SectionOutline {
                 heading: format!("三、有度：{}的边界", topic_hint),
-                points: vec![
-                    "纳入范围".into(),
-                    "不纳入范围".into(),
-                ],
+                points: vec!["纳入范围".into(), "不纳入范围".into()],
             });
         }
         "proposal" => {
@@ -858,10 +902,7 @@ fn build_section_outline(
             });
             sections.push(SectionOutline {
                 heading: "二、顺因：治理依据".into(),
-                points: vec![
-                    "上游文档的授权".into(),
-                    "变更的因果必要性".into(),
-                ],
+                points: vec!["上游文档的授权".into(), "变更的因果必要性".into()],
             });
             sections.push(SectionOutline {
                 heading: "三、方案".into(),
@@ -879,17 +920,11 @@ fn build_section_outline(
             });
             sections.push(SectionOutline {
                 heading: "二、方案选择".into(),
-                points: vec![
-                    "| 维度 | 决策 | 法依据 |".into(),
-                    "每条决策一行".into(),
-                ],
+                points: vec!["| 维度 | 决策 | 法依据 |".into(), "每条决策一行".into()],
             });
             sections.push(SectionOutline {
                 heading: "三、ADR".into(),
-                points: vec![
-                    "decided-by".into(),
-                    "DEPS".into(),
-                ],
+                points: vec!["decided-by".into(), "DEPS".into()],
             });
         }
         "reference" => {
@@ -903,25 +938,17 @@ fn build_section_outline(
             });
             sections.push(SectionOutline {
                 heading: "二、规则".into(),
-                points: vec![
-                    "本条目的规则或约定".into(),
-                ],
+                points: vec!["本条目的规则或约定".into()],
             });
         }
         "note" => {
             sections.push(SectionOutline {
                 heading: format!("一、关于{}", topic_hint),
-                points: vec![
-                    "实践背景".into(),
-                    "核心发现".into(),
-                ],
+                points: vec!["实践背景".into(), "核心发现".into()],
             });
             sections.push(SectionOutline {
                 heading: "二、启示".into(),
-                points: vec![
-                    "可迁移的经验".into(),
-                    "注意事项".into(),
-                ],
+                points: vec!["可迁移的经验".into(), "注意事项".into()],
             });
         }
         _ => {
@@ -952,7 +979,8 @@ fn build_tone_constraints(nature: &str, stage: &str) -> Vec<String> {
     match nature {
         "spec" => {
             if stage == "3/3" {
-                constraints.push("使用确定性措辞：应使用'是'、'必须'、'不可'，避免'可能'、'或许'".into());
+                constraints
+                    .push("使用确定性措辞：应使用'是'、'必须'、'不可'，避免'可能'、'或许'".into());
             } else {
                 constraints.push("使用规范性措辞：使用'应'、'建议'，避免'必须'".into());
             }
@@ -1008,7 +1036,9 @@ impl ServerHandler for SihankorService {
     ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
         let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
         let mut result = SihankorService::tool_router().call(tcc).await?;
-        result.content.insert(0, rmcp::model::Content::text("[SiHankor]"));
+        result
+            .content
+            .insert(0, rmcp::model::Content::text("[SiHankor]"));
         Ok(result)
     }
 

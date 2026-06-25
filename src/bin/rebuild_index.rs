@@ -9,7 +9,8 @@ use sihankor::core::orchestrator;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let db_path = PathBuf::from(".sih/index.db");
-    let db: Arc<dyn sihankor::core::database::SihDatabase> = Arc::new(SqliteBackend::open(&db_path)?);
+    let db: Arc<dyn sihankor::core::database::SihDatabase> =
+        Arc::new(SqliteBackend::open(&db_path)?);
     let docs_dir = PathBuf::from("docs/");
 
     println!("Starting index rebuild...");

@@ -152,7 +152,8 @@ impl ValidationResult {
             .filter(|v| v.severity == ViolationSeverity::Judgment)
             .count();
 
-        let mut dao_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+        let mut dao_counts: std::collections::HashMap<&str, usize> =
+            std::collections::HashMap::new();
         for v in &self.violations {
             if let Some(ref dao) = v.dao_trace {
                 *dao_counts.entry(dao.as_str()).or_insert(0) += 1;
@@ -236,7 +237,10 @@ pub fn validate_document(
 }
 
 /// 域一：Frontmatter 验证
-fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>) -> ValidationResult {
+fn validate_frontmatter(
+    doc: &super::models::Document,
+    file_path: Option<&Path>,
+) -> ValidationResult {
     let mut result = ValidationResult::new();
 
     // F-01: id 格式校验
@@ -244,9 +248,15 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
         result.violations.push(Violation {
             rule_id: "F-01".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: format!("id '{}' does not match format YYMMDD-HHMM[-NNN]-slug", doc.id),
+            message: format!(
+                "id '{}' does not match format YYMMDD-HHMM[-NNN]-slug",
+                doc.id
+            ),
             location: "frontmatter.id".to_string(),
-            fix_suggestion: Some("Rename id to match YYMMDD-HHMM[-NNN]-semantic-name, e.g. 260613-1800-my-doc".to_string()),
+            fix_suggestion: Some(
+                "Rename id to match YYMMDD-HHMM[-NNN]-semantic-name, e.g. 260613-1800-my-doc"
+                    .to_string(),
+            ),
             dao_trace: Some("知止".to_string()),
         });
     }
@@ -261,7 +271,9 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
             severity: ViolationSeverity::Fatal,
             message: format!("invalid stage: {}", doc.stage.0),
             location: "frontmatter.stage".to_string(),
-            fix_suggestion: Some("Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string()),
+            fix_suggestion: Some(
+                "Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string(),
+            ),
             dao_trace: Some("知止".to_string()),
         });
     }
@@ -297,7 +309,13 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
     if let Some(path) = file_path {
         // G-02: 文档必须位于合法目录
         let path_str = path.to_string_lossy();
-        let valid_dirs = ["specs/", "proposals/", "decisions/", "reference/", "knowledge/notes/"];
+        let valid_dirs = [
+            "specs/",
+            "proposals/",
+            "decisions/",
+            "reference/",
+            "knowledge/notes/",
+        ];
         let in_valid_dir = valid_dirs.iter().any(|dir| path_str.contains(dir));
 
         if !in_valid_dir {
@@ -321,9 +339,15 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
             result.violations.push(Violation {
                 rule_id: "G-03".to_string(),
                 severity: ViolationSeverity::Guideline,
-                message: format!("directory depth exceeds 3 levels (found {} components)", depth),
+                message: format!(
+                    "directory depth exceeds 3 levels (found {} components)",
+                    depth
+                ),
                 location: path.to_string_lossy().to_string(),
-                fix_suggestion: Some("Flatten directory structure to max 3 subdirectory levels under docs/".to_string()),
+                fix_suggestion: Some(
+                    "Flatten directory structure to max 3 subdirectory levels under docs/"
+                        .to_string(),
+                ),
                 dao_trace: Some("有度".to_string()),
             });
         }
@@ -346,7 +370,9 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                     severity: ViolationSeverity::Guideline,
                     message: format!("table has {} columns, maximum is 3", col_count),
                     location: format!("line {}", line_num + 1),
-                    fix_suggestion: Some("Split wide table into bullet lists or subsections".to_string()),
+                    fix_suggestion: Some(
+                        "Split wide table into bullet lists or subsections".to_string(),
+                    ),
                     dao_trace: Some("有度".to_string()),
                 });
             }
@@ -386,7 +412,10 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                 severity: ViolationSeverity::Fatal,
                 message: "horizontal rule (---) is forbidden in document body".to_string(),
                 location: format!("line {}", line_num + 1),
-                fix_suggestion: Some("Use level-2 headings (## ) for section separation instead of horizontal rules".to_string()),
+                fix_suggestion: Some(
+                    "Use level-2 headings (## ) for section separation instead of horizontal rules"
+                        .to_string(),
+                ),
                 dao_trace: Some("有度".to_string()),
             });
         }
@@ -420,7 +449,9 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
             severity: ViolationSeverity::Judgment,
             message: format!("list nesting exceeds 2 levels (found {})", max_indent),
             location: "content".to_string(),
-            fix_suggestion: Some("Flatten deeply nested lists: use paragraphs or subsections instead".to_string()),
+            fix_suggestion: Some(
+                "Flatten deeply nested lists: use paragraphs or subsections instead".to_string(),
+            ),
             dao_trace: Some("有度".to_string()),
         });
     }
@@ -442,7 +473,10 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
             severity: ViolationSeverity::Guideline,
             message: "deprecated (X) document should not be referenced".to_string(),
             location: format!("document {}", doc.id),
-            fix_suggestion: Some("Archive or update the referencing document to point to a valid upstream".to_string()),
+            fix_suggestion: Some(
+                "Archive or update the referencing document to point to a valid upstream"
+                    .to_string(),
+            ),
             dao_trace: Some("知止".to_string()),
         });
     }
@@ -451,7 +485,10 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
 }
 
 /// 域六：Governance 验证
-fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) -> ValidationResult {
+fn validate_governance(
+    doc: &super::models::Document,
+    file_path: Option<&Path>,
+) -> ValidationResult {
     let mut result = ValidationResult::new();
 
     // G-09: 2/3 和 3/3 的 decisions/ 文档应有 decided-by
@@ -460,34 +497,39 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
             .and_then(|p| infer_nature(p))
             .map(|n| n == "decision")
             .unwrap_or(false);
-        if is_decision
-            && doc.frontmatter.decided_by.is_none() {
-                result.violations.push(Violation {
-                    rule_id: "G-09".to_string(),
-                    severity: ViolationSeverity::Guideline,
-                    message: format!(
-                        "decision document '{}' at stage {} should have decided-by field",
-                        doc.id, doc.stage.0
-                    ),
-                    location: "frontmatter.decided-by".to_string(),
-                    fix_suggestion: Some("Add decided-by with the identifier of the person who made this decision".to_string()),
-                    dao_trace: Some("顺因".to_string()),
-                });
-            }
+        if is_decision && doc.frontmatter.decided_by.is_none() {
+            result.violations.push(Violation {
+                rule_id: "G-09".to_string(),
+                severity: ViolationSeverity::Guideline,
+                message: format!(
+                    "decision document '{}' at stage {} should have decided-by field",
+                    doc.id, doc.stage.0
+                ),
+                location: "frontmatter.decided-by".to_string(),
+                fix_suggestion: Some(
+                    "Add decided-by with the identifier of the person who made this decision"
+                        .to_string(),
+                ),
+                dao_trace: Some("顺因".to_string()),
+            });
+        }
     }
 
     // F-06: ai-auto 是违例签认
     if let Some(ref decided_by) = doc.frontmatter.decided_by
-        && decided_by == "ai-auto" {
-            result.violations.push(Violation {
-                rule_id: "F-06".to_string(),
-                severity: ViolationSeverity::Fatal,
-                message: "'ai-auto' is a forbidden decided-by value".to_string(),
-                location: "frontmatter.decided-by".to_string(),
-                fix_suggestion: Some("Replace 'ai-auto' with a human identifier (e.g. 'moc')".to_string()),
-                dao_trace: Some("知止".to_string()),
-            });
-        }
+        && decided_by == "ai-auto"
+    {
+        result.violations.push(Violation {
+            rule_id: "F-06".to_string(),
+            severity: ViolationSeverity::Fatal,
+            message: "'ai-auto' is a forbidden decided-by value".to_string(),
+            location: "frontmatter.decided-by".to_string(),
+            fix_suggestion: Some(
+                "Replace 'ai-auto' with a human identifier (e.g. 'moc')".to_string(),
+            ),
+            dao_trace: Some("知止".to_string()),
+        });
+    }
 
     // F-07: 非 decisions/ 目录文档不得有 decided-by
     if doc.frontmatter.decided_by.is_some() {
@@ -567,7 +609,11 @@ mod tests {
     use crate::core::models::{DocStatus, Frontmatter, Stage};
     use chrono::Utc;
 
-    fn make_test_doc(id: &str, stage: &str, upstream: Option<&str>) -> super::super::models::Document {
+    fn make_test_doc(
+        id: &str,
+        stage: &str,
+        upstream: Option<&str>,
+    ) -> super::super::models::Document {
         super::super::models::Document {
             id: id.to_string(),
             stage: Stage(stage.to_string()),
@@ -680,7 +726,10 @@ mod tests {
         doc.frontmatter.decided_by = Some("ai-assist".to_string());
         let result = validate_governance(&doc, Some(make_path("decision")));
         // ai-assist is allowed (F-06 only blocks ai-auto)
-        let fatal = result.violations.iter().any(|v| v.rule_id == "F-06" && matches!(v.severity, ViolationSeverity::Fatal));
+        let fatal = result
+            .violations
+            .iter()
+            .any(|v| v.rule_id == "F-06" && matches!(v.severity, ViolationSeverity::Fatal));
         assert!(!fatal);
     }
 
@@ -840,10 +889,18 @@ mod tests {
     #[test]
     fn test_g10_root_self_reference_ok() {
         let path = Path::new("docs/specs/philosophy/On-SiHankor.sih.md");
-        let doc = make_test_doc("240602-0900-on-sihankor", "3/3", Some("240602-0900-on-sihankor"));
+        let doc = make_test_doc(
+            "240602-0900-on-sihankor",
+            "3/3",
+            Some("240602-0900-on-sihankor"),
+        );
         // G-10 is silent: no violation emitted for self-reference
         let result = validate_governance(&doc, Some(path));
-        let violations = result.violations.iter().filter(|v| v.rule_id == "G-10").count();
+        let violations = result
+            .violations
+            .iter()
+            .filter(|v| v.rule_id == "G-10")
+            .count();
         assert_eq!(violations, 0); // G-10 should not emit violations, just validate internally
     }
 

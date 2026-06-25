@@ -1,4 +1,8 @@
-use super::types::{Cognition, DecisionProposal, Verification, LawCheck, ActionKind, LawCheckResult, Action, DivergenceSeverity, OverlapDegree, DivergenceType, ChainRole, Verdict, DaoTrace, Divergence, GovPosition, RelationGraph, Rationale, AffectedDocs};
+use super::types::{
+    Action, ActionKind, ChainRole, Cognition, DaoTrace, DecisionProposal, Divergence,
+    DivergenceSeverity, DivergenceType, GovPosition, LawCheck, LawCheckResult, OverlapDegree,
+    Verdict, Verification,
+};
 
 /// iCT 方圆机 —— 三机第三机
 ///
@@ -36,7 +40,9 @@ impl ICT {
         let pos = &cognition.governance_position;
 
         // R1: 逆写检查
-        if Self::modifies_upstream(action, &pos.upstream_chain) && action.kind != ActionKind::HumanReview {
+        if Self::modifies_upstream(action, &pos.upstream_chain)
+            && action.kind != ActionKind::HumanReview
+        {
             return LawCheck {
                 law: "顺因".into(),
                 result: LawCheckResult::Fail,
@@ -67,7 +73,9 @@ impl ICT {
         // (future: check action.new_upstream vs nature chain legality)
 
         // Boundary: HumanReview + upstream modification
-        if action.kind == ActionKind::HumanReview && Self::modifies_upstream(action, &pos.upstream_chain) {
+        if action.kind == ActionKind::HumanReview
+            && Self::modifies_upstream(action, &pos.upstream_chain)
+        {
             return LawCheck {
                 law: "顺因".into(),
                 result: LawCheckResult::Conditional,
@@ -88,7 +96,9 @@ impl ICT {
             return false;
         }
         let desc = &action.description.to_lowercase();
-        upstream_chain.iter().any(|up| desc.contains(&up.to_lowercase()))
+        upstream_chain
+            .iter()
+            .any(|up| desc.contains(&up.to_lowercase()))
     }
 
     /// 判断 action 是否达到 ratify 级操作力度
@@ -116,7 +126,8 @@ impl ICT {
         let has_mixed = has_mixed_severity(divs);
 
         // R1: 力度不足
-        if max_severity == Some(DivergenceSeverity::Critical) && action.kind == ActionKind::NoAction {
+        if max_severity == Some(DivergenceSeverity::Critical) && action.kind == ActionKind::NoAction
+        {
             return LawCheck {
                 law: "有度".into(),
                 result: LawCheckResult::Fail,
@@ -228,9 +239,9 @@ impl ICT {
             .iter()
             .any(|d| matches!(d.overlap, OverlapDegree::Exact | OverlapDegree::High));
 
-        let has_gap_div = divs
-            .iter()
-            .any(|d| d.div_type == DivergenceType::ReferenceBreak || d.div_type == DivergenceType::Gap);
+        let has_gap_div = divs.iter().any(|d| {
+            d.div_type == DivergenceType::ReferenceBreak || d.div_type == DivergenceType::Gap
+        });
 
         let has_partial_dups = graph
             .duplicates
@@ -315,16 +326,20 @@ impl ICT {
 
         // R3: 环检测 —— check if upstream change would create cycle
         if (action.kind == ActionKind::Move || action.kind == ActionKind::Merge)
-            && would_create_cycle(action, &pos.upstream_chain) {
-                return LawCheck {
-                    law: "顺势".into(),
-                    result: LawCheckResult::Fail,
-                    note: "引用环：upstream 变更将形成循环依赖".into(),
-                };
-            }
+            && would_create_cycle(action, &pos.upstream_chain)
+        {
+            return LawCheck {
+                law: "顺势".into(),
+                result: LawCheckResult::Fail,
+                note: "引用环：upstream 变更将形成循环依赖".into(),
+            };
+        }
 
         // R4: archive 文档
-        if stage == "X" && action.kind != ActionKind::NoAction && action.kind != ActionKind::HumanReview {
+        if stage == "X"
+            && action.kind != ActionKind::NoAction
+            && action.kind != ActionKind::HumanReview
+        {
             return LawCheck {
                 law: "顺势".into(),
                 result: LawCheckResult::Fail,
@@ -356,7 +371,10 @@ impl ICT {
         if checks.iter().any(|c| c.result == LawCheckResult::Fail) {
             return Verdict::Fail;
         }
-        if checks.iter().any(|c| c.result == LawCheckResult::Conditional) {
+        if checks
+            .iter()
+            .any(|c| c.result == LawCheckResult::Conditional)
+        {
             return Verdict::Conditional;
         }
         Verdict::Pass
@@ -435,21 +453,32 @@ fn max_divergence_severity(divs: &[Divergence]) -> Option<DivergenceSeverity> {
 }
 
 fn has_mixed_severity(divs: &[Divergence]) -> bool {
-    let has_critical = divs.iter().any(|d| d.severity == DivergenceSeverity::Critical);
+    let has_critical = divs
+        .iter()
+        .any(|d| d.severity == DivergenceSeverity::Critical);
     let has_info = divs.iter().any(|d| d.severity == DivergenceSeverity::Info);
     has_critical && has_info
 }
 
 fn contains_philosophical_negation(desc: &str) -> bool {
     let neg_markers = [
-        "是错误的", "不正确", "有问题", "矛盾", "不成立",
-        "重新定义", "推翻了",
+        "是错误的",
+        "不正确",
+        "有问题",
+        "矛盾",
+        "不成立",
+        "重新定义",
+        "推翻了",
     ];
     neg_markers.iter().any(|m| desc.contains(m))
 }
 
 fn is_philosophy_doc(pos: &GovPosition) -> bool {
-    pos.nature == "spec" && pos.upstream_chain.iter().any(|u| u.contains("canon") || u.contains("tao") || u.contains("arche"))
+    pos.nature == "spec"
+        && pos
+            .upstream_chain
+            .iter()
+            .any(|u| u.contains("canon") || u.contains("tao") || u.contains("arche"))
 }
 
 const fn targets_drafts(_pos: &GovPosition) -> bool {
@@ -487,7 +516,7 @@ const fn would_create_cycle(_action: &Action, _upstream_chain: &[String]) -> boo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mind::types::{GovPosition, ChainRole, RelationGraph, Rationale, AffectedDocs};
+    use crate::mind::types::{AffectedDocs, ChainRole, GovPosition, Rationale, RelationGraph};
 
     fn make_test_context(
         stage: &str,
@@ -537,7 +566,9 @@ mod tests {
     #[test]
     fn test_all_pass() {
         let (cog, prop) = make_test_context(
-            "2/3", "spec", ChainRole::Derive,
+            "2/3",
+            "spec",
+            ChainRole::Derive,
             vec![],
             ActionKind::NoAction,
             "文档治理健康，无需操作",
@@ -550,7 +581,9 @@ mod tests {
     #[test]
     fn test_shunyin_fail_skip_stage() {
         let (cog, prop) = make_test_context(
-            "1/3", "proposal", ChainRole::Derive,
+            "1/3",
+            "proposal",
+            ChainRole::Derive,
             vec![],
             ActionKind::Archive,
             "归档此文档",
@@ -564,7 +597,9 @@ mod tests {
     #[test]
     fn test_youdou_fail_under_reaction() {
         let (cog, prop) = make_test_context(
-            "2/3", "spec", ChainRole::Derive,
+            "2/3",
+            "spec",
+            ChainRole::Derive,
             vec![Divergence {
                 div_type: DivergenceType::IntentDrift,
                 severity: DivergenceSeverity::Critical,
@@ -583,7 +618,9 @@ mod tests {
     #[test]
     fn test_zhizhi_fail_modify_non_sihmd() {
         let (cog, prop) = make_test_context(
-            "2/3", "spec", ChainRole::Derive,
+            "2/3",
+            "spec",
+            ChainRole::Derive,
             vec![],
             ActionKind::Merge,
             "合并文档",
@@ -616,7 +653,9 @@ mod tests {
     #[test]
     fn test_all_pass_on_clean_proposal() {
         let (cog, prop) = make_test_context(
-            "3/3", "spec", ChainRole::Derive,
+            "3/3",
+            "spec",
+            ChainRole::Derive,
             vec![],
             ActionKind::NoAction,
             "文档状态正常，无需变更",
