@@ -80,6 +80,8 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .act-assay:hover{background:#f0a500;color:#000}
 .act-correct{background:#16213e;border-color:#4fc3f7;margin-top:8px}
 .act-correct:hover{background:#4fc3f7;color:#000}
+.act-copy{background:#16213e;border-color:#888}
+.act-copy:hover{background:#888;color:#fff}
 
 /* ---- bottom bar ---- */
 .bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:6px 14px;display:flex;justify-content:space-between;align-items:center}
@@ -325,8 +327,11 @@ async function doCorrect(docId){
         const r=await fetch('/api/actions/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
         const d=await r.json();
         if(d.ok){
-            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:300px;overflow-y:auto">'+d.correction_prompt+'</pre>'+
-                '<button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新合道检查</button>';
+            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:200px;overflow-y:auto">'+d.correction_prompt+'</pre>'+
+                '<div style="display:flex;gap:6px;margin-top:8px">'+
+                '<button class="act-btn act-copy" onclick="navigator.clipboard.writeText(this.parentElement.previousElementSibling.textContent)">复制</button>'+
+                '<button class="act-btn" onclick="doAssay(\''+docId+'\')">重新合道检查</button>'+
+                '</div>';
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
         }
