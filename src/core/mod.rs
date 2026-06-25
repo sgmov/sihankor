@@ -1,4 +1,5 @@
 pub mod database;
+pub mod glossary;
 pub mod indexer;
 pub mod kanban;
 pub mod models;

@@ -4,11 +4,12 @@
 // 注入 validator 的已知约束，使外部 Agent 在生成文档前就知道规则。
 //
 // 四个追问由元规则驱动：
-//   道二 -> nature 定位
-//   顺因 -> upstream 链
-//   有度 -> stage 分级
-//   知止 -> 范围边界
+// 道二（Dao-Er）-> nature 定位
+// 顺因（Shun-Yin）-> upstream 链
+// 有度（You-Du）-> stage 分级
+// 知止（Zhi-Zhi）-> 范围边界
 
+use crate::core::glossary::Glossary;
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
@@ -73,40 +74,77 @@ pub struct SectionHint {
 // 追问引擎
 // ---------------------------------------------------------------------------
 
-pub struct GrillingEngine;
+#[derive(Default)]
+pub struct GrillingEngine {
+    glossary: Option<Glossary>,
+}
 
 impl GrillingEngine {
-    pub const fn new() -> Self {
-        Self
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn new(glossary: Option<Glossary>) -> Self {
+        Self { glossary }
     }
 
     pub fn questions(&self, topic_hint: &str) -> Vec<Question> {
+        let g = &self.glossary;
+        let nature_label = g
+            .as_ref()
+            .map(|gl| gl.label("nature"))
+            .unwrap_or_else(|| "nature".into());
+        let stage_label = g
+            .as_ref()
+            .map(|gl| gl.label("stage"))
+            .unwrap_or_else(|| "stage".into());
+
         vec![
             Question {
                 id: "dao-er".into(),
-                dao_principle: "道二：意图先于代码".into(),
-                text: format!("这份'{topic_hint}'文档的 nature 是什么?"),
-                hint:
-                    "spec（系统定义）/ proposal（变更提案）/ decision（架构决策）/ note（实践笔记）"
-                        .into(),
+                dao_principle: g
+                    .as_ref()
+                    .map(|gl| gl.dao_hint("道二"))
+                    .unwrap_or_else(|| "道二：意图先于代码".into()),
+                text: format!("这份'{topic_hint}'文档的类型（{}）是什么?", nature_label),
+                hint: g
+                    .as_ref()
+                    .map(|gl| gl.nature_help())
+                    .unwrap_or_else(|| {
+                        "spec（系统定义）/ proposal（变更提案）/ decision（架构决策）/ note（实践笔记）".into()
+                    }),
             },
             Question {
                 id: "shun-yin".into(),
-                dao_principle: "顺因：因果链可追溯".into(),
-                text: "它的上游是谁？哪个已有文档授权了这个变更?".into(),
-                hint: "上游文档 id，如 260622-1400-sihankor-core-positioning。根文档可以不填"
-                    .into(),
+                dao_principle: g
+                    .as_ref()
+                    .map(|gl| gl.dao_hint("顺因"))
+                    .unwrap_or_else(|| "顺因：因果链可追溯".into()),
+                text: "它的上游文档（upstream）是谁？哪个已有文档授权了这个变更?".into(),
+                hint: g
+                    .as_ref()
+                    .map(|gl| gl.upstream_help())
+                    .unwrap_or_else(|| {
+                        "上游文档 id，如 260622-1400-sihankor-core-positioning。根文档可以不填".into()
+                    }),
             },
             Question {
                 id: "you-du".into(),
-                dao_principle: "有度：力度匹配".into(),
-                text: "它的 stage 应该是 1/3 还是可以直接 2/3？".into(),
-                hint: "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进（推荐追问后选择）, 3/3 = 已定稿"
-                    .into(),
+                dao_principle: g
+                    .as_ref()
+                    .map(|gl| gl.dao_hint("有度"))
+                    .unwrap_or_else(|| "有度：力度匹配".into()),
+                text: format!("它的成熟度（{}）应该是 1/3 还是可以直接 2/3？", stage_label),
+                hint: g
+                    .as_ref()
+                    .map(|gl| gl.stage_help())
+                    .unwrap_or_else(|| {
+                        "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进（推荐追问后选择）, 3/3 = 已定稿".into()
+                    }),
             },
             Question {
                 id: "zhi-zhi".into(),
-                dao_principle: "知止：知道不做什么".into(),
+                dao_principle: g
+                    .as_ref()
+                    .map(|gl| gl.dao_hint("知止"))
+                    .unwrap_or_else(|| "知止：知道不做什么".into()),
                 text: "这个变更的范围明确吗？有什么明确不在范围内的？".into(),
                 hint: "明确排除的内容有助于防止范围膨胀".into(),
             },
@@ -296,12 +334,6 @@ impl GrillingEngine {
     }
 }
 
-impl Default for GrillingEngine {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 // ---------------------------------------------------------------------------
 // 辅助函数
 // ---------------------------------------------------------------------------
@@ -333,7 +365,7 @@ mod tests {
 
     #[test]
     fn test_questions_count() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let questions = engine.questions("test");
         assert_eq!(questions.len(), 4);
         assert_eq!(questions[0].id, "dao-er");
@@ -344,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_each_question_has_principle() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let questions = engine.questions("test");
         for q in &questions {
             assert!(
@@ -359,7 +391,7 @@ mod tests {
 
     #[test]
     fn test_build_prompt_spec() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![
             Answer {
                 question_id: "dao-er".into(),
@@ -399,7 +431,7 @@ mod tests {
 
     #[test]
     fn test_build_prompt_note() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![
             Answer {
                 question_id: "dao-er".into(),
@@ -425,7 +457,7 @@ mod tests {
 
     #[test]
     fn test_empty_answers() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![];
         let prompt = engine.build_prompt(&answers, "empty");
         assert_eq!(prompt.frontmatter.nature, "");
@@ -434,7 +466,7 @@ mod tests {
 
     #[test]
     fn test_constraints_include_all_critical_rules() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![
             Answer {
                 question_id: "dao-er".into(),
@@ -465,7 +497,7 @@ mod tests {
 
     #[test]
     fn test_decision_adds_g09() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![
             Answer {
                 question_id: "dao-er".into(),
@@ -516,7 +548,7 @@ mod tests {
 
     #[test]
     fn test_slug_no_duplicate_c01() {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(None);
         let answers = vec![
             Answer {
                 question_id: "dao-er".into(),

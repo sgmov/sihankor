@@ -4,6 +4,7 @@ use std::sync::Arc;
 use rmcp::{ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_router};
 
 use crate::core::database::SihDatabase;
+use crate::core::glossary::Glossary;
 use crate::core::indexer;
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
@@ -20,6 +21,7 @@ use crate::mind::iww::IWW;
 pub struct SihankorService {
     db: Arc<dyn SihDatabase>,
     config: PipelineConfig,
+    glossary: Option<Glossary>,
 }
 
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
@@ -100,9 +102,11 @@ pub struct ProposeAnswer {
 #[tool_router]
 impl SihankorService {
     pub fn new(db: Arc<dyn SihDatabase>) -> Self {
+        let glossary = Glossary::load(std::path::Path::new("glossary/zh.yml")).ok();
         Self {
             db,
             config: PipelineConfig::default(),
+            glossary,
         }
     }
 
@@ -622,7 +626,7 @@ impl SihankorService {
         &self,
         Parameters(ProposeRequest { intent }): Parameters<ProposeRequest>,
     ) -> String {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(self.glossary.clone());
         let questions = engine.questions(&intent);
         serde_json::to_string_pretty(&serde_json::json!({
             "step": "questions",
@@ -644,7 +648,7 @@ impl SihankorService {
         &self,
         Parameters(ProposeAnswersRequest { intent, answers }): Parameters<ProposeAnswersRequest>,
     ) -> String {
-        let engine = GrillingEngine::new();
+        let engine = GrillingEngine::new(self.glossary.clone());
         let answers: Vec<crate::mind::grilling::Answer> = answers
             .into_iter()
             .map(|a| crate::mind::grilling::Answer {
