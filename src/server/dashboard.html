@@ -152,6 +152,25 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 <script>
 let idx=0,cols=[],data=null,selCard=null,filter='all';
 
+function setFilter(f){
+    filter=f;
+    document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
+    const btn=document.querySelector('.f-btn.'+(f==='error'?'f-err':f==='warning'?'f-warn':f==='in_progress'?'f-live':''))||document.querySelector('.f-btn');
+    if(btn)btn.classList.add('active');
+    showColumn();
+}
+
+function filterCards(cards){
+    if(filter==='all')return cards;
+    return cards.filter(c=>{
+        const s=(c.status||'').toLowerCase();
+        if(filter==='error')return s==='error';
+        if(filter==='warning')return s==='warning';
+        if(filter==='in_progress')return s==='in_progress'||s==='live';
+        return true;
+    });
+}
+
 async function fetchData(){
     try{
         const r=await fetch('/api/dashboard');
