@@ -46,8 +46,10 @@ struct ActionResult {
 
 // ---- Handlers ----
 
-async fn index() -> Html<&'static str> {
-    Html(include_str!("dashboard.html"))
+async fn index() -> Html<String> {
+    let html = std::fs::read_to_string("src/server/dashboard.html")
+        .unwrap_or_else(|_| "<h1>dashboard.html not found</h1>".into());
+    Html(html)
 }
 
 async fn api_dashboard(State(state): State<AppState>) -> Json<DashboardResponse> {
