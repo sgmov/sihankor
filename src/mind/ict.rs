@@ -187,9 +187,11 @@ impl ICT {
             };
         }
 
-        // R2: 不修改非 .sih.md 文件
+        // R2: 不修改非 .sih.md 文件（仅检查实际文件路径，跳过文档 ID）
         for path in &proposal.affected_documents.direct {
-            if !path.ends_with(".sih.md") && !path.starts_with(".sih/") {
+            // Document IDs (YYMMDD format) are governance references, not file modifications
+            let is_doc_id = path.len() >= 10 && path.chars().take(6).all(|c| c.is_ascii_digit());
+            if !is_doc_id && !path.ends_with(".sih.md") && !path.starts_with(".sih/") {
                 return LawCheck {
                     law: "知止".into(),
                     result: LawCheckResult::Fail,
@@ -207,9 +209,10 @@ impl ICT {
             };
         }
 
-        // Boundary: indirect 影响包含非治约文件
+        // Boundary: indirect 影响包含非治约文件（仅检查实际文件路径）
         for path in &proposal.affected_documents.indirect {
-            if !path.ends_with(".sih.md") && !path.starts_with(".sih/") {
+            let is_doc_id = path.len() >= 10 && path.chars().take(6).all(|c| c.is_ascii_digit());
+            if !is_doc_id && !path.ends_with(".sih.md") && !path.starts_with(".sih/") {
                 return LawCheck {
                     law: "知止".into(),
                     result: LawCheckResult::Conditional,
