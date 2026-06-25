@@ -270,10 +270,22 @@ async fn api_push_correction(
 
     let engine = GrillingEngine::new(None);
     let answers = vec![
-        crate::mind::grilling::Answer { question_id: "dao-er".into(), content: doc.nature.clone() },
-        crate::mind::grilling::Answer { question_id: "shun-yin".into(), content: doc.upstream.clone().unwrap_or_default() },
-        crate::mind::grilling::Answer { question_id: "you-du".into(), content: doc.stage.0.clone() },
-        crate::mind::grilling::Answer { question_id: "zhi-zhi".into(), content: "仅修正合道检查不通过的部分".into() },
+        crate::mind::grilling::Answer {
+            question_id: "dao-er".into(),
+            content: doc.nature.clone(),
+        },
+        crate::mind::grilling::Answer {
+            question_id: "shun-yin".into(),
+            content: doc.upstream.clone().unwrap_or_default(),
+        },
+        crate::mind::grilling::Answer {
+            question_id: "you-du".into(),
+            content: doc.stage.0.clone(),
+        },
+        crate::mind::grilling::Answer {
+            question_id: "zhi-zhi".into(),
+            content: "仅修正合道检查不通过的部分".into(),
+        },
     ];
     let prompt = engine.build_prompt(&answers, &format!("修正 {}", doc.id));
 
@@ -287,7 +299,11 @@ async fn api_push_correction(
         "generated_at": chrono::Utc::now().to_rfc3339(),
     });
     let task_path = corr_dir.join(format!("{}.json", req.doc_id));
-    std::fs::write(&task_path, serde_json::to_string_pretty(&task).unwrap_or_default()).ok();
+    std::fs::write(
+        &task_path,
+        serde_json::to_string_pretty(&task).unwrap_or_default(),
+    )
+    .ok();
 
     Json(serde_json::json!({
         "ok": true,
