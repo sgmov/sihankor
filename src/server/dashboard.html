@@ -78,6 +78,8 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .act-advance:hover{background:#e94560;color:#fff}
 .act-assay{background:#16213e;border-color:#f0a500}
 .act-assay:hover{background:#f0a500;color:#000}
+.act-correct{background:#16213e;border-color:#4fc3f7;margin-top:8px}
+.act-correct:hover{background:#4fc3f7;color:#000}
 
 /* ---- bottom bar ---- */
 .bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:6px 14px;display:flex;justify-content:space-between;align-items:center}
@@ -306,7 +308,24 @@ async function doAssay(docId){
             if(d.self_question){
                 html+='<div style="margin-top:6px;font-size:10px;color:#f0a500">需人工审阅</div>';
             }
+            if(d.overall!=='pass'){
+                html+='<button class="act-btn act-correct" onclick="doCorrect(\''+docId+'\')" style="margin-top:8px">生成修正提示词</button>';
+            }
             msg.innerHTML=html;
+        }else{
+            msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
+        }
+    }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
+}
+
+async function doCorrect(docId){
+    const msg=document.getElementById('act-msg');
+    msg.textContent='生成中...';
+    try{
+        const r=await fetch('/api/actions/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
+        const d=await r.json();
+        if(d.ok){
+            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:300px;overflow-y:auto">'+d.correction_prompt+'</pre>';
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
         }

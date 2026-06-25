@@ -3,7 +3,12 @@
 // P0: 只读看板 (GET / + GET /api/dashboard)
 // P1: 按钮可操作 (POST /api/actions/stage, POST /api/actions/validate)
 
-use axum::{Json, Router, extract::State, response::Html, routing::{get, post}};
+use axum::{
+    Json, Router,
+    extract::State,
+    response::Html,
+    routing::{get, post},
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -11,8 +16,8 @@ use tower_http::cors::CorsLayer;
 
 use crate::core::database::SihDatabase;
 use crate::core::kanban;
-use crate::core::validator::{self, ValidationConfig};
 use crate::core::models::Stage;
+use crate::core::validator::{self, ValidationConfig};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -56,7 +61,7 @@ async fn api_dashboard(State(state): State<AppState>) -> Json<DashboardResponse>
 
 /// Re-validate a document: parse from disk, run fresh validation
 async fn api_validate(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     axum::extract::Json(req): axum::extract::Json<ActionRequest>,
 ) -> Json<serde_json::Value> {
     let result = match find_and_validate_on_disk(&req.doc_id).await {
@@ -78,25 +83,31 @@ async fn api_assay(
     };
 
     use crate::mind::icl::ICL;
-    use crate::mind::iww::IWW;
     use crate::mind::ict::ICT;
+    use crate::mind::iww::IWW;
 
     let icl = ICL::new(state.db.clone());
     let cognition = icl.analyze(&doc).await;
     let proposal = IWW::propose(&cognition);
     let verification = ICT::verify(&cognition, &proposal);
 
-    let laws: Vec<serde_json::Value> = verification.five_law_check.iter().map(|check| {
-        serde_json::json!({
-            "law": check.law,
-            "result": format!("{:?}", check.result).to_lowercase(),
-            "note": check.note,
+    let laws: Vec<serde_json::Value> = verification
+        .five_law_check
+        .iter()
+        .map(|check| {
+            serde_json::json!({
+                "law": check.law,
+                "result": format!("{:?}", check.result).to_lowercase(),
+                "note": check.note,
+            })
         })
-    }).collect();
+        .collect();
 
-    let dao_trace: Vec<String> = verification.dao_trace.iter().map(|dt| {
-        format!("{}: {}", dt.dao, dt.trace)
-    }).collect();
+    let dao_trace: Vec<String> = verification
+        .dao_trace
+        .iter()
+        .map(|dt| format!("{}: {}", dt.dao, dt.trace))
+        .collect();
 
     let mut gaps: Vec<String> = Vec::new();
     if cognition.governance_position.upstream_chain.is_empty() {
@@ -127,14 +138,29 @@ async fn api_stage(
 ) -> Json<ActionResult> {
     let doc = match state.db.get_document(&req.doc_id).await {
         Ok(Some(d)) => d,
-        Ok(None) => return Json(ActionResult { ok: false, message: "文档未找到".into() }),
-        Err(e) => return Json(ActionResult { ok: false, message: e.to_string() }),
+        Ok(None) => {
+            return Json(ActionResult {
+                ok: false,
+                message: "文档未找到".into(),
+            });
+        }
+        Err(e) => {
+            return Json(ActionResult {
+                ok: false,
+                message: e.to_string(),
+            });
+        }
     };
 
     let next_stage = match doc.stage.0.as_str() {
         "1/3" => "2/3",
         "2/3" => "3/3",
-        _ => return Json(ActionResult { ok: false, message: "无法推进：当前 stage 不支持".into() }),
+        _ => {
+            return Json(ActionResult {
+                ok: false,
+                message: "无法推进：当前 stage 不支持".into(),
+            });
+        }
     };
 
     let mut updated = doc.clone();
@@ -145,8 +171,69 @@ async fn api_stage(
             ok: true,
             message: format!("已推进 {} -> {}", req.doc_id, next_stage),
         }),
-        Err(e) => Json(ActionResult { ok: false, message: e.to_string() }),
+        Err(e) => Json(ActionResult {
+            ok: false,
+            message: e.to_string(),
+        }),
     }
+}
+
+/// Generate correction prompt when Dao check fails
+async fn api_correct(
+    State(state): State<AppState>,
+    axum::extract::Json(req): axum::extract::Json<ActionRequest>,
+) -> Json<serde_json::Value> {
+    let doc = match state.db.get_document(&req.doc_id).await {
+        Ok(Some(d)) => d,
+        Ok(None) => {
+            return Json(serde_json::json!({"ok": false, "message": "文档未找到"}));
+        }
+        Err(e) => return Json(serde_json::json!({"ok": false, "message": e.to_string()})),
+    };
+
+    use crate::mind::icl::ICL;
+    use crate::mind::ict::ICT;
+    use crate::mind::iww::IWW;
+
+    let icl = ICL::new(state.db.clone());
+    let cognition = icl.analyze(&doc).await;
+    let proposal = IWW::propose(&cognition);
+    let verification = ICT::verify(&cognition, &proposal);
+
+    let mut issues: Vec<String> = Vec::new();
+    for check in &verification.five_law_check {
+        if check.result != crate::mind::types::LawCheckResult::Pass {
+            issues.push(format!(
+                "[{}] {}: {}",
+                check.law,
+                check.note,
+                if check.result == crate::mind::types::LawCheckResult::Fail {
+                    "必须修正"
+                } else {
+                    "建议修正"
+                }
+            ));
+        }
+    }
+    for div in &cognition.divergence_diagnosis {
+        issues.push(format!("[发散] {}", div.description));
+        if let Some(ref s) = div.suggestion {
+            issues.push(format!("  建议: {}", s));
+        }
+    }
+
+    let prompt = format!(
+        "合道修正：{} ({})\n\n不通过项：\n{}\n\n修正要求：仅修正不合道部分，保持其他内容不变。",
+        doc.id,
+        doc.title,
+        issues.join("\n"),
+    );
+
+    Json(serde_json::json!({
+        "ok": true,
+        "doc_id": req.doc_id,
+        "correction_prompt": prompt,
+    }))
 }
 
 // ---- Helpers ----
@@ -177,16 +264,20 @@ async fn find_and_validate_on_disk(doc_id: &str) -> Result<Vec<serde_json::Value
     let doc = parser::parse_file(&path).map_err(|e| format!("解析失败: {}", e))?;
 
     let result = validator::validate_document(&doc, Some(&path), &ValidationConfig::default());
-    let violations: Vec<serde_json::Value> = result.violations.iter().map(|v| {
-        serde_json::json!({
-            "rule": v.rule_id,
-            "severity": v.severity.as_str(),
-            "message": v.message,
-            "location": v.location,
-            "fix": v.fix_suggestion,
-            "dao": v.dao_trace,
+    let violations: Vec<serde_json::Value> = result
+        .violations
+        .iter()
+        .map(|v| {
+            serde_json::json!({
+                "rule": v.rule_id,
+                "severity": v.severity.as_str(),
+                "message": v.message,
+                "location": v.location,
+                "fix": v.fix_suggestion,
+                "dao": v.dao_trace,
+            })
         })
-    }).collect();
+        .collect();
 
     // Re-index after validation
     // state.db.upsert_document(doc).await ... (needs async context, skip for now)
@@ -205,6 +296,7 @@ pub async fn start(db: Arc<dyn SihDatabase>, port: u16) -> Result<(), Box<dyn st
         .route("/api/actions/validate", post(api_validate))
         .route("/api/actions/stage", post(api_stage))
         .route("/api/actions/assay", post(api_assay))
+        .route("/api/actions/correct", post(api_correct))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
