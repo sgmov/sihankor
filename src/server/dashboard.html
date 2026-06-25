@@ -6,73 +6,96 @@
 <title>SiHankor - 司衡工厂产线</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#16213e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460;flex-shrink:0}
-header h1{font-size:18px;color:#e94560}
-header .status{display:flex;gap:12px;font-size:12px;align-items:center}
-header .status span{padding:3px 10px;border-radius:4px;font-weight:bold}
+body{background:#1a1a2e;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;height:100vh;display:flex;overflow:hidden}
+
+/* ---- left sidebar ---- */
+.sidebar{flex:0 0 180px;background:#111827;padding:16px 0;display:flex;flex-direction:column;border-right:1px solid #0f3460;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
+.sidebar h2{font-size:13px;color:#e94560;padding:0 16px 12px;border-bottom:1px solid #0f3460;margin-bottom:8px}
+.nav-item{padding:8px 16px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .2s;border-left:3px solid transparent}
+.nav-item:hover{background:#16213e}
+.nav-item.active{border-left-color:#e94560;background:#16213e}
+.nav-item .ni-count{font-size:10px;padding:1px 6px;border-radius:8px;background:#0f3460}
+.nav-item .ni-err{background:#e94560}
+.nav-item .ni-warn{background:#f0a500;color:#000}
+.sidebar-footer{padding:12px 16px;margin-top:auto;border-top:1px solid #0f3460;font-size:10px;color:#555}
+.sidebar-footer div{padding:2px 0}
+
+/* ---- main area ---- */
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
+header{background:#16213e;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460;flex-shrink:0}
+header h1{font-size:16px;color:#e94560}
+header .status{display:flex;gap:10px;font-size:11px;align-items:center}
+header .status span{padding:2px 8px;border-radius:4px;font-weight:bold}
 .s-fatal{background:#e94560;color:#fff}
 .s-warn{background:#f0a500;color:#000}
 .s-ok{background:#0f3460;color:#e0e0e0}
-.s-summary{margin-left:8px;font-size:11px;color:#888}
 
-/* Kanban scroll area */
-.kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:16px 12px}
-.kanban-board{display:flex;gap:12px;height:100%;min-width:min-content}
-.kanban-column{flex:0 0 260px;background:#16213e;border-radius:8px;border:1px solid #0f3460;display:flex;flex-direction:column;max-height:100%}
-.column-header{padding:12px 14px 8px;border-bottom:1px solid #0f3460;flex-shrink:0}
-.column-header h2{font-size:14px;display:flex;justify-content:space-between;align-items:center}
-.column-header .count{font-size:11px;color:#888;font-weight:normal}
-.column-body{flex:1;overflow-y:auto;padding:8px 10px;scrollbar-width:thin;scrollbar-color:#0f3460 #16213e}
+/* Kanban */
+.kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:12px 8px}
+.kanban-board{display:flex;gap:8px;height:100%;min-width:min-content}
+.kanban-column{flex:0 0 250px;background:#16213e;border-radius:6px;border:1px solid #0f3460;display:flex;flex-direction:column;max-height:100%}
+.column-header{padding:10px 12px 8px;border-bottom:1px solid #0f3460;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.column-header h2{font-size:13px;display:flex;align-items:center;gap:6px}
+.column-header .count{font-size:10px;color:#888;font-weight:normal}
+.col-toggle{font-size:10px;color:#888;cursor:pointer;padding:2px 6px;border-radius:3px;border:1px solid #0f3460}
+.col-toggle:hover{color:#e0e0e0;border-color:#e94560}
+.column-body{flex:1;overflow-y:auto;padding:6px 8px;scrollbar-width:thin;scrollbar-color:#0f3460 #16213e}
 
-/* Compact card */
-.card{background:#1a1a2e;border:1px solid #0f3460;border-radius:5px;padding:8px 10px;margin-bottom:6px;cursor:default;transition:border-color .2s}
+/* Card — collapsed by default */
+.card{background:#1a1a2e;border:1px solid #0f3460;border-radius:4px;padding:6px 8px;margin-bottom:4px;cursor:pointer;transition:border-color .15s;font-size:11px}
 .card:hover{border-color:#e94560}
-.card-title{font-size:12px;font-weight:bold;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-meta{font-size:10px;color:#999;margin-bottom:2px}
-.card-summary{font-size:9px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
-.card-blocked{font-size:9px;color:#e94560;margin-top:2px;font-weight:bold}
-
-/* Card status colors */
-.card-status{float:right;width:8px;height:8px;border-radius:50%;margin-left:6px;margin-top:3px}
-.cs-ok{background:#0f3460}
-.cs-warn{background:#f0a500}
-.cs-error{background:#e94560}
-.cs-pending{background:#555}
-.cs-in-progress{background:#4fc3f7;animation:pulse 2s infinite}
+.card.expanded{padding:8px 10px}
+.card .card-row1{display:flex;justify-content:space-between;align-items:center}
+.card .card-title{font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.card .card-dot{width:7px;height:7px;border-radius:50%;margin-left:6px;flex-shrink:0}
+.card .card-extra{display:none;margin-top:4px;font-size:10px;color:#999}
+.card.expanded .card-extra{display:block}
+.dot-ok{background:#0f3460}
+.dot-warn{background:#f0a500}
+.dot-err{background:#e94560}
+.dot-pending{background:#555}
+.dot-active{background:#4fc3f7;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Verify column: grouped */
-.verify-group{margin-bottom:8px}
-.verify-group-header{font-size:10px;color:#e94560;padding:4px 0;border-bottom:1px solid #0f3460;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between}
-.verify-group-header .g-count{font-size:9px;color:#888}
+/* Verify groups */
+.verify-group{margin-bottom:6px}
+.verify-group-header{font-size:10px;color:#e94560;padding:3px 0;border-bottom:1px solid #0f3460;margin-bottom:3px;cursor:pointer;display:flex;justify-content:space-between}
 .verify-group.collapsed .card{display:none}
 .verify-group.collapsed .verify-group-header{margin-bottom:0;border-bottom:none}
 
-.empty-col{color:#444;font-style:italic;text-align:center;padding:30px 0;font-size:12px}
-
-/* Conveyor arrow between columns */
-.conveyor{writing-mode:vertical-lr;text-align:center;color:#0f3460;font-size:20px;flex:0 0 20px;display:flex;align-items:center;justify-content:center;user-select:none}
+/* Conveyor */
+.conveyor{writing-mode:vertical-lr;text-align:center;color:#0f3460;font-size:16px;flex:0 0 16px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:bold}
 .conveyor.active{color:#e94560}
 
-.refresh-bar{flex-shrink:0;text-align:center;padding:6px;font-size:10px;color:#444;background:#111}
+.empty-col{color:#444;font-style:italic;text-align:center;padding:30px 0;font-size:11px}
+.refresh-bar{flex-shrink:0;text-align:center;padding:4px;font-size:9px;color:#444;background:#111}
 </style>
 </head>
 <body>
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+<h2>SiHankor 产线</h2>
+</nav>
+
+<!-- MAIN -->
+<div class="main-area">
 <header>
-<h1>SiHankor 产线</h1>
+<h1>工厂看板</h1>
 <div class="status">
 <span id="fatal-count" class="s-ok">F:0</span>
 <span id="warn-count" class="s-ok">G:0</span>
 <span id="total-count" class="s-ok">总:0</span>
-<span class="s-summary" id="summary-text"></span>
 </div>
 </header>
 <div class="kanban-scroll">
 <div class="kanban-board" id="board"></div>
 </div>
-<div class="refresh-bar">30s auto-refresh | <span id="last-update">--</span></div>
+<div class="refresh-bar">30s auto-refresh | <span id="last-update">--</span> | click card to expand | sidebar to navigate</div>
+</div>
+
 <script>
+const PHASE_LABELS={draft:'草稿',propose:'提案',decide:'决议',spec:'规约',code:'代码',verify:'验证'};
+
 async function load(){
     try{
         const r=await fetch('/api/dashboard');
@@ -85,52 +108,70 @@ async function load(){
 
 function render(d){
     const board=document.getElementById('board');
+    const sidebar=document.getElementById('sidebar');
     board.innerHTML='';
+    sidebar.innerHTML='<h2>SiHankor 产线</h2>';
 
     // Global stats
-    const allCards = d.columns.flatMap(c=>c.cards||[]);
+    const allCards=d.columns.flatMap(c=>c.cards||[]);
     const errs=allCards.filter(c=>c.status==='Error'||c.status==='error').length;
     const warns=allCards.filter(c=>c.status==='Warning'||c.status==='warning').length;
+    const active=allCards.filter(c=>c.status==='in_progress').length;
     document.getElementById('fatal-count').textContent='F:'+errs;
     document.getElementById('fatal-count').className=errs?'s-fatal':'s-ok';
     document.getElementById('warn-count').textContent='G:'+warns;
     document.getElementById('warn-count').className=warns?'s-warn':'s-ok';
     document.getElementById('total-count').textContent='总:'+d.summary.total_cards;
-    document.getElementById('summary-text').textContent='活跃:'+(d.summary.active_cards||0)+' 阻塞:'+(d.summary.blocked_cards||0)+' 完成:'+(d.summary.done_cards||0);
     document.getElementById('last-update').textContent=new Date(d.generated_at).toLocaleTimeString();
 
     for(let i=0;i<d.columns.length;i++){
         const col=d.columns[i];
         const cards=col.cards||[];
+        const colErrs=cards.filter(c=>c.status==='Error'||c.status==='error').length;
+        const colWarns=cards.filter(c=>c.status==='Warning'||c.status==='warning').length;
+        const hasActive=cards.some(c=>c.status==='in_progress');
+        const colColor=hasActive?'#e94560':'#0f3460';
 
+        // ---- sidebar item ----
+        const ni=document.createElement('div');
+        ni.className='nav-item'+(i===0?' active':'');
+        let niBadge='';
+        if(colErrs)niBadge='<span class="ni-count ni-err">'+colErrs+'</span>';
+        else if(colWarns)niBadge='<span class="ni-count ni-warn">'+colWarns+'</span>';
+        else niBadge='<span class="ni-count">'+cards.length+'</span>';
+        ni.innerHTML=col.label+niBadge;
+        ni.onclick=()=>{
+            document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+            ni.classList.add('active');
+            document.querySelectorAll('.kanban-column')[i].scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+        };
+        sidebar.appendChild(ni);
+
+        // ---- column ----
         const el=document.createElement('div');
         el.className='kanban-column';
-
-        const hasActive = cards.some(c=>c.status==='in_progress'||c.status==='Error');
-        const colColor = hasActive?'#e94560':'#0f3460';
-
-        el.innerHTML='<div class="column-header" style="border-left:3px solid '+colColor+'"><h2>'+col.label+' <span class="count">'+cards.length+'</span></h2></div>'+
-            '<div class="column-body" id="col-'+col.phase+'"></div>';
+        el.innerHTML='<div class="column-header" style="border-left:3px solid '+colColor+'">'+
+            '<h2>'+col.label+' <span class="count">'+cards.length+'</span></h2>'+
+            '<span class="col-toggle" onclick="toggleColumn(\''+col.phase+'\')">展开</span>'+
+            '</div><div class="column-body" id="col-'+col.phase+'"></div>';
 
         const body=el.querySelector('.column-body');
 
         if(!cards.length){
-            body.innerHTML='<div class="empty-col">--- 空闲 ---</div>';
+            body.innerHTML='<div class="empty-col">---</div>';
         }else if(col.phase==='verify'){
-            // Grouped view for verify column
             const groups=col.groups||[];
             if(groups.length){
                 for(const g of groups){
                     const gdiv=document.createElement('div');
                     gdiv.className='verify-group';
-                    gdiv.innerHTML='<div class="verify-group-header" onclick="this.parentElement.classList.toggle(\'collapsed\')">'+g.nature+' <span class="g-count">'+g.clean_count+'+'+g.attention.length+'</span></div>';
+                    gdiv.innerHTML='<div class="verify-group-header" onclick="this.parentElement.classList.toggle(\'collapsed\')">'+g.nature+' ('+g.attention.length+')</div>';
                     for(const card of g.attention||[]){
                         gdiv.appendChild(renderCard(card));
                     }
                     body.appendChild(gdiv);
                 }
             }
-            // Also show any ungrouped cards
             for(const card of cards){
                 body.appendChild(renderCard(card));
             }
@@ -142,38 +183,64 @@ function render(d){
 
         board.appendChild(el);
 
-        // Conveyor between columns
-        if(i < d.columns.length-1){
+        if(i<d.columns.length-1){
             const conv=document.createElement('div');
             conv.className='conveyor'+(hasActive?' active':'');
             conv.textContent='\u2192';
             board.appendChild(conv);
         }
     }
+
+    // Footer stats in sidebar
+    const sf=document.createElement('div');
+    sf.className='sidebar-footer';
+    sf.innerHTML='<div>总卡片: '+d.summary.total_cards+'</div><div>活跃: '+(active||0)+'</div><div>阻塞: '+(d.summary.blocked_cards||0)+'</div><div>完成: '+(d.summary.done_cards||0)+'</div>';
+    sidebar.appendChild(sf);
 }
 
 function renderCard(card){
     const m=document.createElement('div');
     m.className='card';
-    const title=(card.title||card.id||'?').slice(0,45);
-    let statusClass='cs-ok';
-    if(card.status==='Error'||card.status==='error')statusClass='cs-error';
-    else if(card.status==='Warning'||card.status==='warning')statusClass='cs-warn';
-    else if(card.status==='in_progress')statusClass='cs-in-progress';
-    else if(card.status==='pending')statusClass='cs-pending';
+    const title=(card.title||card.id||'?').slice(0,40);
+    let dot='dot-ok';
+    if(card.status==='Error'||card.status==='error')dot='dot-err';
+    else if(card.status==='Warning'||card.status==='warning')dot='dot-warn';
+    else if(card.status==='in_progress')dot='dot-active';
+    else if(card.status==='pending')dot='dot-pending';
 
     const stage=card.stage||'';
     const nature=card.nature||card.entity_type||'';
+    const summary=card.summary||'';
 
-    m.innerHTML='<div class="card-title">'+title+'<span class="card-status '+statusClass+'"></span></div>'+
-        '<div class="card-meta">'+(stage?'['+stage+'] ':'')+nature+'</div>'+
-        (card.summary?'<div class="card-summary">'+(card.summary.slice(0,60))+'</div>':'')+
-        (card.blockers&&card.blockers.length?'<div class="card-blocked">BLOCKED: '+card.blockers[0]+'</div>':'');
+    m.innerHTML='<div class="card-row1"><span class="card-title">'+title+'</span><span class="card-dot '+dot+'"></span></div>'+
+        '<div class="card-extra">'+
+        '<div>'+(stage?'['+stage+'] ':'')+nature+'</div>'+
+        (summary?'<div style="color:#666">'+summary.slice(0,80)+'</div>':'')+
+        (card.blockers&&card.blockers.length?'<div style="color:#e94560;font-weight:bold">BLOCKED: '+card.blockers[0]+'</div>':'')+
+        '</div>';
 
-    if(card.id){
-        m.title=card.id;
-    }
+    m.onclick=function(e){
+        e.stopPropagation();
+        m.classList.toggle('expanded');
+    };
+
+    if(card.id)m.title=card.id;
     return m;
+}
+
+function toggleColumn(phase){
+    const body=document.getElementById('col-'+phase);
+    if(!body)return;
+    const cards=body.querySelectorAll('.card');
+    const allExp=Array.from(cards).every(c=>c.classList.contains('expanded'));
+    const toggle=body.parentElement.querySelector('.col-toggle');
+    if(allExp){
+        cards.forEach(c=>c.classList.remove('expanded'));
+        if(toggle)toggle.textContent='展开';
+    }else{
+        cards.forEach(c=>c.classList.add('expanded'));
+        if(toggle)toggle.textContent='折叠';
+    }
 }
 
 load();
