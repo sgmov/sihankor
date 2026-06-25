@@ -6,40 +6,42 @@
 <title>SiHankor - 司衡工厂产线</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-serif;height:100vh;display:flex;overflow:hidden}
 
-/* ---- top bar ---- */
-.top-bar{flex-shrink:0;background:#16213e;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
-.top-bar .title{font-size:15px;color:#e94560;font-weight:bold}
-.top-bar .badges{display:flex;gap:8px;font-size:11px}
-.badge{padding:3px 10px;border-radius:4px;font-weight:bold}
-.badge-ok{background:#0f3460;color:#e0e0e0}
-.badge-err{background:#e94560;color:#fff}
-.badge-warn{background:#f0a500;color:#000}
+/* ---- left sidebar ---- */
+.sidebar{flex:0 0 200px;background:#111827;display:flex;flex-direction:column;border-right:1px solid #0f3460}
+.sidebar h1{font-size:14px;color:#e94560;padding:12px 14px;border-bottom:1px solid #0f3460;flex-shrink:0}
+.sidebar-nav{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
+.nav-item{padding:10px 14px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid transparent;transition:.15s}
+.nav-item:hover{background:#16213e}
+.nav-item.active{border-left-color:#e94560;background:#16213e;font-weight:bold}
+.nav-item .n-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:#0f3460;min-width:24px;text-align:center}
+.nav-item .n-err{background:#e94560}
+.nav-item .n-warn{background:#f0a500;color:#000}
+.nav-item .n-live{border-left-color:#4fc3f7!important}
+.sidebar-foot{flex-shrink:0;padding:10px 14px;border-top:1px solid #0f3460;font-size:10px;color:#555}
+.sidebar-foot div{padding:1px 0}
 
-/* ---- phase tabs ---- */
-.tabs{flex-shrink:0;display:flex;background:#111827;border-bottom:1px solid #0f3460;overflow-x:auto;scrollbar-width:none}
-.tab{flex:1;padding:10px 12px;font-size:12px;text-align:center;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-width:70px;transition:.15s}
-.tab:hover{background:#16213e}
-.tab.active{border-bottom-color:#e94560;background:#16213e;font-weight:bold}
-.tab .t-count{font-size:10px;color:#888;display:block}
-.tab.active .t-count{color:#e94560}
+/* ---- main area ---- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top-bar{flex-shrink:0;background:#16213e;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
+.top-bar .phase-title{font-size:15px;font-weight:bold}
+.top-bar .badges{display:flex;gap:6px;font-size:10px}
+.badge{padding:2px 8px;border-radius:4px;font-weight:bold}
+.b-ok{background:#0f3460}
+.b-err{background:#e94560;color:#fff}
+.b-warn{background:#f0a500;color:#000}
 
-/* ---- content area ---- */
-.content{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
-.content h3{font-size:16px;margin-bottom:4px}
-.content .desc{font-size:11px;color:#888;margin-bottom:14px}
-
-/* ---- card ---- */
-.card{background:#16213e;border:1px solid #0f3460;border-radius:6px;padding:10px 14px;margin-bottom:6px;cursor:pointer;max-width:600px}
+.middle{display:flex;flex:1;overflow:hidden}
+/* ---- card list ---- */
+.card-list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
+.card-list .desc{font-size:11px;color:#888;margin-bottom:10px}
+.card{background:#16213e;border:1px solid #0f3460;border-radius:5px;padding:8px 12px;margin-bottom:6px;cursor:pointer;transition:.15s;display:flex;justify-content:space-between;align-items:center}
 .card:hover{border-color:#e94560}
-.card .head{display:flex;justify-content:space-between;align-items:center}
-.card .title{font-size:13px;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card .dot{width:8px;height:8px;border-radius:50%;margin-left:8px;flex-shrink:0}
-.card .meta{font-size:11px;color:#999;margin-top:3px}
-.card .detail{display:none;margin-top:8px;font-size:11px;color:#aaa;line-height:1.5}
-.card.open .detail{display:block}
-.card .blocker{color:#e94560;font-weight:bold;font-size:11px;margin-top:4px}
+.card.selected{border-color:#e94560;background:#1a1a3e}
+.card .ctitle{font-size:12px;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .cmeta{font-size:10px;color:#999;margin-left:8px;flex-shrink:0}
+.card .cdot{width:7px;height:7px;border-radius:50%;margin-left:6px;flex-shrink:0}
 .dot-ok{background:#0f3460}
 .dot-warn{background:#f0a500}
 .dot-err{background:#e94560}
@@ -47,52 +49,77 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .dot-live{background:#4fc3f7;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* grouped verify */
-.vgroup{margin-bottom:10px;max-width:600px}
-.vgroup .vhdr{font-size:11px;color:#e94560;padding:3px 0;border-bottom:1px solid #0f3460;margin-bottom:3px;cursor:pointer;display:flex;justify-content:space-between}
-.vgroup.shut .card{display:none}
-.vgroup.shut .vhdr{margin-bottom:0;border-bottom:none}
-
+.verify-group{margin-bottom:8px}
+.verify-group .vhead{font-size:10px;color:#e94560;padding:3px 0;border-bottom:1px solid #0f3460;margin-bottom:3px;cursor:pointer;display:flex;justify-content:space-between}
+.verify-group.shut .card{display:none}
+.verify-group.shut .vhead{margin-bottom:0;border-bottom:none}
 .empty{color:#444;text-align:center;padding:40px;font-size:13px}
 
+/* ---- right detail panel ---- */
+.detail-panel{flex:0 0 0;background:#111827;border-left:1px solid #0f3460;overflow-y:auto;transition:flex-basis .2s;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
+.detail-panel.open{flex-basis:340px}
+.detail-inner{padding:16px;min-width:280px}
+.detail-inner h3{font-size:15px;color:#e94560;margin-bottom:10px}
+.detail-inner .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0f3460;font-size:12px}
+.detail-inner .row .label{color:#888}
+.detail-inner .row .val{font-weight:bold;text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.detail-inner .section{margin-top:14px}
+.detail-inner .section h4{font-size:11px;color:#e94560;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.detail-inner .section .text{font-size:11px;color:#aaa;line-height:1.6}
+.detail-inner .blocked{background:#e94560;color:#fff;font-size:11px;padding:6px 10px;border-radius:4px;margin-top:8px}
+.detail-close{float:right;cursor:pointer;color:#888;font-size:16px;line-height:1}
+.detail-close:hover{color:#e94560}
+.detail-empty{color:#555;text-align:center;padding:40px 16px;font-size:12px}
+
 /* ---- bottom bar ---- */
-.bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:8px 16px;display:flex;justify-content:space-between;align-items:center}
-.bottom-bar .step-label{font-size:11px;color:#888}
-.bottom-bar .btns{display:flex;gap:8px}
-.bottom-bar button{background:#16213e;color:#e0e0e0;border:1px solid #0f3460;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px}
+.bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:6px 14px;display:flex;justify-content:space-between;align-items:center}
+.bottom-bar .step{font-size:10px;color:#888}
+.bottom-bar button{background:#16213e;color:#e0e0e0;border:1px solid #0f3460;padding:4px 12px;border-radius:3px;cursor:pointer;font-size:11px}
 .bottom-bar button:hover:not(:disabled){border-color:#e94560}
 .bottom-bar button:disabled{opacity:.3;cursor:default}
 </style>
 </head>
 <body>
 
-<!-- top bar -->
+<!-- LEFT SIDEBAR -->
+<nav class="sidebar">
+<h1>SiHankor</h1>
+<div class="sidebar-nav" id="sidebar-nav"></div>
+<div class="sidebar-foot" id="sidebar-foot"></div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
 <div class="top-bar">
-<span class="title">SiHankor 工厂产线</span>
+<span class="phase-title" id="phase-title">--</span>
 <div class="badges">
-<span id="b-fatal" class="badge badge-ok">F:0</span>
-<span id="b-warn" class="badge badge-ok">G:0</span>
-<span id="b-total" class="badge badge-ok">总:0</span>
+<span id="b-fatal" class="badge b-err" style="display:none">F:0</span>
+<span id="b-warn" class="badge b-warn" style="display:none">G:0</span>
+<span id="b-total" class="badge b-ok">总:0</span>
 </div>
 </div>
 
-<!-- phase tabs -->
-<div class="tabs" id="tabs"></div>
+<div class="middle">
+<!-- card list -->
+<div class="card-list" id="card-list"><div class="empty">加载中...</div></div>
 
-<!-- content -->
-<div class="content" id="content"><div class="empty">加载中...</div></div>
+<!-- detail panel -->
+<div class="detail-panel" id="detail-panel">
+<div class="detail-empty">选择一张卡片查看详情</div>
+</div>
+</div>
 
-<!-- bottom bar -->
 <div class="bottom-bar">
-<span class="step-label" id="step-label"></span>
-<div class="btns">
+<span class="step" id="step-label">-</span>
+<div style="display:flex;gap:6px">
 <button id="btn-prev" onclick="nav(-1)">上一步</button>
 <button id="btn-next" onclick="nav(1)">下一步</button>
 </div>
 </div>
+</div>
 
 <script>
-let idx=0,cols=[],data=null;
+let idx=0,cols=[],data=null,selCard=null;
 
 async function fetchData(){
     try{
@@ -101,74 +128,76 @@ async function fetchData(){
         cols=data.columns||[];
         render();
     }catch(e){
-        document.getElementById('content').innerHTML='<div class="empty">'+e.message+'</div>';
+        document.getElementById('card-list').innerHTML='<div class="empty">'+e.message+'</div>';
     }
 }
 
 function render(){
     if(!cols.length)return;
 
-    // badges
     const all=cols.flatMap(c=>c.cards||[]);
     const e=all.filter(c=>c.status==='Error'||c.status==='error').length;
     const w=all.filter(c=>c.status==='Warning'||c.status==='warning').length;
-    document.getElementById('b-fatal').textContent='F:'+e;
-    document.getElementById('b-fatal').className='badge'+(e?' badge-err':' badge-ok');
-    document.getElementById('b-warn').textContent='G:'+w;
-    document.getElementById('b-warn').className='badge'+(w?' badge-warn':' badge-ok');
+    const bf=document.getElementById('b-fatal');
+    bf.textContent='F:'+e;
+    bf.style.display=e?'inline':'none';
+    const bw=document.getElementById('b-warn');
+    bw.textContent='G:'+w;
+    bw.style.display=w?'inline':'none';
     document.getElementById('b-total').textContent='总:'+data.summary.total_cards;
 
-    // tabs
-    const tabs=document.getElementById('tabs');
-    tabs.innerHTML='';
+    // sidebar nav
+    const sn=document.getElementById('sidebar-nav');
+    sn.innerHTML='';
     for(let i=0;i<cols.length;i++){
-        const c=cols[i];
-        const cs=c.cards||[];
+        const c=cols[i];const cs=c.cards||[];
         const ce=cs.filter(x=>x.status==='Error'||x.status==='error').length;
         const cw=cs.filter(x=>x.status==='Warning'||x.status==='warning').length;
         const live=cs.some(x=>x.status==='in_progress');
-        const t=document.createElement('div');
-        t.className='tab'+(i===idx?' active':'');
-        if(live)t.style.color='#4fc3f7';
-        t.innerHTML=c.label+'<span class="t-count">'+(ce||cw||cs.length)+'</span>';
-        t.onclick=()=>{idx=i;render();};
-        tabs.appendChild(t);
+        const ni=document.createElement('div');
+        ni.className='nav-item'+(i===idx?' active':'')+(live?' n-live':'');
+        ni.innerHTML=c.label+'<span class="n-badge'+(ce?' n-err':cw?' n-warn':'')+'">'+(ce||cw||cs.length)+'</span>';
+        ni.onclick=()=>{idx=i;selectCard(null);render();};
+        sn.appendChild(ni);
     }
+
+    // sidebar foot
+    const sf=document.getElementById('sidebar-foot');
+    sf.innerHTML='<div>活跃:'+all.filter(c=>c.status==='in_progress').length+'</div><div>阻塞:'+(data.summary.blocked_cards||0)+'</div><div>完成:'+(data.summary.done_cards||0)+'</div>';
 
     showColumn();
 }
 
 function showColumn(){
-    const col=cols[idx];
-    const cards=col.cards||[];
+    const col=cols[idx];const cards=col.cards||[];
     const live=cards.some(c=>c.status==='in_progress');
+    document.getElementById('phase-title').textContent=col.label;
+    document.getElementById('phase-title').style.color=live?'#e94560':'#e0e0e0';
 
-    // update tabs
-    document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+    document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',i===idx));
 
-    // content
-    const body=document.getElementById('content');
-    body.innerHTML='<h3 style="color:'+(live?'#e94560':'#e0e0e0')+'">'+col.label+'</h3>'+
-        '<div class="desc">'+(col.entry_condition||'')+'</div>';
+    const list=document.getElementById('card-list');
+    list.innerHTML='<div class="desc">'+(col.entry_condition||'')+'</div>';
 
     if(!cards.length){
-        body.innerHTML+='<div class="empty">--- 空闲 ---</div>';
+        list.innerHTML+='<div class="empty">--- 空闲 ---</div>';
     }else if(col.phase==='verify'){
         const groups=col.groups||[];
         if(groups.length){
             for(const g of groups){
-                const d=document.createElement('div');d.className='vgroup';
-                d.innerHTML='<div class="vhdr" onclick="this.parentElement.classList.toggle(\'shut\')">'+g.nature+' ('+g.attention.length+')</div>';
+                const d=document.createElement('div');d.className='verify-group';
+                d.innerHTML='<div class="vhead" onclick="this.parentElement.classList.toggle(\'shut\')">'+g.nature+' ('+g.attention.length+')</div>';
                 for(const c of g.attention||[])d.appendChild(cardEl(c));
-                body.appendChild(d);
+                list.appendChild(d);
             }
         }
-        for(const c of cards)body.appendChild(cardEl(c));
+        for(const c of cards)list.appendChild(cardEl(c));
     }else{
-        for(const c of cards)body.appendChild(cardEl(c));
+        for(const c of cards)list.appendChild(cardEl(c));
+        const last=cards[cards.length-1];
+        if(last&&col.phase==='verify')list.querySelectorAll('.card').forEach(c=>{c.classList.remove('selected');});
     }
 
-    // bottom
     document.getElementById('step-label').textContent=(idx+1)+' / '+cols.length;
     document.getElementById('btn-prev').disabled=idx===0;
     document.getElementById('btn-next').disabled=idx===cols.length-1;
@@ -176,7 +205,7 @@ function showColumn(){
 
 function cardEl(card){
     const m=document.createElement('div');m.className='card';
-    const t=(card.title||card.id||'?').slice(0,60);
+    const t=(card.title||card.id||'?').slice(0,55);
     let dot='dot-ok';
     if(card.status==='Error'||card.status==='error')dot='dot-err';
     else if(card.status==='Warning'||card.status==='warning')dot='dot-warn';
@@ -184,21 +213,52 @@ function cardEl(card){
     else if(card.status==='pending')dot='dot-pend';
     const s=card.stage||'';
     const n=card.nature||card.entity_type||'';
-    const su=card.summary||'';
-    m.innerHTML='<div class="head"><span class="title">'+t+'</span><span class="dot '+dot+'"></span></div>'+
-        '<div class="meta">'+(s?'['+s+'] ':'')+n+'</div>'+
-        '<div class="detail">'+
-        (su?'<div>'+su+'</div>':'')+
-        (card.blockers&&card.blockers.length?'<div class="blocker">BLOCKED: '+card.blockers.join('; ')+'</div>':'')+
-        (card.depends_on&&card.depends_on.length?'<div style="color:#666;margin-top:2px">depends on: '+card.depends_on.join(', ')+'</div>':'')+
-        '</div>';
-    m.onclick=function(ev){ev.stopPropagation();m.classList.toggle('open');};
+    m.innerHTML='<span class="ctitle">'+t+'</span><span class="cmeta">'+(s?'['+s+'] ':'')+n+'</span><span class="cdot '+dot+'"></span>';
+    m.onclick=function(ev){ev.stopPropagation();selectCard(card);};
     if(card.id)m.title=card.id;
     return m;
 }
 
-function nav(d){const n=idx+d;if(n>=0&&n<cols.length){idx=n;showColumn();}}
-document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1);});
+function selectCard(card){
+    selCard=card;
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('selected'));
+    if(card){
+        const cards=document.querySelectorAll('.card');
+        for(const c of cards){
+            if(c.querySelector('.ctitle')&&c.querySelector('.ctitle').textContent===card.title.slice(0,55)){c.classList.add('selected');break;}
+        }
+        showDetail(card);
+    }else{
+        document.getElementById('detail-panel').classList.remove('open');
+        document.getElementById('detail-panel').innerHTML='<div class="detail-empty">选择一张卡片查看详情</div>';
+    }
+}
+
+function showDetail(card){
+    const panel=document.getElementById('detail-panel');
+    panel.classList.add('open');
+    let html='<div class="detail-inner">';
+    html+='<span class="detail-close" onclick="selectCard(null)">x</span>';
+    html+='<h3>'+(card.title||card.id)+'</h3>';
+    html+='<div class="row"><span class="label">ID</span><span class="val">'+(card.id||'-')+'</span></div>';
+    html+='<div class="row"><span class="label">Stage</span><span class="val">'+(card.stage||'-')+'</span></div>';
+    html+='<div class="row"><span class="label">Nature</span><span class="val">'+(card.nature||card.entity_type||'-')+'</span></div>';
+    html+='<div class="row"><span class="label">Status</span><span class="val">'+(card.status||'-')+'</span></div>';
+    if(card.summary){
+        html+='<div class="section"><h4>摘要</h4><div class="text">'+card.summary+'</div></div>';
+    }
+    if(card.blockers&&card.blockers.length){
+        html+='<div class="blocked">BLOCKED: '+card.blockers.join('; ')+'</div>';
+    }
+    if(card.depends_on&&card.depends_on.length){
+        html+='<div class="section"><h4>依赖</h4><div class="text">'+card.depends_on.join(', ')+'</div></div>';
+    }
+    html+='</div>';
+    panel.innerHTML=html;
+}
+
+function nav(d){const n=idx+d;if(n>=0&&n<cols.length){idx=n;selectCard(null);showColumn();}}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1);if(e.key==='Escape')selectCard(null);});
 
 fetchData();
 setInterval(fetchData,30000);
