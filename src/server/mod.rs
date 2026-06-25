@@ -403,7 +403,7 @@ async fn api_fix_refs(
     }
 
     if removed.is_empty() {
-        return Json(serde_json::json!({"ok": true, "doc_id": req.doc_id, "message": "未发现失效引用"}));
+        return Json(serde_json::json!({"ok": true, "doc_id": req.doc_id, "message": "未发现失效引用。如有冲突需要人工审核。"}));
     }
 
     // Rewrite file

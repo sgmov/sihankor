@@ -303,7 +303,7 @@ function showDetail(card){
         html+='<div class="section"><h4>依赖</h4><div class="text">'+card.depends_on.join(', ')+'</div></div>';
     }
     if(card.gaps&&card.gaps.length&&card.gaps.some(g=>g.includes('引用缺失'))){
-        html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+card.id+'\')" style="margin-top:6px">修复引用</button>';
+        html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+card.id+'\')" style="margin-top:6px">修复</button>';
     }
 
     // Action buttons
@@ -348,7 +348,7 @@ async function doAssay(docId){
             }
             if(d.gaps&&d.gaps.length){
                 html+='<div style="margin-top:6px;font-size:10px;color:#888">'+d.gaps.join('; ')+'</div>';
-                html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+docId+'\')" style="margin-top:4px">修复引用</button>';
+                html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+docId+'\')" style="margin-top:4px">修复</button>';
             }
             if(d.self_question){
                 html+='<div style="margin-top:6px;font-size:10px;color:#f0a500">需人工审阅</div>';
