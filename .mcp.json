@@ -2,7 +2,7 @@
   "servers": {
     "sihankor": {
       "command": "cargo",
-      "args": ["run", "--release", "--manifest-path", "/Users/moc/projects/SiHankor/sihankor/Cargo.toml"]
+      "args": ["run", "--release", "--bin", "sihankor", "--manifest-path", "/Users/moc/projects/SiHankor/sihankor/Cargo.toml"]
     }
   }
 }
