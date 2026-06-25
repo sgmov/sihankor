@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiHankor - 司衡工厂产线</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+header{background:#16213e;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
+header h1{font-size:20px;color:#e94560}
+header .status{display:flex;gap:16px;font-size:13px}
+header .status span{padding:4px 12px;border-radius:4px}
+.s-fatal{background:#e94560;color:#fff}
+.s-warn{background:#f0a500;color:#000}
+.s-ok{background:#0f3460;color:#e0e0e0}
+main{padding:24px;display:flex;gap:24px;flex-wrap:wrap}
+.production-line{flex:1;min-width:320px;max-width:480px;background:#16213e;border-radius:8px;padding:20px;border:1px solid #0f3460}
+.production-line h2{font-size:16px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #0f3460}
+.machine{border:1px solid #0f3460;border-radius:6px;padding:12px;margin-bottom:12px;position:relative}
+.machine-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.machine-label{font-weight:bold;font-size:14px}
+.machine-status{font-size:12px;padding:2px 8px;border-radius:3px}
+.status-ok{background:#0f3460;color:#e0e0e0}
+.status-warn{background:#f0a500;color:#000}
+.status-error{background:#e94560;color:#fff}
+.status-pending{background:#555;color:#ccc}
+.docs-in-machine{font-size:12px}
+.doc-item{padding:3px 0;display:flex;justify-content:space-between;align-items:center}
+.doc-id{color:#e94560;font-family:monospace;font-size:11px}
+.doc-title{color:#999;font-size:11px;margin-left:8px;flex:1}
+.doc-stage{font-size:10px;padding:1px 6px;border-radius:2px;background:#0f3460}
+.summary-panel{flex:0 0 280px;background:#16213e;border-radius:8px;padding:20px;border:1px solid #0f3460}
+.summary-panel h2{font-size:16px;margin-bottom:16px}
+.summary-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #0f3460}
+.summary-label{color:#999}
+.summary-value{font-weight:bold}
+.conveyor{text-align:center;color:#0f3460;font-size:18px;margin:4px 0}
+.empty-line{color:#555;font-style:italic;text-align:center;padding:20px}
+.refresh{font-size:11px;color:#555;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+<h1>SiHankor -- 司衡工厂产线</h1>
+<div class="status" id="global-status">
+<span id="fatal-count" class="s-ok">F: 0</span>
+<span id="warn-count" class="s-ok">G: 0</span>
+<span id="total-count" class="s-ok">docs: 0</span>
+</div>
+</header>
+<main id="main">
+<div class="empty-line">加载中...</div>
+</main>
+<div class="refresh">auto-refresh 30s</div>
+<script>
+const PHASES = [
+    {id:'draft',label:'草稿',icon:'...'},
+    {id:'propose',label:'提案',icon:'(...)'},
+    {id:'decide',label:'决议',icon:'(..)'},
+    {id:'spec',label:'规约',icon:'[...]'},
+    {id:'code',label:'代码',icon:'{...}'},
+    {id:'verify',label:'验证',icon:'(...)'},
+];
+
+function machineStatus(s){if(s==='Ok')return'status-ok';if(s==='Warning')return'status-warn';if(s==='Error')return'status-error';return'status-pending'}
+function machineLabel(s){if(s==='Ok')return'OK';if(s==='Warning')return'WARN';if(s==='Error')return'ERR';return's?'}
+
+async function load(){
+    try{
+        const r=await fetch('/api/dashboard');
+        const d=await r.json();
+        render(d);
+    }catch(e){
+        document.getElementById('main').innerHTML='<div class="empty-line">连接失败: '+e.message+'</div>';
+    }
+}
+
+function render(d){
+    const main=document.getElementById('main');
+    main.innerHTML='';
+
+    // Update global status
+    const fatalCards = d.columns.flatMap(c=>c.cards||[]).filter(c=>c.status==='Error').length;
+    const warnCards = d.columns.flatMap(c=>c.cards||[]).filter(c=>c.status==='Warning').length;
+    document.getElementById('fatal-count').textContent='F: '+fatalCards;
+    document.getElementById('fatal-count').className=fatalCards?'s-fatal':'s-ok';
+    document.getElementById('warn-count').textContent='G: '+warnCards;
+    document.getElementById('warn-count').className=warnCards?'s-warn':'s-ok';
+    document.getElementById('total-count').textContent='docs: '+d.summary.total_cards;
+
+    // Render each production line column
+    for(const col of d.columns){
+        const line=document.createElement('div');
+        line.className='production-line';
+        line.innerHTML='<h2>'+col.label+'</h2>' + (col.entry_condition?'<div style="font-size:11px;color:#555;margin-bottom:8px">'+col.entry_condition+'</div>':'');
+
+        const cards=col.cards||[];
+        if(!cards.length){
+            line.innerHTML+='<div class="empty-line">--- 空闲 ---</div>';
+        }else{
+            for(const card of cards){
+                const m=document.createElement('div');
+                m.className='machine';
+                const title=card.title||card.id;
+                const shortTitle=title.length>40?title.slice(0,37)+'...':title;
+                m.innerHTML='<div class="machine-header">'+
+                    '<span class="machine-label">'+shortTitle+'</span>'+
+                    '<span class="machine-status '+machineStatus(card.status)+'">'+machineLabel(card.status)+'</span>'+
+                    '</div>'+
+                    '<div style="font-size:11px;color:#999">'+(card.stage||'')+' '+(card.nature||card.entity_type||'')+'</div>'+
+                    (card.summary?'<div style="font-size:10px;color:#666;margin-top:4px">'+card.summary.slice(0,80)+'</div>':'')+
+                    (card.blockers&&card.blockers.length?'<div style="font-size:10px;color:#e94560;margin-top:4px">BLOCKED: '+card.blockers.join('; ')+'</div>':'');
+                line.appendChild(m);
+                line.appendChild(document.createElement('div')).className='conveyor';
+                const conv=line.lastChild;
+                conv.textContent='|';
+            }
+        }
+        main.appendChild(line);
+    }
+
+    // Summary panel
+    const summary=document.createElement('div');
+    summary.className='summary-panel';
+    let html='<h2>总览</h2>';
+    html+='<div class="summary-item"><span class="summary-label">总卡片</span><span class="summary-value">'+d.summary.total_cards+'</span></div>';
+    html+='<div class="summary-item"><span class="summary-label">活跃</span><span class="summary-value">'+(d.summary.active_cards||0)+'</span></div>';
+    html+='<div class="summary-item"><span class="summary-label">阻塞</span><span class="summary-value">'+(d.summary.blocked_cards||0)+'</span></div>';
+    html+='<div class="summary-item"><span class="summary-label">完成</span><span class="summary-value">'+(d.summary.done_cards||0)+'</span></div>';
+    html+='<div style="margin-top:12px;font-size:11px;color:#555">生成时间: '+d.generated_at+'</div>';
+    summary.innerHTML=html;
+    main.appendChild(summary);
+}
+
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>
