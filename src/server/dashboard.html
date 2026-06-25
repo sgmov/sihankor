@@ -353,7 +353,11 @@ async function doPush(docId){
         const r=await fetch('/api/actions/push-correction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
         const d=await r.json();
         if(d.ok){
-            msg.innerHTML='<div style="color:#4fc3f7;font-weight:bold;margin-bottom:4px">已推送</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:100px;overflow-y:auto">'+d.message+'</pre>'+
+            const cmd='执行合道修正任务: '+docId;
+            msg.innerHTML='<div style="color:#4fc3f7;font-weight:bold;margin-bottom:4px">已推送 '+docId+'</div>'+
+                '<div style="margin-bottom:6px;font-size:11px;color:#888">发送下面这句话给 Reasonix 即可自动执行：</div>'+
+                '<pre style="background:#0a0a1e;color:#4fc3f7;padding:8px;border-radius:4px;font-size:12px;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent);this.style.background=\'#0a1a1e\'">'+cmd+'</pre>'+
+                '<div style="font-size:10px;color:#555;margin-top:2px">点击复制后粘贴到 Reasonix 对话中</div>'+
                 '<button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新检查</button>';
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
