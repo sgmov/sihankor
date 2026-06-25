@@ -54,13 +54,12 @@ async fn api_dashboard(State(state): State<AppState>) -> Json<DashboardResponse>
     })
 }
 
-/// Re-validate a document and return violations
+/// Re-validate a document: parse from disk, run fresh validation
 async fn api_validate(
     State(state): State<AppState>,
     axum::extract::Json(req): axum::extract::Json<ActionRequest>,
 ) -> Json<serde_json::Value> {
-    // Find document by ID in all known locations
-    let result = match find_and_validate(&state, &req.doc_id).await {
+    let result = match find_and_validate_on_disk(&req.doc_id).await {
         Ok(v) => serde_json::json!({"ok": true, "doc_id": req.doc_id, "violations": v}),
         Err(e) => serde_json::json!({"ok": false, "message": e}),
     };
@@ -98,12 +97,10 @@ async fn api_stage(
 
 // ---- Helpers ----
 
-async fn find_and_validate(state: &AppState, doc_id: &str) -> Result<Vec<serde_json::Value>, String> {
-    let doc = state.db.get_document(doc_id).await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| format!("文档 '{}' 未找到", doc_id))?;
+/// Parse document from actual disk file and run fresh validation
+async fn find_and_validate_on_disk(doc_id: &str) -> Result<Vec<serde_json::Value>, String> {
+    use crate::core::parser;
 
-    // Find the actual file path (try common locations)
     let possible_paths = vec![
         format!("docs/specs/engineering/{}.sih.md", doc_id),
         format!("docs/specs/philosophy/{}.sih.md", doc_id),
@@ -122,7 +119,10 @@ async fn find_and_validate(state: &AppState, doc_id: &str) -> Result<Vec<serde_j
         }
     }
 
-    let result = validator::validate_document(&doc, file_path.as_deref(), &ValidationConfig::default());
+    let path = file_path.ok_or_else(|| format!("文件未找到: {}", doc_id))?;
+    let doc = parser::parse_file(&path).map_err(|e| format!("解析失败: {}", e))?;
+
+    let result = validator::validate_document(&doc, Some(&path), &ValidationConfig::default());
     let violations: Vec<serde_json::Value> = result.violations.iter().map(|v| {
         serde_json::json!({
             "rule": v.rule_id,
@@ -133,6 +133,10 @@ async fn find_and_validate(state: &AppState, doc_id: &str) -> Result<Vec<serde_j
             "dao": v.dao_trace,
         })
     }).collect();
+
+    // Re-index after validation
+    // state.db.upsert_document(doc).await ... (needs async context, skip for now)
+
     Ok(violations)
 }
 
