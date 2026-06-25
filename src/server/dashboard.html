@@ -9,7 +9,7 @@
 body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-serif;height:100vh;display:flex;overflow:hidden}
 
 /* ---- left sidebar ---- */
-.sidebar{flex:0 0 200px;background:#111827;display:flex;flex-direction:column;border-right:1px solid #0f3460}
+.sidebar{flex:0 0 10%; min-width:140px;background:#111827;display:flex;flex-direction:column;border-right:1px solid #0f3460}
 .sidebar h1{font-size:14px;color:#e94560;padding:12px 14px;border-bottom:1px solid #0f3460;flex-shrink:0}
 .sidebar-nav{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
 .nav-item{padding:10px 14px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid transparent;transition:.15s}
@@ -34,7 +34,7 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 
 .middle{display:flex;flex:1;overflow:hidden}
 /* ---- card list ---- */
-.card-list{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
+.card-list{flex:0 0 22%; min-width:180px; border-right:1px solid #0f3460;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
 .card-list .desc{font-size:11px;color:#888;margin-bottom:10px}
 .card{background:#16213e;border:1px solid #0f3460;border-radius:5px;padding:8px 12px;margin-bottom:6px;cursor:pointer;transition:.15s;display:flex;justify-content:space-between;align-items:center}
 .card:hover{border-color:#e94560}
@@ -56,9 +56,8 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .empty{color:#444;text-align:center;padding:40px;font-size:13px}
 
 /* ---- right detail panel ---- */
-.detail-panel{flex:0 0 0;background:#111827;border-left:1px solid #0f3460;overflow-y:auto;transition:flex-basis .2s;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
-.detail-panel.open{flex-basis:420px}
-.detail-inner{padding:16px;min-width:280px}
+.detail-panel{flex:1;background:#111827;border-left:1px solid #0f3460;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#0f3460 #111827}
+.detail-inner{padding:20px 24px;max-width:800px}
 .detail-inner h3{font-size:15px;color:#e94560;margin-bottom:10px}
 .detail-inner .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0f3460;font-size:12px}
 .detail-inner .row .label{color:#888}
@@ -238,14 +237,12 @@ function selectCard(card){
         }
         showDetail(card);
     }else{
-        document.getElementById('detail-panel').classList.remove('open');
         document.getElementById('detail-panel').innerHTML='<div class="detail-empty">选择一张卡片查看详情</div>';
     }
 }
 
 function showDetail(card){
     const panel=document.getElementById('detail-panel');
-    panel.classList.add('open');
     let html='<div class="detail-inner">';
     html+='<span class="detail-close" onclick="selectCard(null)">x</span>';
     html+='<h3>'+(card.title||card.id)+'</h3>';
