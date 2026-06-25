@@ -1,7 +1,7 @@
 ---
 id: 260623-1130-glossary-integration-plan
 stage: 1/3
-upstream: 260623-1100-grilling-engine-builder-gap
+upstream: 260622-1325-grilling-engine-decision
 ---
 
 # glossary 集成与术语墙修复计划

@@ -10,6 +10,7 @@ use crate::core::indexer;
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
+use crate::core::project_state::{self, ProjectState};
 use crate::core::validator::{self, ValidationConfig, ValidationResult};
 use crate::mind::grilling::GrillingEngine;
 use crate::mind::icl::ICL;
@@ -557,6 +558,25 @@ impl SihankorService {
     ) -> String {
         let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
         crate::core::kanban::render_html(&kanban)
+    }
+
+    /// 流程推进建议：基于项目状态和文档 stage，推导下一步应推进什么
+    #[tool(description = "[SiHankor] Suggest next action: based on project state and document stages, recommends what to advance next")]
+    pub async fn suggest_next_action(
+        &self,
+        Parameters(_): Parameters<EmptyParams>,
+    ) -> String {
+        let project_root = std::path::PathBuf::from(&self.config.docs_dir).parent().map(|p| p.to_path_buf()).unwrap_or_default();
+        let state = ProjectState::load(&project_root).unwrap_or_default();
+        let suggestions = project_state::suggest_next_action(&state, self.db.as_ref());
+        let result = serde_json::json!({
+            "current_stage": state.current_stage,
+            "active_proposal": state.active_proposal,
+            "pending_checkpoints": state.pending_checkpoints.iter().filter(|cp| cp.decision.is_none()).count(),
+            "suggestions": suggestions,
+        });
+        serde_json::to_string_pretty(&result)
+            .unwrap_or_else(|e| format!("Serialization error: {}", e))
     }
 
     /// 追问引擎第一步：输入意图，返回四个元规则追问

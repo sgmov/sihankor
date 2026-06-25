@@ -5,3 +5,4 @@ pub mod validator;
 pub mod indexer;
 pub mod orchestrator;
 pub mod kanban;
+pub mod project_state;

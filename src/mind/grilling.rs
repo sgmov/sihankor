@@ -98,7 +98,7 @@ impl GrillingEngine {
                 id: "you-du".into(),
                 dao_principle: "有度：力度匹配".into(),
                 text: "它的 stage 应该是 1/3 还是可以直接 2/3？".into(),
-                hint: "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进, 3/3 = 已定稿".into(),
+                hint: "1/3 = 初稿待讨论, 2/3 = 方案已收敛可推进（推荐追问后选择）, 3/3 = 已定稿".into(),
             },
             Question {
                 id: "zhi-zhi".into(),
