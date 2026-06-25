@@ -6,244 +6,202 @@
 <title>SiHankor - 司衡工厂产线</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;height:100vh;display:flex;overflow:hidden}
+body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ---- left sidebar ---- */
-.sidebar{flex:0 0 170px;background:#111827;padding:12px 0;display:flex;flex-direction:column;border-right:1px solid #0f3460;overflow-y:auto}
-.sidebar h2{font-size:13px;color:#e94560;padding:0 14px 10px;border-bottom:1px solid #0f3460;margin-bottom:6px}
-.nav-item{padding:10px 14px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s;border-left:3px solid transparent}
-.nav-item:hover{background:#16213e}
-.nav-item.active{border-left-color:#e94560;background:#16213e;font-weight:bold}
-.nav-item .ni-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:#0f3460;min-width:22px;text-align:center}
-.nav-item .ni-err{background:#e94560}
-.nav-item .ni-warn{background:#f0a500;color:#000}
-.sidebar-footer{padding:12px 14px;margin-top:auto;border-top:1px solid #0f3460;font-size:10px;color:#555}
-.sidebar-footer div{padding:2px 0}
+/* ---- top bar ---- */
+.top-bar{flex-shrink:0;background:#16213e;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460}
+.top-bar .title{font-size:15px;color:#e94560;font-weight:bold}
+.top-bar .badges{display:flex;gap:8px;font-size:11px}
+.badge{padding:3px 10px;border-radius:4px;font-weight:bold}
+.badge-ok{background:#0f3460;color:#e0e0e0}
+.badge-err{background:#e94560;color:#fff}
+.badge-warn{background:#f0a500;color:#000}
 
-/* ---- main area ---- */
-.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
-header{background:#16213e;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f3460;flex-shrink:0}
-header h1{font-size:16px;color:#e94560}
-header .status-bar{display:flex;gap:10px;font-size:11px;align-items:center}
-header .status-bar span{padding:2px 8px;border-radius:4px;font-weight:bold}
-.s-fatal{background:#e94560;color:#fff}
-.s-warn{background:#f0a500;color:#000}
-.s-ok{background:#0f3460;color:#e0e0e0}
+/* ---- phase tabs ---- */
+.tabs{flex-shrink:0;display:flex;background:#111827;border-bottom:1px solid #0f3460;overflow-x:auto;scrollbar-width:none}
+.tab{flex:1;padding:10px 12px;font-size:12px;text-align:center;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-width:70px;transition:.15s}
+.tab:hover{background:#16213e}
+.tab.active{border-bottom-color:#e94560;background:#16213e;font-weight:bold}
+.tab .t-count{font-size:10px;color:#888;display:block}
+.tab.active .t-count{color:#e94560}
 
-/* ---- single-column view ---- */
-.view{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.view-header{flex-shrink:0;padding:16px 24px 8px;display:flex;justify-content:space-between;align-items:center}
-.view-header h2{font-size:18px;display:flex;align-items:center;gap:8px}
-.view-header .phase-badge{font-size:11px;padding:2px 8px;border-radius:3px;background:#0f3460;color:#999}
-.view-desc{font-size:11px;color:#888;padding:0 24px 12px}
-.view-body{flex:1;overflow-y:auto;padding:0 24px 16px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
+/* ---- content area ---- */
+.content{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:#0f3460 #1a1a2e}
+.content h3{font-size:16px;margin-bottom:4px}
+.content .desc{font-size:11px;color:#888;margin-bottom:14px}
 
-/* ---- cards in single-column view ---- */
-.card{background:#16213e;border:1px solid #0f3460;border-radius:6px;padding:12px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;max-width:640px}
+/* ---- card ---- */
+.card{background:#16213e;border:1px solid #0f3460;border-radius:6px;padding:10px 14px;margin-bottom:6px;cursor:pointer;max-width:600px}
 .card:hover{border-color:#e94560}
-.card .card-head{display:flex;justify-content:space-between;align-items:center}
-.card .card-title{font-size:14px;font-weight:bold;flex:1}
-.card .card-dot{width:8px;height:8px;border-radius:50%;margin-left:10px;flex-shrink:0}
-.card .card-meta{font-size:11px;color:#999;margin-top:4px}
-.card .card-body{display:none;margin-top:8px;font-size:12px;color:#aaa;line-height:1.5}
-.card.expanded .card-body{display:block}
-.card .card-extra{font-size:11px;color:#666;margin-top:4px}
-.card-blocked{color:#e94560;font-weight:bold;font-size:11px;margin-top:4px}
-
+.card .head{display:flex;justify-content:space-between;align-items:center}
+.card .title{font-size:13px;font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .dot{width:8px;height:8px;border-radius:50%;margin-left:8px;flex-shrink:0}
+.card .meta{font-size:11px;color:#999;margin-top:3px}
+.card .detail{display:none;margin-top:8px;font-size:11px;color:#aaa;line-height:1.5}
+.card.open .detail{display:block}
+.card .blocker{color:#e94560;font-weight:bold;font-size:11px;margin-top:4px}
 .dot-ok{background:#0f3460}
 .dot-warn{background:#f0a500}
 .dot-err{background:#e94560}
-.dot-pending{background:#555}
-.dot-active{background:#4fc3f7;animation:pulse 2s infinite}
+.dot-pend{background:#555}
+.dot-live{background:#4fc3f7;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Verify groups */
-.verify-group{margin-bottom:10px;max-width:640px}
-.verify-group-header{font-size:11px;color:#e94560;padding:4px 0;border-bottom:1px solid #0f3460;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between}
-.verify-group.collapsed .card{display:none}
-.verify-group.collapsed .verify-group-header{margin-bottom:0;border-bottom:none}
-.empty-col{color:#444;font-style:italic;text-align:center;padding:40px 0;font-size:13px}
+/* grouped verify */
+.vgroup{margin-bottom:10px;max-width:600px}
+.vgroup .vhdr{font-size:11px;color:#e94560;padding:3px 0;border-bottom:1px solid #0f3460;margin-bottom:3px;cursor:pointer;display:flex;justify-content:space-between}
+.vgroup.shut .card{display:none}
+.vgroup.shut .vhdr{margin-bottom:0;border-bottom:none}
 
-/* ---- bottom nav ---- */
-.view-nav{flex-shrink:0;display:flex;justify-content:center;align-items:center;padding:10px;gap:12px;background:#111827;border-top:1px solid #0f3460}
-.view-nav button{background:#16213e;color:#e0e0e0;border:1px solid #0f3460;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:11px;transition:border-color .15s}
-.view-nav button:hover{border-color:#e94560}
-.view-nav button:disabled{opacity:.3;cursor:default}
-.view-nav .step-indicator{font-size:11px;color:#888;min-width:120px;text-align:center}
-.refresh-bar{flex-shrink:0;text-align:center;padding:3px;font-size:9px;color:#444;background:#111}
+.empty{color:#444;text-align:center;padding:40px;font-size:13px}
+
+/* ---- bottom bar ---- */
+.bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:8px 16px;display:flex;justify-content:space-between;align-items:center}
+.bottom-bar .step-label{font-size:11px;color:#888}
+.bottom-bar .btns{display:flex;gap:8px}
+.bottom-bar button{background:#16213e;color:#e0e0e0;border:1px solid #0f3460;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px}
+.bottom-bar button:hover:not(:disabled){border-color:#e94560}
+.bottom-bar button:disabled{opacity:.3;cursor:default}
 </style>
 </head>
 <body>
-<!-- SIDEBAR -->
-<nav class="sidebar" id="sidebar"><h2>SiHankor</h2></nav>
 
-<!-- MAIN -->
-<div class="main-area">
-<header>
-<h1>工厂产线</h1>
-<div class="status-bar">
-<span id="fatal-count" class="s-ok">F:0</span>
-<span id="warn-count" class="s-ok">G:0</span>
-<span id="total-count" class="s-ok">总:0</span>
+<!-- top bar -->
+<div class="top-bar">
+<span class="title">SiHankor 工厂产线</span>
+<div class="badges">
+<span id="b-fatal" class="badge badge-ok">F:0</span>
+<span id="b-warn" class="badge badge-ok">G:0</span>
+<span id="b-total" class="badge badge-ok">总:0</span>
 </div>
-</header>
-<div class="view" id="view">
-<div class="view-header"><h2 id="phase-title">----</h2></div>
-<div class="view-desc" id="phase-desc"></div>
-<div class="view-body" id="view-body"><div class="empty-col">加载中...</div></div>
 </div>
-<div class="view-nav">
+
+<!-- phase tabs -->
+<div class="tabs" id="tabs"></div>
+
+<!-- content -->
+<div class="content" id="content"><div class="empty">加载中...</div></div>
+
+<!-- bottom bar -->
+<div class="bottom-bar">
+<span class="step-label" id="step-label"></span>
+<div class="btns">
 <button id="btn-prev" onclick="nav(-1)">上一步</button>
-<span class="step-indicator" id="step-indicator">-</span>
 <button id="btn-next" onclick="nav(1)">下一步</button>
 </div>
-<div class="refresh-bar">30s refresh | click card to expand | sidebar to switch</div>
 </div>
 
 <script>
-let currentIdx=0;
-let columns=[];
-let allData=null;
+let idx=0,cols=[],data=null;
 
-async function load(){
+async function fetchData(){
     try{
         const r=await fetch('/api/dashboard');
-        allData=await r.json();
-        columns=allData.columns||[];
+        data=await r.json();
+        cols=data.columns||[];
         render();
     }catch(e){
-        document.getElementById('view-body').innerHTML='<div class="empty-col">连接失败: '+e.message+'</div>';
+        document.getElementById('content').innerHTML='<div class="empty">'+e.message+'</div>';
     }
 }
 
 function render(){
-    if(!columns.length)return;
+    if(!cols.length)return;
 
-    const d=allData;
-    const allCards=columns.flatMap(c=>c.cards||[]);
-    const errs=allCards.filter(c=>c.status==='Error'||c.status==='error').length;
-    const warns=allCards.filter(c=>c.status==='Warning'||c.status==='warning').length;
-    document.getElementById('fatal-count').textContent='F:'+errs;
-    document.getElementById('fatal-count').className=errs?'s-fatal':'s-ok';
-    document.getElementById('warn-count').textContent='G:'+warns;
-    document.getElementById('warn-count').className=warns?'s-warn':'s-ok';
-    document.getElementById('total-count').textContent='总:'+d.summary.total_cards;
+    // badges
+    const all=cols.flatMap(c=>c.cards||[]);
+    const e=all.filter(c=>c.status==='Error'||c.status==='error').length;
+    const w=all.filter(c=>c.status==='Warning'||c.status==='warning').length;
+    document.getElementById('b-fatal').textContent='F:'+e;
+    document.getElementById('b-fatal').className='badge'+(e?' badge-err':' badge-ok');
+    document.getElementById('b-warn').textContent='G:'+w;
+    document.getElementById('b-warn').className='badge'+(w?' badge-warn':' badge-ok');
+    document.getElementById('b-total').textContent='总:'+data.summary.total_cards;
 
-    // Sidebar
-    const sidebar=document.getElementById('sidebar');
-    sidebar.innerHTML='<h2>SiHankor</h2>';
-    for(let i=0;i<columns.length;i++){
-        const col=columns[i];
-        const cards=col.cards||[];
-        const colErrs=cards.filter(c=>c.status==='Error'||c.status==='error').length;
-        const colWarns=cards.filter(c=>c.status==='Warning'||c.status==='warning').length;
-        const hasActive=cards.some(c=>c.status==='in_progress');
-
-        const ni=document.createElement('div');
-        ni.className='nav-item'+(i===currentIdx?' active':'');
-        let badge='<span class="ni-badge'+(colErrs?' ni-err':colWarns?' ni-warn':'')+'">'+(colErrs||colWarns||cards.length)+'</span>';
-        ni.innerHTML=col.label+badge;
-        if(hasActive)ni.style.borderLeftColor='#4fc3f7';
-        ni.onclick=()=>{currentIdx=i;render();};
-        sidebar.appendChild(ni);
+    // tabs
+    const tabs=document.getElementById('tabs');
+    tabs.innerHTML='';
+    for(let i=0;i<cols.length;i++){
+        const c=cols[i];
+        const cs=c.cards||[];
+        const ce=cs.filter(x=>x.status==='Error'||x.status==='error').length;
+        const cw=cs.filter(x=>x.status==='Warning'||x.status==='warning').length;
+        const live=cs.some(x=>x.status==='in_progress');
+        const t=document.createElement('div');
+        t.className='tab'+(i===idx?' active':'');
+        if(live)t.style.color='#4fc3f7';
+        t.innerHTML=c.label+'<span class="t-count">'+(ce||cw||cs.length)+'</span>';
+        t.onclick=()=>{idx=i;render();};
+        tabs.appendChild(t);
     }
 
-    const sf=document.createElement('div');
-    sf.className='sidebar-footer';
-    sf.innerHTML='<div>总:'+d.summary.total_cards+'</div><div>活跃:'+(allCards.filter(c=>c.status==='in_progress').length)+'</div><div>阻塞:'+(d.summary.blocked_cards||0)+'</div><div>完成:'+(d.summary.done_cards||0)+'</div>';
-    sidebar.appendChild(sf);
-
-    // Active column
-    showColumn(currentIdx);
+    showColumn();
 }
 
-function showColumn(idx){
-    if(idx<0||idx>=columns.length)return;
-    currentIdx=idx;
-    const col=columns[idx];
+function showColumn(){
+    const col=cols[idx];
     const cards=col.cards||[];
-    const hasActive=cards.some(c=>c.status==='in_progress');
+    const live=cards.some(c=>c.status==='in_progress');
 
-    document.getElementById('phase-title').textContent=col.label;
-    document.getElementById('phase-title').style.color=hasActive?'#e94560':'#e0e0e0';
-    document.getElementById('phase-desc').textContent=col.entry_condition||'';
-    document.getElementById('step-indicator').textContent=(idx+1)+' / '+columns.length;
+    // update tabs
+    document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
 
-    document.getElementById('btn-prev').disabled=idx===0;
-    document.getElementById('btn-next').disabled=idx===columns.length-1;
-
-    // Update sidebar active
-    document.querySelectorAll('.nav-item').forEach((el,i)=>{
-        el.classList.toggle('active',i===idx);
-    });
-
-    const body=document.getElementById('view-body');
-    body.innerHTML='';
+    // content
+    const body=document.getElementById('content');
+    body.innerHTML='<h3 style="color:'+(live?'#e94560':'#e0e0e0')+'">'+col.label+'</h3>'+
+        '<div class="desc">'+(col.entry_condition||'')+'</div>';
 
     if(!cards.length){
-        body.innerHTML='<div class="empty-col">--- 空闲 ---</div>';
-        return;
-    }
-
-    if(col.phase==='verify'){
+        body.innerHTML+='<div class="empty">--- 空闲 ---</div>';
+    }else if(col.phase==='verify'){
         const groups=col.groups||[];
         if(groups.length){
             for(const g of groups){
-                const gdiv=document.createElement('div');
-                gdiv.className='verify-group';
-                gdiv.innerHTML='<div class="verify-group-header" onclick="this.parentElement.classList.toggle(\'collapsed\')">'+g.nature+' ('+g.attention.length+')</div>';
-                for(const card of g.attention||[]){
-                    gdiv.appendChild(renderCard(card));
-                }
-                body.appendChild(gdiv);
+                const d=document.createElement('div');d.className='vgroup';
+                d.innerHTML='<div class="vhdr" onclick="this.parentElement.classList.toggle(\'shut\')">'+g.nature+' ('+g.attention.length+')</div>';
+                for(const c of g.attention||[])d.appendChild(cardEl(c));
+                body.appendChild(d);
             }
         }
-        for(const card of cards){
-            body.appendChild(renderCard(card));
-        }
+        for(const c of cards)body.appendChild(cardEl(c));
     }else{
-        for(const card of cards){
-            body.appendChild(renderCard(card));
-        }
+        for(const c of cards)body.appendChild(cardEl(c));
     }
+
+    // bottom
+    document.getElementById('step-label').textContent=(idx+1)+' / '+cols.length;
+    document.getElementById('btn-prev').disabled=idx===0;
+    document.getElementById('btn-next').disabled=idx===cols.length-1;
 }
 
-function renderCard(card){
-    const m=document.createElement('div');
-    m.className='card';
-    const title=(card.title||card.id||'?').slice(0,60);
+function cardEl(card){
+    const m=document.createElement('div');m.className='card';
+    const t=(card.title||card.id||'?').slice(0,60);
     let dot='dot-ok';
     if(card.status==='Error'||card.status==='error')dot='dot-err';
     else if(card.status==='Warning'||card.status==='warning')dot='dot-warn';
-    else if(card.status==='in_progress')dot='dot-active';
-    else if(card.status==='pending')dot='dot-pending';
-
-    const stage=card.stage||'';
-    const nature=card.nature||card.entity_type||'';
-    const summary=card.summary||'';
-
-    m.innerHTML='<div class="card-head"><span class="card-title">'+title+'</span><span class="card-dot '+dot+'"></span></div>'+
-        '<div class="card-meta">'+(stage?'['+stage+'] ':'')+nature+'</div>'+
-        '<div class="card-body">'+
-        (summary?'<div>'+summary+'</div>':'')+
-        (card.blockers&&card.blockers.length?'<div class="card-blocked">BLOCKED: '+card.blockers.join('; ')+'</div>':'')+
-        (card.depends_on&&card.depends_on.length?'<div style="margin-top:4px;color:#666">depends: '+card.depends_on.join(', ')+'</div>':'')+
+    else if(card.status==='in_progress')dot='dot-live';
+    else if(card.status==='pending')dot='dot-pend';
+    const s=card.stage||'';
+    const n=card.nature||card.entity_type||'';
+    const su=card.summary||'';
+    m.innerHTML='<div class="head"><span class="title">'+t+'</span><span class="dot '+dot+'"></span></div>'+
+        '<div class="meta">'+(s?'['+s+'] ':'')+n+'</div>'+
+        '<div class="detail">'+
+        (su?'<div>'+su+'</div>':'')+
+        (card.blockers&&card.blockers.length?'<div class="blocker">BLOCKED: '+card.blockers.join('; ')+'</div>':'')+
+        (card.depends_on&&card.depends_on.length?'<div style="color:#666;margin-top:2px">depends on: '+card.depends_on.join(', ')+'</div>':'')+
         '</div>';
-
-    m.onclick=function(e){e.stopPropagation();m.classList.toggle('expanded');};
+    m.onclick=function(ev){ev.stopPropagation();m.classList.toggle('open');};
     if(card.id)m.title=card.id;
     return m;
 }
 
-function nav(dir){showColumn(currentIdx+dir);}
+function nav(d){const n=idx+d;if(n>=0&&n<cols.length){idx=n;showColumn();}}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')nav(-1);if(e.key==='ArrowRight')nav(1);});
 
-document.addEventListener('keydown',function(e){
-    if(e.key==='ArrowLeft')nav(-1);
-    if(e.key==='ArrowRight')nav(1);
-});
-
-load();
-setInterval(load,30000);
+fetchData();
+setInterval(fetchData,30000);
 </script>
 </body>
 </html>
