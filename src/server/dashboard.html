@@ -78,6 +78,8 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .act-advance:hover{background:#e94560;color:#fff}
 .act-validate{background:#16213e}
 .act-validate:hover{border-color:#4fc3f7;color:#4fc3f7}
+.act-assay{background:#16213e;border-color:#f0a500}
+.act-assay:hover{background:#f0a500;color:#000}
 
 /* ---- bottom bar ---- */
 .bottom-bar{flex-shrink:0;background:#111827;border-top:1px solid #0f3460;padding:6px 14px;display:flex;justify-content:space-between;align-items:center}
@@ -268,6 +270,7 @@ function showDetail(card){
         html+='<button class="act-btn act-advance" onclick="doStage(\''+card.id+'\',\''+stage+'\')">推进到 '+next+'</button>';
     }
     html+='<button class="act-btn act-validate" onclick="doValidate(\''+card.id+'\')">验证</button>';
+    html+='<button class="act-btn act-assay" onclick="doAssay(\''+card.id+'\')">合道检查</button>';
     html+='</div></div>';
     html+='<div id="act-msg" style="margin-top:8px;font-size:11px"></div>';
 
@@ -296,6 +299,33 @@ async function doValidate(docId){
             const vs=d.violations||[];
             if(!vs.length)msg.innerHTML='<span style="color:#4fc3f7">通过：无违规</span>';
             else msg.innerHTML='<span style="color:#e94560">'+vs.length+' 项违规</span><div style="font-size:10px;margin-top:4px">'+vs.map(v=>'['+v.severity+'] '+v.rule).join('<br>')+'</div>';
+        }else{
+            msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
+        }
+    }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
+}
+
+async function doAssay(docId){
+    const msg=document.getElementById('act-msg');
+    msg.textContent='合道检查中...';
+    try{
+        const r=await fetch('/api/actions/assay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
+        const d=await r.json();
+        if(d.ok){
+            let html='<div style="font-weight:bold;margin-bottom:6px;color:'+(d.overall==='pass'?'#4fc3f7':d.overall==='conditional'?'#f0a500':'#e94560')+'">合道: '+d.overall+'</div>';
+            const laws=d.laws||[];
+            for(const l of laws){
+                const icon=l.result==='pass'?'o':l.result==='fail'?'x':'~';
+                const color=l.result==='pass'?'#4fc3f7':l.result==='fail'?'#e94560':'#f0a500';
+                html+='<div style="font-size:11px;margin:2px 0"><span style="color:'+color+'">'+icon+'</span> '+l.law+': '+l.note+'</div>';
+            }
+            if(d.gaps&&d.gaps.length){
+                html+='<div style="margin-top:6px;font-size:10px;color:#888">'+d.gaps.join('; ')+'</div>';
+            }
+            if(d.self_question){
+                html+='<div style="margin-top:6px;font-size:10px;color:#f0a500">需人工审阅</div>';
+            }
+            msg.innerHTML=html;
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
         }

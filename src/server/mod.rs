@@ -66,6 +66,60 @@ async fn api_validate(
     Json(result)
 }
 
+/// Run full philosophical review: iCL -> iWW -> iCT (five-law Dao check)
+async fn api_assay(
+    State(state): State<AppState>,
+    axum::extract::Json(req): axum::extract::Json<ActionRequest>,
+) -> Json<serde_json::Value> {
+    let doc = match state.db.get_document(&req.doc_id).await {
+        Ok(Some(d)) => d,
+        Ok(None) => return Json(serde_json::json!({"ok": false, "message": "文档未找到"})),
+        Err(e) => return Json(serde_json::json!({"ok": false, "message": e.to_string()})),
+    };
+
+    use crate::mind::icl::ICL;
+    use crate::mind::iww::IWW;
+    use crate::mind::ict::ICT;
+
+    let icl = ICL::new(state.db.clone());
+    let cognition = icl.analyze(&doc).await;
+    let proposal = IWW::propose(&cognition);
+    let verification = ICT::verify(&cognition, &proposal);
+
+    let laws: Vec<serde_json::Value> = verification.five_law_check.iter().map(|check| {
+        serde_json::json!({
+            "law": check.law,
+            "result": format!("{:?}", check.result).to_lowercase(),
+            "note": check.note,
+        })
+    }).collect();
+
+    let dao_trace: Vec<String> = verification.dao_trace.iter().map(|dt| {
+        format!("{}: {}", dt.dao, dt.trace)
+    }).collect();
+
+    let mut gaps: Vec<String> = Vec::new();
+    if cognition.governance_position.upstream_chain.is_empty() {
+        gaps.push("无上游链：root 文档无法追溯授权来源".into());
+    }
+    for g in &cognition.relation_graph.gaps {
+        gaps.push(format!("引用缺失: {}", g));
+    }
+    for d in &cognition.divergence_diagnosis {
+        gaps.push(format!("[{:?}] {}", d.severity, d.description));
+    }
+
+    Json(serde_json::json!({
+        "ok": true,
+        "doc_id": req.doc_id,
+        "overall": format!("{:?}", verification.overall).to_lowercase(),
+        "laws": laws,
+        "dao_trace": dao_trace,
+        "gaps": gaps,
+        "self_question": verification.overall != crate::mind::types::Verdict::Pass,
+    }))
+}
+
 /// Advance document stage: 1/3 -> 2/3, or 2/3 -> 3/3
 async fn api_stage(
     State(state): State<AppState>,
@@ -150,6 +204,7 @@ pub async fn start(db: Arc<dyn SihDatabase>, port: u16) -> Result<(), Box<dyn st
         .route("/api/dashboard", get(api_dashboard))
         .route("/api/actions/validate", post(api_validate))
         .route("/api/actions/stage", post(api_stage))
+        .route("/api/actions/assay", post(api_assay))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
