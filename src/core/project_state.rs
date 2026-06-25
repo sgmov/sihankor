@@ -121,7 +121,37 @@ pub fn suggest_next_action(
 ) -> Vec<ActionSuggestion> {
     let mut suggestions = Vec::new();
 
-    // Rule 1: pending checkpoints — highest priority
+    // Rule 0: pending correction tasks (from dashboard) — highest priority
+    let corr_dir = std::path::Path::new(".sih/corrections");
+    if corr_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(corr_dir) {
+            for entry in entries.flatten() {
+                if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                    if let Ok(task) = serde_json::from_str::<serde_json::Value>(&content) {
+                        let doc_id = task["doc_id"].as_str().unwrap_or("?");
+                        let title = task["doc_title"].as_str().unwrap_or("?");
+                        let issues: Vec<&str> = task["issues"]
+                            .as_array()
+                            .map(|a| a.iter().filter_map(|v| v.as_str()).collect())
+                            .unwrap_or_default();
+                        suggestions.push(ActionSuggestion {
+                            priority: 1,
+                            action: format!(
+                                "修正文档 {}: {} — 问题: {}",
+                                doc_id,
+                                title,
+                                issues.join(", ")
+                            ),
+                            reason: "有待处理的合道修正任务".into(),
+                            target_id: Some(doc_id.to_string()),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Rule 1: pending checkpoints
     let pending: Vec<_> = state
         .pending_checkpoints
         .iter()

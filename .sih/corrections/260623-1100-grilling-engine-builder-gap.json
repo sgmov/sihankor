@@ -18,9 +18,9 @@
     "dao_trace": "本文档的声明性主张需溯源至道/法原则。道四（规约与实现必有间隙）要求声明已知的不完备之处。",
     "falsifiability": "本文档的主张是否可以通过独立验证被证伪？",
     "frontmatter": {
-      "id_hint": "260625-0452-260623-1100-grilling-engine-builder",
+      "id_hint": "260625-0500-260623-1100-grilling-engine-builder",
       "nature": "note",
-      "stage": "1/3",
+      "stage": "2/3",
       "title_hint": "修正 260623-1100-grilling-engine-builder-gap",
       "upstream": "260622-1325-grilling-engine"
     },
@@ -49,8 +49,8 @@
   },
   "doc_id": "260623-1100-grilling-engine-builder-gap",
   "doc_title": "追问引擎人工测试：Builder 用户术语墙",
-  "generated_at": "2026-06-25T04:52:38.279955+00:00",
+  "generated_at": "2026-06-25T05:00:40.799220+00:00",
   "issues": [
-    "[知止] 越权操作：不可直接修改非治约文件 '260622-1325-grilling-engine'"
+    "[顺势] 2/3 阶段措辞力度存在弹性空间"
   ]
 }
