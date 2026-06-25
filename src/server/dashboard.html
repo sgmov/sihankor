@@ -325,7 +325,8 @@ async function doCorrect(docId){
         const r=await fetch('/api/actions/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
         const d=await r.json();
         if(d.ok){
-            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:300px;overflow-y:auto">'+d.correction_prompt+'</pre>';
+            msg.innerHTML='<div style="font-weight:bold;color:#f0a500;margin-bottom:4px">修正提示词</div><pre style="background:#0a0a1e;color:#aaa;padding:10px;border-radius:4px;font-size:11px;white-space:pre-wrap;max-height:300px;overflow-y:auto">'+d.correction_prompt+'</pre>'+
+                '<button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新合道检查</button>';
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
         }
