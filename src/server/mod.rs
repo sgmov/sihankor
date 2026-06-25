@@ -331,7 +331,43 @@ async fn api_fix_refs(
     ];
     let path = match possible_paths.iter().find(|p| std::path::Path::new(p).exists()) {
         Some(p) => p.clone(),
-        None => return Json(serde_json::json!({"ok": false, "message": "文件未找到"})),
+        None => {
+            // Fallback: search by ID in all .sih.md files
+            let doc = state.db.get_document(&req.doc_id).await.ok().flatten();
+            let found = doc.and_then(|d| {
+                let dirs = ["specs/engineering", "specs/philosophy", "specs/techne",
+                            "proposals", "decisions", "reference", "knowledge/notes"];
+                for dir in &dirs {
+                    let full_dir = format!("docs/{}", dir);
+                    if let Ok(entries) = std::fs::read_dir(&full_dir) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            if path.to_string_lossy().ends_with(".sih.md") {
+                                match std::fs::read_to_string(&path) {
+                                    Ok(content) => {
+                                        let id_pattern = format!("id: {}\n", d.id);
+                                        // Check with both exact and flexible matching
+                                        if content.contains(&id_pattern) {
+                                            return path.to_str().map(|s| s.to_string());
+                                        }
+                                        if content.contains(&d.id) {
+                                        }
+                                    }
+                                    Err(e) => {
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                    }
+                }
+                None
+            });
+            match found {
+                Some(p) => p,
+                None => return Json(serde_json::json!({"ok": false, "message": "文件未找到"})),
+            }
+        }
     };
 
     let content = std::fs::read_to_string(&path).unwrap_or_default();
