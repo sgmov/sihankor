@@ -283,6 +283,9 @@ function showDetail(card){
     if(card.depends_on&&card.depends_on.length){
         html+='<div class="section"><h4>依赖</h4><div class="text">'+card.depends_on.join(', ')+'</div></div>';
     }
+    if(card.gaps&&card.gaps.length&&card.gaps.some(g=>g.includes('引用缺失'))){
+        html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+card.id+'\')" style="margin-top:6px">修复引用</button>';
+    }
 
     // Action buttons
     html+='<div class="section"><h4>操作</h4><div class="actions">';
@@ -326,6 +329,7 @@ async function doAssay(docId){
             }
             if(d.gaps&&d.gaps.length){
                 html+='<div style="margin-top:6px;font-size:10px;color:#888">'+d.gaps.join('; ')+'</div>';
+                html+='<button class="act-btn act-fixref" onclick="doFixRefs(\''+docId+'\')" style="margin-top:4px">修复引用</button>';
             }
             if(d.self_question){
                 html+='<div style="margin-top:6px;font-size:10px;color:#f0a500">需人工审阅</div>';
@@ -381,6 +385,16 @@ async function doPush(docId){
         }else{
             msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
         }
+    }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
+}
+
+async function doFixRefs(docId){
+    const msg=document.getElementById('act-msg');
+    msg.textContent='修复中...';
+    try{
+        const r=await fetch('/api/actions/fix-refs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
+        const d=await r.json();
+        msg.innerHTML=d.ok?'<div style="color:#4fc3f7">'+d.message+'</div><button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新合道检查</button>':'<span style="color:#e94560">'+d.message+'</span>';
     }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
 }
 

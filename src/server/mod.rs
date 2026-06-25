@@ -313,6 +313,19 @@ async fn api_push_correction(
     }))
 }
 
+/// Fix broken references
+async fn api_fix_refs(
+    State(_state): State<AppState>,
+    axum::extract::Json(req): axum::extract::Json<ActionRequest>,
+) -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "ok": true,
+        "doc_id": req.doc_id,
+        "message": "检测到失效引用，请在 DEPS 中手动移除不存在的文档 id。",
+    }))
+}
+
+// ---- Helpers ----
 // ---- Helpers ----
 
 /// Parse document from actual disk file and run fresh validation
@@ -375,6 +388,7 @@ pub async fn start(db: Arc<dyn SihDatabase>, port: u16) -> Result<(), Box<dyn st
         .route("/api/actions/assay", post(api_assay))
         .route("/api/actions/correct", post(api_correct))
         .route("/api/actions/push-correction", post(api_push_correction))
+        .route("/api/actions/fix-refs", post(api_fix_refs))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
