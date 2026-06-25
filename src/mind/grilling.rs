@@ -76,7 +76,7 @@ pub struct SectionHint {
 pub struct GrillingEngine;
 
 impl GrillingEngine {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self
     }
 

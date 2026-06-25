@@ -1,4 +1,4 @@
-use super::types::*;
+use super::types::{Cognition, DecisionProposal, Verification, LawCheck, ActionKind, LawCheckResult, Action, DivergenceSeverity, OverlapDegree, DivergenceType, ChainRole, Verdict, DaoTrace, Divergence, GovPosition, RelationGraph, Rationale, AffectedDocs};
 
 /// iCT 方圆机 —— 三机第三机
 ///
@@ -9,13 +9,13 @@ pub struct ICT;
 impl ICT {
     /// 对单个 proposal 执行全五法检验
     pub fn verify(cognition: &Cognition, proposal: &DecisionProposal) -> Verification {
-        let mut checks = Vec::with_capacity(5);
-
-        checks.push(Self::check_shunyin(cognition, proposal));
-        checks.push(Self::check_youdou(cognition, proposal));
-        checks.push(Self::check_zhizhi(cognition, proposal));
-        checks.push(Self::check_sunbu(cognition, proposal));
-        checks.push(Self::check_shunshi(cognition, proposal));
+        let checks = vec![
+            Self::check_shunyin(cognition, proposal),
+            Self::check_youdou(cognition, proposal),
+            Self::check_zhizhi(cognition, proposal),
+            Self::check_sunbu(cognition, proposal),
+            Self::check_shunshi(cognition, proposal),
+        ];
 
         let overall = Self::overall_verdict(&checks);
         let dao_trace = Self::build_dao_trace(&checks, cognition, proposal);
@@ -92,13 +92,13 @@ impl ICT {
     }
 
     /// 判断 action 是否达到 ratify 级操作力度
-    fn targets_ratify_level(action: &Action) -> bool {
+    const fn targets_ratify_level(action: &Action) -> bool {
         // ratify 级操作：Archive（对低 stage 文档）, Merge 到上游
         matches!(action.kind, ActionKind::Archive | ActionKind::Merge)
     }
 
     /// 判断 action 是否对 proposal 文档施加 spec 级要求
-    fn targets_spec_verification(action: &Action) -> bool {
+    const fn targets_spec_verification(action: &Action) -> bool {
         // spec 级操作：重命名（改名是 spec 的 formalization 操作）
         matches!(action.kind, ActionKind::Rename)
     }
@@ -314,15 +314,14 @@ impl ICT {
         }
 
         // R3: 环检测 —— check if upstream change would create cycle
-        if action.kind == ActionKind::Move || action.kind == ActionKind::Merge {
-            if would_create_cycle(action, &pos.upstream_chain) {
+        if (action.kind == ActionKind::Move || action.kind == ActionKind::Merge)
+            && would_create_cycle(action, &pos.upstream_chain) {
                 return LawCheck {
                     law: "顺势".into(),
                     result: LawCheckResult::Fail,
                     note: "引用环：upstream 变更将形成循环依赖".into(),
                 };
             }
-        }
 
         // R4: archive 文档
         if stage == "X" && action.kind != ActionKind::NoAction && action.kind != ActionKind::HumanReview {
@@ -384,9 +383,7 @@ impl ICT {
                 ),
                 "有度" => (
                     "道一",
-                    format!(
-                        "力度失配：action severity vs 发散 severity，违反道一（过犹不及）",
-                    ),
+                    "力度失配：action severity vs 发散 severity，违反道一（过犹不及）".to_string(),
                 ),
                 "知止" => (
                     "道一 + 道四",
@@ -455,7 +452,7 @@ fn is_philosophy_doc(pos: &GovPosition) -> bool {
     pos.nature == "spec" && pos.upstream_chain.iter().any(|u| u.contains("canon") || u.contains("tao") || u.contains("arche"))
 }
 
-fn targets_drafts(_pos: &GovPosition) -> bool {
+const fn targets_drafts(_pos: &GovPosition) -> bool {
     // 当前 iCT 无法从 nature 直接判断是否在 drafts/ —— 由调用方传入上下文
     // MVP 实现：不做 drafts 检查（nature 系统无 "draft" 值），返回 false
     false
@@ -468,7 +465,7 @@ fn has_conflicting_merge_archive(proposal: &DecisionProposal) -> bool {
         (main_is_merge && a.action == ActionKind::Archive)
             || (main_is_archive && a.action == ActionKind::Merge)
     });
-    main_is_merge && alt_has_opposite || main_is_archive && alt_has_opposite
+    (main_is_archive || main_is_merge) && alt_has_opposite
 }
 
 fn contains_weak_hedging(desc: &str) -> bool {
@@ -481,7 +478,7 @@ fn contains_mandatory_language(desc: &str) -> bool {
     mandatory_words.iter().any(|w| desc.contains(w))
 }
 
-fn would_create_cycle(_action: &Action, _upstream_chain: &[String]) -> bool {
+const fn would_create_cycle(_action: &Action, _upstream_chain: &[String]) -> bool {
     // 环检测需 resolve_chain DB 查询，MVP 返回 false
     // 未来实现：检查 action 的 upstream 变更是否会使文档的 id 出现在新 upstream 的 chain 中
     false
@@ -490,6 +487,7 @@ fn would_create_cycle(_action: &Action, _upstream_chain: &[String]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mind::types::{GovPosition, ChainRole, RelationGraph, Rationale, AffectedDocs};
 
     fn make_test_context(
         stage: &str,

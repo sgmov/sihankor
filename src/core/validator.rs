@@ -19,8 +19,14 @@ pub struct ValidationResult {
     pub violations: Vec<Violation>,
 }
 
+impl Default for ValidationResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ValidationResult {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             violations: Vec::new(),
         }
@@ -263,10 +269,7 @@ fn validate_frontmatter(doc: &super::models::Document, file_path: Option<&Path>)
     // F-04: upstream 必填性由 nature 决定
     // note (knowledge/notes/) 无 upstream；proposal 在 proposals/ 有 upstream
     let nature = file_path.and_then(|p| infer_nature(p));
-    let upstream_required = match nature {
-        Some("note") => false,
-        _ => true,
-    };
+    let upstream_required = !matches!(nature, Some("note"));
     if upstream_required && doc.upstream.is_none() {
         result.violations.push(Violation {
             rule_id: "F-04".to_string(),
@@ -354,10 +357,10 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
     let mut in_code_block = false;
     for (line_num, line) in doc.content.lines().enumerate() {
         let trimmed = line.trim();
-        if trimmed.starts_with("```") {
+        if let Some(after_fence) = trimmed.strip_prefix("```") {
             if !in_code_block {
                 in_code_block = true;
-                let lang = trimmed[3..].trim();
+                let lang = after_fence.trim();
                 if lang.is_empty() {
                     result.violations.push(Violation {
                         rule_id: "G-05".to_string(),
@@ -457,8 +460,8 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
             .and_then(|p| infer_nature(p))
             .map(|n| n == "decision")
             .unwrap_or(false);
-        if is_decision {
-            if doc.frontmatter.decided_by.is_none() {
+        if is_decision
+            && doc.frontmatter.decided_by.is_none() {
                 result.violations.push(Violation {
                     rule_id: "G-09".to_string(),
                     severity: ViolationSeverity::Guideline,
@@ -471,12 +474,11 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                     dao_trace: Some("顺因".to_string()),
                 });
             }
-        }
     }
 
     // F-06: ai-auto 是违例签认
-    if let Some(ref decided_by) = doc.frontmatter.decided_by {
-        if decided_by == "ai-auto" {
+    if let Some(ref decided_by) = doc.frontmatter.decided_by
+        && decided_by == "ai-auto" {
             result.violations.push(Violation {
                 rule_id: "F-06".to_string(),
                 severity: ViolationSeverity::Fatal,
@@ -486,7 +488,6 @@ fn validate_governance(doc: &super::models::Document, file_path: Option<&Path>) 
                 dao_trace: Some("知止".to_string()),
             });
         }
-    }
 
     // F-07: 非 decisions/ 目录文档不得有 decided-by
     if doc.frontmatter.decided_by.is_some() {
@@ -535,7 +536,10 @@ fn is_valid_id(id: &str) -> bool {
 }
 
 fn regex_pattern_for_id() -> regex_lite::Regex {
-    regex_lite::Regex::new(r"^\d{6}-\d{4}(-\d{3})?-.+$").unwrap()
+    #[allow(clippy::unwrap_used, clippy::expect_used)]
+    {
+        regex_lite::Regex::new(r"^\d{6}-\d{4}(-\d{3})?-.+$").expect("invalid id format regex")
+    }
 }
 
 /// 检测 emoji 字符

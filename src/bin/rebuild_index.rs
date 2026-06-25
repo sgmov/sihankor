@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::Arc;

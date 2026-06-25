@@ -27,7 +27,7 @@ pub struct StyleSection {
     pub mix_lang_ignore: bool,
 }
 
-fn default_pre_commit() -> bool {
+const fn default_pre_commit() -> bool {
     true
 }
 
@@ -48,19 +48,15 @@ impl FormatConfig {
     /// Load config from .sih/config.yml if present, otherwise return defaults.
     pub fn load() -> Self {
         let path = std::path::Path::new(".sih/config.yml");
-        if path.exists() {
-            match std::fs::read_to_string(path) {
-                Ok(content) => {
-                    match serde_yaml::from_str(&content) {
-                        Ok(config) => return config,
-                        Err(e) => {
-                            eprintln!("sihankor-fmt: warning: failed to parse .sih/config.yml: {}. Using defaults.", e);
-                        }
+        if path.exists()
+            && let Ok(content) = std::fs::read_to_string(path) {
+                match serde_yaml::from_str(&content) {
+                    Ok(config) => return config,
+                    Err(e) => {
+                        eprintln!("sihankor-fmt: warning: failed to parse .sih/config.yml: {}. Using defaults.", e);
                     }
                 }
-                Err(_) => {}
             }
-        }
         FormatConfig::default()
     }
 }
@@ -73,7 +69,7 @@ pub enum Level {
 }
 
 impl Level {
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Level::Error => "error",
             Level::Warning => "warning",
@@ -137,7 +133,7 @@ pub fn update_codeblock_state(line: &str, in_codeblock: bool) -> bool {
 }
 
 /// Check if a character is within the CJK Unified Ideographs range.
-fn is_cjk(c: char) -> bool {
+const fn is_cjk(c: char) -> bool {
     matches!(
         c,
         '\u{4E00}'..='\u{9FFF}'   // CJK Unified Ideographs
@@ -152,7 +148,7 @@ fn is_cjk(c: char) -> bool {
 
 /// Permitted CJK punctuation per Document-Conventions §8.5:
 /// U+3001, U+3002, U+FF0C, U+FF1A, U+FF1B, U+FF08, U+FF09, U+300A, U+300B, U+300C, U+300D
-fn is_permitted_cjk_punctuation(c: char) -> bool {
+const fn is_permitted_cjk_punctuation(c: char) -> bool {
     matches!(
         c,
         '\u{3001}' // 、
@@ -169,7 +165,7 @@ fn is_permitted_cjk_punctuation(c: char) -> bool {
     )
 }
 
-fn is_emoji(c: char) -> bool {
+const fn is_emoji(c: char) -> bool {
     // Simple emoji detection by Unicode blocks commonly associated with emoji.
     matches!(
         c,
@@ -364,8 +360,8 @@ pub fn check_c06(lines: &[&str], file: &str, codeblock_lines: &std::collections:
         let is_list_item = trimmed.starts_with('-')
             || trimmed.starts_with('*')
             || trimmed.starts_with('+')
-            || trimmed.chars().next().map_or(false, |c| c.is_ascii_digit())
-                && trimmed.chars().skip_while(|c| c.is_ascii_digit()).next() == Some('.');
+            || trimmed.chars().next().is_some_and(|c| c.is_ascii_digit())
+                && trimmed.chars().find(|c| !c.is_ascii_digit()) == Some('.');
 
         if is_list_item {
             // 2-space indent per nesting level
@@ -407,16 +403,19 @@ pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections:
             run_start = None;
             continue;
         }
-        let first_char = trimmed.chars().next().unwrap();
+        let Some(first_char) = trimmed.chars().next() else {
+            continue;
+        };
         if ascii_art_starts.contains(&first_char) {
             if run_start.is_none() {
                 run_start = Some(i);
             }
-            let run_len = i - run_start.unwrap() + 1;
-            if run_len >= 3 {
-                violations.push(Violation {
-                    file: file.to_string(),
-                    line: run_start.unwrap() + 1,
+            if let Some(rs) = run_start {
+                let run_len = i - rs + 1;
+                if run_len >= 3 {
+                    violations.push(Violation {
+                        file: file.to_string(),
+                        line: rs + 1,
                     col: 1,
                     code: "C07".to_string(),
                     level: Level::Warning,
@@ -425,6 +424,7 @@ pub fn check_c07(lines: &[&str], file: &str, codeblock_lines: &std::collections:
                     dao_trace: Some("有度".to_string()),
                 });
                 run_start = None; // Reset to avoid duplicate reports
+            }
             }
         } else {
             run_start = None;
@@ -441,7 +441,7 @@ pub fn check_c08(lines: &[&str], file: &str, codeblock_lines: &std::collections:
         if codeblock_lines.contains(&i) {
             continue;
         }
-        let has_cjk = line.chars().any(|c| is_cjk(c));
+        let has_cjk = line.chars().any(is_cjk);
         let has_ascii_alpha = line.chars().any(|c| c.is_ascii_alphabetic());
         // Skip lines that are purely structural (headings, tables, links)
         let trimmed = line.trim();
@@ -473,10 +473,10 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
     let mut in_codeblock = false;
     for (i, line) in lines.iter().enumerate() {
         let trimmed = line.trim_start();
-        if trimmed.starts_with("```") {
+        if let Some(after_fence) = trimmed.strip_prefix("```") {
             if !in_codeblock {
                 // Opening fence — check language tag
-                let tag = trimmed[3..].trim();
+                let tag = after_fence.trim();
                 if tag.is_empty() {
                     violations.push(Violation {
                         file: file.to_string(),
@@ -622,9 +622,7 @@ pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Vi
         if nature == "spec" || nature == "decision" {
             for v in &mut c10_violations {
                 v.level = Level::Warning;
-                v.message = format!(
-                    "table has >3 columns (spec/decision docs: warning only; split if for narrative purpose)",
-                );
+                v.message = "table has >3 columns (spec/decision docs: warning only; split if for narrative purpose)".to_string();
                 v.fix_suggestion = Some("Consider splitting this table if it serves narrative rather than structural purpose".to_string());
             }
         }

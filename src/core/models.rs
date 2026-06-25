@@ -47,7 +47,7 @@ pub enum DocStatus {
 }
 
 impl DocStatus {
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             DocStatus::Ok => "Ok",
             DocStatus::Warning => "Warning",
@@ -55,7 +55,7 @@ impl DocStatus {
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_status_str(s: &str) -> Option<Self> {
         match s {
             "Ok" => Some(DocStatus::Ok),
             "Warning" => Some(DocStatus::Warning),
@@ -135,7 +135,7 @@ pub enum ViolationSeverity {
 }
 
 impl ViolationSeverity {
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             ViolationSeverity::Fatal => "F",
             ViolationSeverity::Guideline => "G",

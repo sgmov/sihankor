@@ -1,6 +1,7 @@
 //! `sihankor-proptest` — 验码：对标注函数运行随机输入 fuzzing，仅报告硬崩溃。
 //!
 //! Usage: `sihankor-proptest`
+#![allow(clippy::print_stdout, clippy::unwrap_used, clippy::expect_used, clippy::vec_init_then_push, clippy::unnecessary_unwrap)]
 //!
 //! 对 `#[proptest]` 标注的函数生成随机输入，通过 `catch_unwind` 捕获 panic。
 //! 不判断语义正确性——只判定硬崩溃。输出结构化报告供 CI 消费。
@@ -26,7 +27,7 @@ struct FuzzResult {
 }
 
 impl FuzzResult {
-    fn _build(target: &'static str, file: &'static str, total: usize, crashes: usize, crash_details: Vec<(String, String)>) -> Self {
+    const fn _build(target: &'static str, file: &'static str, total: usize, crashes: usize, crash_details: Vec<(String, String)>) -> Self {
         Self { target, file, total, crashes, crash_details }
     }
 }
@@ -97,14 +98,14 @@ where
     F: FnOnce() -> R + panic::UnwindSafe,
 {
     panic::catch_unwind(f).map_err(|e| {
-        let msg = if let Some(s) = e.downcast_ref::<String>() {
+        
+        if let Some(s) = e.downcast_ref::<String>() {
             s.clone()
         } else if let Some(s) = e.downcast_ref::<&str>() {
             s.to_string()
         } else {
             "unknown panic".to_string()
-        };
-        msg
+        }
     })
 }
 

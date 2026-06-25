@@ -126,13 +126,9 @@ fn parse_frontmatter(yaml_str: &str) -> Result<Frontmatter, ParseError> {
 
 /// 从正文中提取标题（第一个 # 开头的行）
 fn extract_title(body: &str) -> Option<String> {
-    for line in body.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("# ") {
-            return Some(trimmed[2..].trim().to_string());
-        }
-    }
-    None
+    body.lines()
+        .find(|line| line.trim().starts_with("# "))
+        .map(|line| line.trim()[2..].trim().to_string())
 }
 
 /// YAML Value → JSON Value

@@ -226,11 +226,10 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
         }
 
         // 上游依赖：非 root 文档且有 upstream
-        if let Some(ref upstream) = doc.upstream {
-            if upstream != &doc.id {
+        if let Some(ref upstream) = doc.upstream
+            && upstream != &doc.id {
                 depends_on.push(upstream.clone());
             }
-        }
 
         // 2/3 文档没有 upstream 视为阻塞
         if doc.stage.0 == "2/3" && doc.upstream.is_none() {

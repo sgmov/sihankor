@@ -51,7 +51,7 @@ pub struct ResolveChainRequest {
     pub depth: u32,
 }
 
-fn default_depth() -> u32 {
+const fn default_depth() -> u32 {
     10
 }
 

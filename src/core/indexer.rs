@@ -26,21 +26,18 @@ pub fn discover_documents(docs_dir: &Path) -> Vec<PathBuf> {
         .into_iter()
         .filter_entry(|e| {
             let name = e.file_name().to_string_lossy();
-            // 忽略隐藏目录和特殊目录
             !name.starts_with('.')
                 && name != "target"
                 && name != "archived"
                 && name != "node_modules"
         })
+        .flatten()
     {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            if path.is_file() {
-                let name = path.file_name().unwrap_or_default().to_string_lossy();
-                // 只索引 .sih.md 文件，忽略普通 .md 文件（如 README.md）
-                if name.ends_with(".sih.md") {
-                    files.push(path.to_path_buf());
-                }
+        let path = entry.path();
+        if path.is_file() {
+            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            if name.ends_with(".sih.md") {
+                files.push(path.to_path_buf());
             }
         }
     }

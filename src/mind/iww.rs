@@ -1,4 +1,4 @@
-use super::types::*;
+use super::types::{Cognition, DecisionProposal, Action, ActionKind, Rationale, Alternative, AffectedDocs, DivergenceSeverity, DivergenceType, Divergence, GovPosition, ChainRole, RelationGraph};
 
 /// iWW 消息机 —— 三机第二机
 ///

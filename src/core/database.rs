@@ -323,7 +323,7 @@ fn row_to_document(
         upstream,
         frontmatter,
         content,
-        status: DocStatus::from_str(&status_str).unwrap_or(DocStatus::Error),
+        status: DocStatus::from_status_str(&status_str).unwrap_or(DocStatus::Error),
         indexed_at,
         nature,
     })

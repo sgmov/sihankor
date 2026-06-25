@@ -1,6 +1,7 @@
 //! `sihankor-fmt` — format lint for .sih.md documents.
 //!
 //! Usage: `sihankor-fmt [path]`
+#![allow(clippy::print_stdout)]
 //!
 //! Scans .sih.md files for format violations defined in Document-Conventions §八.
 //! Exits with code 1 if any Error-level violation found, 0 otherwise.
