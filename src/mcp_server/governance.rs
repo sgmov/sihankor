@@ -11,6 +11,7 @@ use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
 use crate::core::validator::{self, ValidationConfig, ValidationResult};
+use crate::mind::grilling::GrillingEngine;
 use crate::mind::icl::ICL;
 use crate::mind::ict::ICT;
 use crate::mind::iww::IWW;
@@ -72,6 +73,29 @@ pub struct GenerateDocumentPlanRequest {
     pub upstream_id: Option<String>,
     /// 主题提示，用于生成文档 ID 语义短名和内容大纲
     pub topic_hint: String,
+}
+
+/// 追问引擎请求：用户提供意图，引擎生成四个元规则追问
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct ProposeRequest {
+    /// 用户意图的自然语言描述
+    pub intent: String,
+}
+
+/// 追问回答请求：用户回答追问后，引擎生成结构化提示词
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct ProposeAnswersRequest {
+    /// 用户意图的自然语言描述
+    pub intent: String,
+    /// 用户对四个追问的回答
+    pub answers: Vec<ProposeAnswer>,
+}
+
+/// 追问回答（用于 MCP 参数序列化）
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct ProposeAnswer {
+    pub question_id: String,
+    pub content: String,
 }
 
 #[tool_router]
@@ -533,6 +557,48 @@ impl SihankorService {
     ) -> String {
         let kanban = crate::core::kanban::generate_kanban(self.db.as_ref()).await;
         crate::core::kanban::render_html(&kanban)
+    }
+
+    /// 追问引擎第一步：输入意图，返回四个元规则追问
+    ///
+    /// 调用此 tool 后，用户看到四个问题（道二/顺因/有度/知止）。
+    /// 用户回答后再调用 sihankor_propose_answers 获取结构化提示词。
+    #[tool(description = "[SiHankor] Grilling engine step 1: input your intent, get four Dao-driven questions to clarify the document's governance identity")]
+    pub async fn sihankor_propose(
+        &self,
+        Parameters(ProposeRequest { intent }): Parameters<ProposeRequest>,
+    ) -> String {
+        let engine = GrillingEngine::new();
+        let questions = engine.questions(&intent);
+        serde_json::to_string_pretty(&serde_json::json!({
+            "step": "questions",
+            "intent": intent,
+            "questions": questions,
+            "instruction": "Answer these 4 questions, then call sihankor_propose_answers with your answers to get a structured prompt template."
+        }))
+        .unwrap_or_else(|e| format!("Serialization error: {}", e))
+    }
+
+    /// 追问引擎第二步：提交追问回答，返回结构化提示词
+    ///
+    /// 提示词包含 frontmatter 模板、章节结构、validator 约束注入、可证伪条件。
+    /// 将该提示词发送给外部 Agent 即可生成符合治理约束的文档。
+    #[tool(description = "[SiHankor] Grilling engine step 2: submit your answers to the four questions, get a structured prompt with frontmatter template, section outline, and constraint injection")]
+    pub async fn sihankor_propose_answers(
+        &self,
+        Parameters(ProposeAnswersRequest { intent, answers }): Parameters<ProposeAnswersRequest>,
+    ) -> String {
+        let engine = GrillingEngine::new();
+        let answers: Vec<crate::mind::grilling::Answer> = answers
+            .into_iter()
+            .map(|a| crate::mind::grilling::Answer {
+                question_id: a.question_id,
+                content: a.content,
+            })
+            .collect();
+        let prompt = engine.build_prompt(&answers, &intent);
+        serde_json::to_string_pretty(&prompt)
+            .unwrap_or_else(|e| format!("Serialization error: {}", e))
     }
 
     /// 术层编排：生成文档蓝图
