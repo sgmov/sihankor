@@ -312,13 +312,13 @@ async function doAssay(docId){
             if(d.self_question){
                 html+='<div style="margin-top:6px;font-size:10px;color:#f0a500">需人工审阅</div>';
             }
-            if(d.overall!=='pass'){
+            if(d.overall!=='pass' && d.overall!=='conditional'){
                 html+='<button class="act-btn act-correct" onclick="doCorrect(\''+docId+'\')" style="margin-top:8px">生成修正提示词</button>';
                 const advBtn=document.getElementById('btn-advance');
                 if(advBtn){advBtn.disabled=true;advBtn.title='合道检查未通过，无法推进';advBtn.style.opacity='0.3';}
             }else{
                 const advBtn=document.getElementById('btn-advance');
-                if(advBtn){advBtn.disabled=false;advBtn.title='';advBtn.style.opacity='1';}
+                if(advBtn){advBtn.disabled=false;advBtn.title='合道检查通过，可以推进';advBtn.style.opacity='1';}
             }
             msg.innerHTML=html;
         }else{
