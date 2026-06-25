@@ -271,7 +271,7 @@ function showDetail(card){
     const stage=card.stage||'';
     if(stage==='1/3'||stage==='2/3'){
         const next=stage==='1/3'?'2/3':'3/3';
-        html+='<button class="act-btn act-advance" onclick="doStage(\''+card.id+'\',\''+stage+'\')">推进到 '+next+'</button>';
+        html+='<button class="act-btn act-advance" id="btn-advance" onclick="doStage(\''+card.id+'\',\''+stage+'\')">推进到 '+next+'</button>';
     }
     html+='<button class="act-btn act-assay" onclick="doAssay(\''+card.id+'\')">合道检查</button>';
     html+='</div></div>';
@@ -314,6 +314,11 @@ async function doAssay(docId){
             }
             if(d.overall!=='pass'){
                 html+='<button class="act-btn act-correct" onclick="doCorrect(\''+docId+'\')" style="margin-top:8px">生成修正提示词</button>';
+                const advBtn=document.getElementById('btn-advance');
+                if(advBtn){advBtn.disabled=true;advBtn.title='合道检查未通过，无法推进';advBtn.style.opacity='0.3';}
+            }else{
+                const advBtn=document.getElementById('btn-advance');
+                if(advBtn){advBtn.disabled=false;advBtn.title='';advBtn.style.opacity='1';}
             }
             msg.innerHTML=html;
         }else{
