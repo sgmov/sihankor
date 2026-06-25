@@ -1,6 +1,6 @@
 ---
 id: 260623-1130-glossary-integration-plan
-stage: 2/3
+stage: 3/3
 upstream: 260622-1325-grilling-engine-decision
 ---
 
