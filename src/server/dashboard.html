@@ -413,7 +413,16 @@ async function doFixRefs(docId){
     try{
         const r=await fetch('/api/actions/fix-refs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
         const d=await r.json();
-        msg.innerHTML=d.ok?'<div style="color:#4fc3f7">'+d.message+'</div><button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新合道检查</button>':'<span style="color:#e94560">'+d.message+'</span>';
+        if(d.ok){
+            let msgHtml='<div style="color:#4fc3f7">'+d.message+'</div>';
+            if(d.dao_pass!==undefined){
+                msgHtml+='<div class="badge '+(d.dao_pass?'b-ok':'b-err')+'" style="display:inline-block;margin-top:4px;border-radius:3px">合道'+(d.dao_pass?'通过':'未通过')+'</div>';
+            }
+            msgHtml+='<button class="act-btn" onclick="doAssay(\''+docId+'\')" style="margin-top:6px">重新合道检查</button>';
+            msg.innerHTML=msgHtml;
+        }else{
+            msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
+        }
     }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
 }
 

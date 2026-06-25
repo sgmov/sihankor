@@ -202,7 +202,7 @@ impl ICL {
         use std::collections::HashMap;
         let valid: HashMap<&str, Vec<&str>> = vec![
             ("spec", vec!["proposal", "decision", "spec", "reference"]),
-            ("proposal", vec!["decision"]),
+            ("proposal", vec!["decision", "note"]),
             ("decision", vec!["spec", "reference"]),
             (
                 "note",

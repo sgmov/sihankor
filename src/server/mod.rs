@@ -403,7 +403,20 @@ async fn api_fix_refs(
     }
 
     if removed.is_empty() {
-        return Json(serde_json::json!({"ok": true, "doc_id": req.doc_id, "message": "未发现失效引用。如有冲突需要人工审核。"}));
+        // Check if there are remaining issues after fix
+        use crate::mind::icl::ICL;
+        use crate::mind::iww::IWW;
+        use crate::mind::ict::ICT;
+        let icl = ICL::new(state.db.clone());
+        let cognition = icl.analyze(&doc).await;
+        let proposal = IWW::propose(&cognition);
+        let verification = ICT::verify(&cognition, &proposal);
+        let dao_passed = verification.overall == crate::mind::types::Verdict::Pass;
+        return Json(serde_json::json!({
+            "ok": true, "doc_id": req.doc_id,
+            "dao_pass": dao_passed,
+            "message": if dao_passed { "合道检查通过，无待修复问题。" } else { "未发现失效引用。运行合道检查查看其他问题。" },
+        }));
     }
 
     // Rewrite file
