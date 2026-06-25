@@ -9,15 +9,26 @@ use sihankor::mcp_server::governance::SihankorService;
 async fn main() -> Result<(), Box<dyn Error>> {
     let db_path = find_db_path();
     let db = SqliteBackend::open(&db_path)?;
+    let db = Arc::new(db);
 
-    let service = SihankorService::new(Arc::new(db));
+    // Start dashboard server in background (syncs with MCP lifecycle)
+    let db_dash = db.clone();
+    let dash_handle = tokio::spawn(async move {
+        if let Err(e) = sihankor::server::start(db_dash, 9741).await {
+            eprintln!("siheng-dashboard: {}", e);
+        }
+    });
+    tokio::task::yield_now().await;
 
+    let service = SihankorService::new(db);
     eprintln!("sihankor engine starting, db at {}", db_path.display());
 
     let io = (tokio::io::stdin(), tokio::io::stdout());
     let running = rmcp::serve_server(service, io).await?;
     eprintln!("sihankor engine ready");
     running.waiting().await?;
+    // On MCP disconnect, process exits → dashboard task is cancelled
+    dash_handle.abort();
     Ok(())
 }
 
