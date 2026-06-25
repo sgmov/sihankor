@@ -313,19 +313,83 @@ async fn api_push_correction(
     }))
 }
 
-/// Fix broken references
+/// Fix broken references — auto-remove dead DEPS entries
 async fn api_fix_refs(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     axum::extract::Json(req): axum::extract::Json<ActionRequest>,
 ) -> Json<serde_json::Value> {
+    use crate::core::parser;
+
+    let possible_paths = vec![
+        format!("docs/specs/engineering/{}.sih.md", req.doc_id),
+        format!("docs/specs/philosophy/{}.sih.md", req.doc_id),
+        format!("docs/specs/techne/{}.sih.md", req.doc_id),
+        format!("docs/proposals/{}.sih.md", req.doc_id),
+        format!("docs/decisions/{}.sih.md", req.doc_id),
+        format!("docs/reference/{}.sih.md", req.doc_id),
+        format!("docs/knowledge/notes/{}.sih.md", req.doc_id),
+    ];
+    let path = match possible_paths.iter().find(|p| std::path::Path::new(p).exists()) {
+        Some(p) => p.clone(),
+        None => return Json(serde_json::json!({"ok": false, "message": "文件未找到"})),
+    };
+
+    let content = std::fs::read_to_string(&path).unwrap_or_default();
+    let doc = match parser::parse_file(std::path::Path::new(&path)) {
+        Ok(d) => d,
+        Err(e) => return Json(serde_json::json!({"ok": false, "message": format!("解析失败: {}", e)})),
+    };
+
+    // Find DEPS section and check each reference
+    let deps_marker = "\n## DEPS\n";
+    let Some(deps_start) = doc.content.find(deps_marker) else {
+        return Json(serde_json::json!({"ok": false, "message": "无 DEPS 章节"}));
+    };
+    let deps_content_start = deps_start + deps_marker.len();
+    let deps_end = doc.content[deps_content_start..].find("\n## ").map(|i| deps_content_start + i).unwrap_or(doc.content.len());
+    let deps_block = &doc.content[deps_content_start..deps_end];
+
+    let mut new_deps_lines: Vec<&str> = Vec::new();
+    let mut removed: Vec<String> = Vec::new();
+    for line in deps_block.lines() {
+        let trimmed = line.trim();
+        if let Some(ref_id) = trimmed.strip_prefix("- ").and_then(|l| l.split(|c| c == '：' || c == ':').next()) {
+            let ref_id = ref_id.trim();
+            if ref_id.len() >= 8 && ref_id.contains('-') {
+                match state.db.get_document(ref_id).await {
+                    Ok(Some(_)) => new_deps_lines.push(line),
+                    _ => removed.push(ref_id.to_string()),
+                }
+                continue;
+            }
+        }
+        new_deps_lines.push(line);
+    }
+
+    if removed.is_empty() {
+        return Json(serde_json::json!({"ok": true, "doc_id": req.doc_id, "message": "未发现失效引用"}));
+    }
+
+    // Rewrite file
+    let before_deps = &content[..deps_content_start];
+    let after_deps = &content[deps_end..];
+    let new_deps_block = new_deps_lines.join("\n");
+    let new_content = format!("{}{}{}", before_deps, new_deps_block, after_deps);
+
+    // Write back and re-parse to verify
+    std::fs::write(&path, &new_content).ok();
+    if let Err(e) = parser::parse_file(std::path::Path::new(&path)) {
+        // Rollback if parsing fails
+        std::fs::write(&path, &content).ok();
+        return Json(serde_json::json!({"ok": false, "message": format!("移除后解析失败，已回滚: {}", e)}));
+    }
     Json(serde_json::json!({
         "ok": true,
         "doc_id": req.doc_id,
-        "message": "检测到失效引用，请在 DEPS 中手动移除不存在的文档 id。",
+        "message": format!("已移除 {} 个失效引用: {}", removed.len(), removed.join(", ")),
     }))
 }
 
-// ---- Helpers ----
 // ---- Helpers ----
 
 /// Parse document from actual disk file and run fresh validation
