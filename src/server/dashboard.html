@@ -76,8 +76,6 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,system-ui,sans-s
 .act-btn:hover{border-color:#e94560}
 .act-advance{background:#16213e;border-color:#e94560}
 .act-advance:hover{background:#e94560;color:#fff}
-.act-validate{background:#16213e}
-.act-validate:hover{border-color:#4fc3f7;color:#4fc3f7}
 .act-assay{background:#16213e;border-color:#f0a500}
 .act-assay:hover{background:#f0a500;color:#000}
 
@@ -269,7 +267,6 @@ function showDetail(card){
         const next=stage==='1/3'?'2/3':'3/3';
         html+='<button class="act-btn act-advance" onclick="doStage(\''+card.id+'\',\''+stage+'\')">推进到 '+next+'</button>';
     }
-    html+='<button class="act-btn act-validate" onclick="doValidate(\''+card.id+'\')">验证</button>';
     html+='<button class="act-btn act-assay" onclick="doAssay(\''+card.id+'\')">合道检查</button>';
     html+='</div></div>';
     html+='<div id="act-msg" style="margin-top:8px;font-size:11px"></div>';
@@ -286,22 +283,6 @@ async function doStage(docId, current){
         const d=await r.json();
         msg.innerHTML=d.ok?'<span style="color:#4fc3f7">'+d.message+'</span>':'<span style="color:#e94560">'+d.message+'</span>';
         if(d.ok)setTimeout(fetchData,500);
-    }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
-}
-
-async function doValidate(docId){
-    const msg=document.getElementById('act-msg');
-    msg.textContent='验证中...';
-    try{
-        const r=await fetch('/api/actions/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({doc_id:docId})});
-        const d=await r.json();
-        if(d.ok){
-            const vs=d.violations||[];
-            if(!vs.length)msg.innerHTML='<span style="color:#4fc3f7">通过：无违规</span>';
-            else msg.innerHTML='<span style="color:#e94560">'+vs.length+' 项违规</span><div style="font-size:10px;margin-top:4px">'+vs.map(v=>'['+v.severity+'] '+v.rule).join('<br>')+'</div>';
-        }else{
-            msg.innerHTML='<span style="color:#e94560">'+d.message+'</span>';
-        }
     }catch(e){msg.innerHTML='<span style="color:#e94560">'+e.message+'</span>';}
 }
 
