@@ -216,14 +216,14 @@ function showColumn(){
 function cardEl(card){
     const m=document.createElement('div');m.className='card';
     const t=(card.title||card.id||'?').slice(0,55);
-    let dot='dot-ok';
-    if(card.status==='Error'||card.status==='error')dot='dot-err';
-    else if(card.status==='Warning'||card.status==='warning')dot='dot-warn';
+    let dot='dot-ok',vBadge='';
+    if(card.status==='Error'||card.status==='error'){dot='dot-err';vBadge='<span style="font-size:9px;background:#e94560;color:#fff;padding:1px 4px;border-radius:3px;margin-left:4px">E</span>';}
+    else if(card.status==='Warning'||card.status==='warning'){dot='dot-warn';vBadge='<span style="font-size:9px;background:#f0a500;color:#000;padding:1px 4px;border-radius:3px;margin-left:4px">W</span>';}
     else if(card.status==='in_progress')dot='dot-live';
     else if(card.status==='pending')dot='dot-pend';
     const s=card.stage||'';
     const n=card.nature||card.entity_type||'';
-    m.innerHTML='<span class="ctitle">'+t+'</span><span class="cmeta">'+(s?'['+s+'] ':'')+n+'</span><span class="cdot '+dot+'"></span>';
+    m.innerHTML='<span class="ctitle">'+t+vBadge+'</span><span class="cmeta">'+(s?'['+s+'] ':'')+n+'</span><span class="cdot '+dot+'"></span>';
     m.onclick=function(ev){ev.stopPropagation();selectCard(card);};
     if(card.id)m.title=card.id;
     return m;
