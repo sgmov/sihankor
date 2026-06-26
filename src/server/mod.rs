@@ -329,14 +329,24 @@ async fn api_fix_refs(
         format!("docs/reference/{}.sih.md", req.doc_id),
         format!("docs/knowledge/notes/{}.sih.md", req.doc_id),
     ];
-    let path = match possible_paths.iter().find(|p| std::path::Path::new(p).exists()) {
+    let path = match possible_paths
+        .iter()
+        .find(|p| std::path::Path::new(p).exists())
+    {
         Some(p) => p.clone(),
         None => {
             // Fallback: search by ID in all .sih.md files
             let doc = state.db.get_document(&req.doc_id).await.ok().flatten();
             let found = doc.and_then(|d| {
-                let dirs = ["specs/engineering", "specs/philosophy", "specs/techne",
-                            "proposals", "decisions", "reference", "knowledge/notes"];
+                let dirs = [
+                    "specs/engineering",
+                    "specs/philosophy",
+                    "specs/techne",
+                    "proposals",
+                    "decisions",
+                    "reference",
+                    "knowledge/notes",
+                ];
                 for dir in &dirs {
                     let full_dir = format!("docs/{}", dir);
                     if let Ok(entries) = std::fs::read_dir(&full_dir) {
@@ -350,11 +360,9 @@ async fn api_fix_refs(
                                         if content.contains(&id_pattern) {
                                             return path.to_str().map(|s| s.to_string());
                                         }
-                                        if content.contains(&d.id) {
-                                        }
+                                        if content.contains(&d.id) {}
                                     }
-                                    Err(e) => {
-                                    }
+                                    Err(e) => {}
                                 }
                             }
                         }
@@ -373,7 +381,9 @@ async fn api_fix_refs(
     let content = std::fs::read_to_string(&path).unwrap_or_default();
     let doc = match parser::parse_file(std::path::Path::new(&path)) {
         Ok(d) => d,
-        Err(e) => return Json(serde_json::json!({"ok": false, "message": format!("解析失败: {}", e)})),
+        Err(e) => {
+            return Json(serde_json::json!({"ok": false, "message": format!("解析失败: {}", e)}));
+        }
     };
 
     // Find DEPS section and check each reference
@@ -382,14 +392,20 @@ async fn api_fix_refs(
         return Json(serde_json::json!({"ok": false, "message": "无 DEPS 章节"}));
     };
     let deps_content_start = deps_start + deps_marker.len();
-    let deps_end = doc.content[deps_content_start..].find("\n## ").map(|i| deps_content_start + i).unwrap_or(doc.content.len());
+    let deps_end = doc.content[deps_content_start..]
+        .find("\n## ")
+        .map(|i| deps_content_start + i)
+        .unwrap_or(doc.content.len());
     let deps_block = &doc.content[deps_content_start..deps_end];
 
     let mut new_deps_lines: Vec<&str> = Vec::new();
     let mut removed: Vec<String> = Vec::new();
     for line in deps_block.lines() {
         let trimmed = line.trim();
-        if let Some(ref_id) = trimmed.strip_prefix("- ").and_then(|l| l.split(|c| c == '：' || c == ':').next()) {
+        if let Some(ref_id) = trimmed
+            .strip_prefix("- ")
+            .and_then(|l| l.split(|c| c == '：' || c == ':').next())
+        {
             let ref_id = ref_id.trim();
             if ref_id.len() >= 8 && ref_id.contains('-') {
                 match state.db.get_document(ref_id).await {
@@ -405,8 +421,8 @@ async fn api_fix_refs(
     if removed.is_empty() {
         // Check if there are remaining issues after fix
         use crate::mind::icl::ICL;
-        use crate::mind::iww::IWW;
         use crate::mind::ict::ICT;
+        use crate::mind::iww::IWW;
         let icl = ICL::new(state.db.clone());
         let cognition = icl.analyze(&doc).await;
         let proposal = IWW::propose(&cognition);
@@ -430,7 +446,9 @@ async fn api_fix_refs(
     if let Err(e) = parser::parse_file(std::path::Path::new(&path)) {
         // Rollback if parsing fails
         std::fs::write(&path, &content).ok();
-        return Json(serde_json::json!({"ok": false, "message": format!("移除后解析失败，已回滚: {}", e)}));
+        return Json(
+            serde_json::json!({"ok": false, "message": format!("移除后解析失败，已回滚: {}", e)}),
+        );
     }
     Json(serde_json::json!({
         "ok": true,
