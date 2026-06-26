@@ -495,7 +495,6 @@ async fn find_and_validate_on_disk(doc_id: &str) -> Result<Vec<serde_json::Value
                 "message": v.message,
                 "location": v.location,
                 "fix": v.fix_suggestion,
-                "dao": v.dao_trace,
             })
         })
         .collect();

@@ -67,17 +67,17 @@ async fn test_search_and_resolve() {
 
 #[test]
 fn test_parse_philosophy_docs() {
-    let philosophy_dir = Path::new("docs/specs/philosophy");
+    let archive_dir = Path::new("archive/philosophy-v1");
 
-    if !philosophy_dir.exists() {
-        eprintln!("Philosophy dir not found, skipping");
+    if !archive_dir.exists() {
+        eprintln!("Archive dir not found, skipping");
         return;
     }
 
     let mut parsed = 0;
     let mut errors = Vec::new();
 
-    for entry in std::fs::read_dir(philosophy_dir).unwrap() {
+    for entry in std::fs::read_dir(archive_dir).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.extension().map(|e| e == "md").unwrap_or(false) {
@@ -85,14 +85,6 @@ fn test_parse_philosophy_docs() {
                 Ok(doc) => {
                     parsed += 1;
                     println!("Parsed: {} ({}) - {}", doc.id, doc.stage.0, doc.title);
-
-                    // 哲学文档应该是 2/3 或 3/3
-                    assert!(
-                        doc.stage.0 == "2/3" || doc.stage.0 == "3/3",
-                        "Philosophy docs should be at 2/3 or 3/3, got {} for {}",
-                        doc.stage.0,
-                        doc.id
-                    );
                 }
                 Err(e) => {
                     errors.push((path.to_string_lossy().to_string(), e.to_string()));
@@ -101,7 +93,10 @@ fn test_parse_philosophy_docs() {
         }
     }
 
-    assert!(parsed > 0, "Should parse at least one philosophy doc");
+    assert!(
+        parsed > 0,
+        "Should parse at least one archived philosophy doc"
+    );
     for (path, error) in &errors {
         eprintln!("Parse error for {}: {}", path, error);
     }

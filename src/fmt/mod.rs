@@ -92,8 +92,6 @@ pub struct Violation {
     pub message: String,
     /// 修复建议（面向开发者的可操作指引）
     pub fix_suggestion: Option<String>,
-    /// 道法追溯：此规则对应哪个司衡道法维度
-    pub dao_trace: Option<String>,
 }
 
 impl Violation {
@@ -120,7 +118,6 @@ impl Violation {
             "level": self.level.as_str(),
             "message": self.message,
             "fix_suggestion": self.fix_suggestion,
-            "dao_trace": self.dao_trace,
         }))
         .unwrap_or_else(|_| "{}".to_string())
     }
@@ -195,7 +192,6 @@ pub fn check_c01(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 level: Level::Error,
                 message: format!("emoji character found: '{}' (U+{:04X})", c, c as u32),
                 fix_suggestion: Some("Replace emoji with text description".to_string()),
-                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -233,7 +229,6 @@ pub fn check_c01a(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
             fix_suggestion: Some(
                 "Replace with ASCII equivalent or permitted CJK character".to_string(),
             ),
-            dao_trace: Some("损补".to_string()),
         });
     }
     violations
@@ -255,7 +250,6 @@ pub fn check_c02(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                 fix_suggestion: Some(
                     "Replace with fullwidth colon (：) or ASCII hyphen (-)".to_string(),
                 ),
-                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -279,7 +273,6 @@ pub fn check_c03(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     c as u32
                 ),
                 fix_suggestion: Some("Replace with straight double quote (\")".to_string()),
-                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -301,7 +294,6 @@ pub fn check_c04(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     level: Level::Error,
                     message: "right arrow (U+2192) should be '->'".to_string(),
                     fix_suggestion: Some("Replace -> with ASCII '->'".to_string()),
-                    dao_trace: Some("损补".to_string()),
                 });
             }
             '\u{2190}' => {
@@ -313,7 +305,6 @@ pub fn check_c04(line: &str, line_num: usize, file: &str) -> Vec<Violation> {
                     level: Level::Error,
                     message: "left arrow (U+2190) should be '<-'".to_string(),
                     fix_suggestion: Some("Replace with ASCII '<-'".to_string()),
-                    dao_trace: Some("损补".to_string()),
                 });
             }
             _ => {}
@@ -347,7 +338,6 @@ pub fn check_c05(lines: &[&str], file: &str, doc_start: usize) -> Vec<Violation>
                 fix_suggestion: Some(
                     "Use level-2 headings (## ) for section separation instead of ---".to_string(),
                 ),
-                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -394,7 +384,6 @@ pub fn check_c06(
                         "Flatten deeply nested lists: use paragraphs or subsections instead"
                             .to_string(),
                     ),
-                    dao_trace: Some("有度".to_string()),
                 });
             }
         }
@@ -441,7 +430,6 @@ pub fn check_c07(
                     level: Level::Warning,
                     message: "suspected ASCII art diagram (≥3 consecutive lines); use Mermaid flowchart instead".to_string(),
                     fix_suggestion: Some("Replace ASCII art with a Mermaid flowchart diagram".to_string()),
-                    dao_trace: Some("有度".to_string()),
                 });
                     run_start = None; // Reset to avoid duplicate reports
                 }
@@ -481,7 +469,6 @@ pub fn check_c08(
                 level: Level::Warning,
                 message: "mixed Chinese/English in same paragraph".to_string(),
                 fix_suggestion: Some("Separate CJK and English into distinct paragraphs or wrap English terms in code spans".to_string()),
-                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -512,7 +499,6 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                         fix_suggestion: Some(
                             "Add a language tag: ```rust, ```mermaid, ```text".to_string(),
                         ),
-                        dao_trace: Some("有度".to_string()),
                     });
                 } else if !VALID_LANG_TAGS.contains(&tag) {
                     violations.push(Violation {
@@ -529,7 +515,6 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
                             "Use one of the permitted tags: {}",
                             VALID_LANG_TAGS.join(", ")
                         )),
-                        dao_trace: Some("有度".to_string()),
                     });
                 }
             }
@@ -568,7 +553,6 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                         fix_suggestion: Some(
                             "Split wide table into bullet lists or subsections".to_string(),
                         ),
-                        dao_trace: Some("有度".to_string()),
                     });
                     last_table_violation = true;
                 }
@@ -583,7 +567,6 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
                     fix_suggestion: Some(
                         "Split wide table into bullet lists or subsections".to_string(),
                     ),
-                    dao_trace: Some("有度".to_string()),
                 });
                 last_table_violation = true;
             }
@@ -683,32 +666,11 @@ pub fn governance_trailer(violations: &[Violation]) -> String {
         .filter(|v| v.level == Level::Warning)
         .count();
 
-    let mut dao_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for v in violations {
-        if let Some(ref dao) = v.dao_trace {
-            *dao_counts.entry(dao.as_str()).or_insert(0) += 1;
-        }
-    }
-
     let status = if errors > 0 { "blocked" } else { "pass" };
-    let dao_parts: Vec<String> = ["知止", "顺因", "有度", "损补", "顺势"]
-        .iter()
-        .filter_map(|d| {
-            let count = dao_counts.get(d).copied().unwrap_or(0);
-            if count > 0 {
-                Some(format!("{}={}", d, count))
-            } else {
-                None
-            }
-        })
-        .collect();
 
     format!(
-        "SiHankor-Governance: {} (E={} W={}; {})",
-        status,
-        errors,
-        warnings,
-        dao_parts.join(" ")
+        "SiHankor-Governance: {} (E={} W={})",
+        status, errors, warnings,
     )
 }
 
@@ -969,7 +931,6 @@ mod tests {
             level: Level::Error,
             message: "emoji found".to_string(),
             fix_suggestion: Some("remove emoji".to_string()),
-            dao_trace: Some("损补".to_string()),
         };
         assert_eq!(v.format(), "test.sih.md:5:3: C01 error: emoji found");
     }

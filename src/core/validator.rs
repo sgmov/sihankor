@@ -82,11 +82,8 @@ impl ValidationResult {
             report.push_str(&format!("## F 级阻断 ({} items)\n\n", fatal.len()));
             for v in &fatal {
                 report.push_str(&format!(
-                    "- **{}** ({}) [{}]: {}\n",
-                    v.rule_id,
-                    v.dao_trace.as_deref().unwrap_or("-"),
-                    v.location,
-                    v.message
+                    "- **{}** [{}]: {}\n",
+                    v.rule_id, v.location, v.message
                 ));
                 if let Some(ref fix) = v.fix_suggestion {
                     report.push_str(&format!("  -> Fix: {}\n", fix));
@@ -99,11 +96,8 @@ impl ValidationResult {
             report.push_str(&format!("## G 级警告 ({} items)\n\n", guidelines.len()));
             for v in &guidelines {
                 report.push_str(&format!(
-                    "- **{}** ({}) [{}]: {}\n",
-                    v.rule_id,
-                    v.dao_trace.as_deref().unwrap_or("-"),
-                    v.location,
-                    v.message
+                    "- **{}** [{}]: {}\n",
+                    v.rule_id, v.location, v.message
                 ));
                 if let Some(ref fix) = v.fix_suggestion {
                     report.push_str(&format!("  -> Fix: {}\n", fix));
@@ -152,34 +146,11 @@ impl ValidationResult {
             .filter(|v| v.severity == ViolationSeverity::Judgment)
             .count();
 
-        let mut dao_counts: std::collections::HashMap<&str, usize> =
-            std::collections::HashMap::new();
-        for v in &self.violations {
-            if let Some(ref dao) = v.dao_trace {
-                *dao_counts.entry(dao.as_str()).or_insert(0) += 1;
-            }
-        }
-
         let status = if fatal > 0 { "blocked" } else { "pass" };
-        let dao_parts: Vec<String> = ["知止", "顺因", "有度", "损补", "顺势"]
-            .iter()
-            .filter_map(|d| {
-                let count = dao_counts.get(d).copied().unwrap_or(0);
-                if count > 0 {
-                    Some(format!("{}={}", d, count))
-                } else {
-                    None
-                }
-            })
-            .collect();
 
         format!(
-            "SiHankor-Governance: {} (F={} G={} J={}; {})",
-            status,
-            fatal,
-            guidelines,
-            judgments,
-            dao_parts.join(" ")
+            "SiHankor-Governance: {} (F={} G={} J={})",
+            status, fatal, guidelines, judgments,
         )
     }
 }
@@ -257,7 +228,6 @@ fn validate_frontmatter(
                 "Rename id to match YYMMDD-HHMM[-NNN]-semantic-name, e.g. 260613-1800-my-doc"
                     .to_string(),
             ),
-            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -274,7 +244,6 @@ fn validate_frontmatter(
             fix_suggestion: Some(
                 "Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string(),
             ),
-            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -289,7 +258,6 @@ fn validate_frontmatter(
             message: "upstream is required for this document nature".to_string(),
             location: "frontmatter.upstream".to_string(),
             fix_suggestion: Some("Add upstream field with the id of the document that authorizes this one. For root docs, set upstream to own id.".to_string()),
-            dao_trace: Some("顺因".to_string()),
         });
     }
 
@@ -328,11 +296,10 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
                 ),
                 location: path.to_string_lossy().to_string(),
                 fix_suggestion: Some("Move document to the correct directory matching its nature: specs/, proposals/, decisions/, reference/, or knowledge/notes/".to_string()),
-                dao_trace: Some("有度".to_string()),
             });
         }
 
-        // G-03: 子目录深度 <= 3
+        // G-03: 子目录深度 <= 4 (docs/{nature}/{dir1}/{dir2}/{dir3}/{dir4}/file)
         let depth = path.components().count();
         if depth > 5 {
             // root + docs/ + dir1 + dir2 + dir3 + file = 6 components max
@@ -348,7 +315,6 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
                     "Flatten directory structure to max 3 subdirectory levels under docs/"
                         .to_string(),
                 ),
-                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -373,7 +339,6 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                     fix_suggestion: Some(
                         "Split wide table into bullet lists or subsections".to_string(),
                     ),
-                    dao_trace: Some("有度".to_string()),
                 });
             }
         }
@@ -394,7 +359,6 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                         message: "code block must declare a language tag".to_string(),
                         location: format!("line {}", line_num + 1),
                         fix_suggestion: Some("Add a language tag after the opening fence: ```mermaid, ```rust, ```text".to_string()),
-                        dao_trace: Some("有度".to_string()),
                     });
                 }
             } else {
@@ -416,7 +380,6 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                     "Use level-2 headings (## ) for section separation instead of horizontal rules"
                         .to_string(),
                 ),
-                dao_trace: Some("有度".to_string()),
             });
         }
     }
@@ -430,7 +393,6 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                 message: "emoji characters are forbidden".to_string(),
                 location: format!("line {}", line_num + 1),
                 fix_suggestion: Some("Remove emoji characters from narrative text".to_string()),
-                dao_trace: Some("损补".to_string()),
             });
         }
     }
@@ -452,7 +414,6 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
             fix_suggestion: Some(
                 "Flatten deeply nested lists: use paragraphs or subsections instead".to_string(),
             ),
-            dao_trace: Some("有度".to_string()),
         });
     }
 
@@ -477,7 +438,6 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
                 "Archive or update the referencing document to point to a valid upstream"
                     .to_string(),
             ),
-            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -510,7 +470,6 @@ fn validate_governance(
                     "Add decided-by with the identifier of the person who made this decision"
                         .to_string(),
                 ),
-                dao_trace: Some("顺因".to_string()),
             });
         }
     }
@@ -527,7 +486,6 @@ fn validate_governance(
             fix_suggestion: Some(
                 "Replace 'ai-auto' with a human identifier (e.g. 'moc')".to_string(),
             ),
-            dao_trace: Some("知止".to_string()),
         });
     }
 
@@ -545,7 +503,6 @@ fn validate_governance(
                 ),
                 location: "frontmatter.decided-by".to_string(),
                 fix_suggestion: Some("Remove the decided-by field from this non-decision document".to_string()),
-                dao_trace: Some("知止".to_string()),
             });
         }
     }
@@ -555,19 +512,19 @@ fn validate_governance(
 
 /// 从文件路径推断 document nature
 pub fn infer_nature(path: &Path) -> Option<&str> {
-    let path_str = path.to_string_lossy();
-    if path_str.contains("specs/") {
-        Some("spec")
-    } else if path_str.contains("proposals/") {
-        Some("proposal")
-    } else if path_str.contains("decisions/") {
-        Some("decision")
-    } else if path_str.contains("reference/") {
-        Some("reference")
-    } else if path_str.contains("knowledge/notes/") {
-        Some("note")
-    } else {
-        None
+    let mut components = path.components();
+    // First component must be "docs"
+    if components.next().map(|c| c.as_os_str()) != Some(std::ffi::OsStr::new("docs")) {
+        return None;
+    }
+    // Second component is the nature directory
+    match components.next()?.as_os_str().to_str()? {
+        "specs" => Some("spec"),
+        "proposals" => Some("proposal"),
+        "decisions" => Some("decision"),
+        "reference" => Some("reference"),
+        dir if dir.starts_with("knowledge") => Some("note"),
+        _ => None,
     }
 }
 
@@ -588,18 +545,96 @@ fn regex_pattern_for_id() -> regex_lite::Regex {
 fn contains_emoji(s: &str) -> bool {
     s.chars().any(|c| {
         let cp = c as u32;
-        // 常见 emoji 范围
-        (0x1F600..=0x1F64F).contains(&cp)
-            || (0x1F300..=0x1F5FF).contains(&cp)
-            || (0x1F680..=0x1F6FF).contains(&cp)
-            || (0x1F1E0..=0x1F1FF).contains(&cp)
-            || (0x2600..=0x26FF).contains(&cp)
-            || (0x2700..=0x27BF).contains(&cp)
-            || (0xFE00..=0xFE0F).contains(&cp)
-            || (0x1F900..=0x1F9FF).contains(&cp)
-            || (0x1FA00..=0x1FA6F).contains(&cp)
-            || (0x1FA70..=0x1FAFF).contains(&cp)
-            || (0x200D).eq(&cp) // ZWJ
+        (0x1F600..=0x1F64F).contains(&cp)  // Emoticons
+            || (0x1F300..=0x1F5FF).contains(&cp)  // Misc Symbols & Pictographs
+            || (0x1F680..=0x1F6FF).contains(&cp)  // Transport & Map
+            || (0x1F1E0..=0x1F1FF).contains(&cp)  // Flags
+            || (0x2600..=0x26FF).contains(&cp)    // Misc symbols
+            || (0x2700..=0x27BF).contains(&cp)    // Dingbats
+            || (0xFE00..=0xFE0F).contains(&cp)    // Variation Selectors
+            || (0x1F900..=0x1F9FF).contains(&cp)  // Supplemental Symbols
+            || (0x1FA00..=0x1FA6F).contains(&cp)  // Chess Symbols
+            || (0x1FA70..=0x1FAFF).contains(&cp)  // Symbols Extended-A
+            || (0x200D).eq(&cp) // ZWJ (Zero Width Joiner)
+            || (0x20E3).eq(&cp) // Combining Enclosing Keycap
+            || (0x231A..=0x231B).contains(&cp) // Watch, Hourglass
+            || (0x23E9..=0x23F3).contains(&cp) // Double triangles, hourglass with sand
+            || (0x23F8..=0x23FA).contains(&cp) // Power, pause, record symbols
+            || (0x23CF).eq(&cp) // Eject symbol
+            || (0x24C2).eq(&cp) // Circled M
+            || (0x25AA..=0x25AB).contains(&cp) // Black/white small squares
+            || (0x25B6).eq(&cp) // Play button
+            || (0x25C0).eq(&cp) // Reverse button
+            || (0x25FB..=0x25FE).contains(&cp) // Medium/large squares
+            || (0x2B05..=0x2B07).contains(&cp) // Arrows
+            || (0x2B1B..=0x2B1C).contains(&cp) // Black/white large squares
+            || (0x2B50).eq(&cp) // Star
+            || (0x2B55).eq(&cp) // Circle
+            || (0x3030).eq(&cp) // Wavy dash
+            || (0x303D).eq(&cp) // Part alternation mark
+            || (0x3297).eq(&cp) // Japanese "congratulations"
+            || (0x3299).eq(&cp) // Japanese "secret"
+            || (0xA9..=0xAE).contains(&cp) // Copyright/Registered signs
+            || (0x2122).eq(&cp) // TM sign
+            || (0x2139).eq(&cp) // Info symbol
+            || (0x2328).eq(&cp) // Keyboard
+            || (0x23ED..=0x23EF).contains(&cp) // Media control symbols
+            || (0x23F1..=0x23F2).contains(&cp) // Stopwatch, timer
+            || (0x23F4..=0x23F7).contains(&cp) // Media playback symbols
+            || (0x2620).eq(&cp) // Skull
+            || (0x2622..=0x2623).contains(&cp) // Radioactive, biohazard
+            || (0x2626).eq(&cp) // Orthodox cross
+            || (0x262A).eq(&cp) // Star and crescent
+            || (0x262E).eq(&cp) // Peace symbol
+            || (0x262F).eq(&cp) // Yin Yang
+            || (0x2638..=0x263A).contains(&cp) // Wheel of dharma, faces
+            || (0x2640..=0x2653).contains(&cp) // Gender/zodiac symbols
+            || (0x2660..=0x2668).contains(&cp) // Card suits/misc
+            || (0x267B).eq(&cp) // Recycle
+            || (0x267E..=0x267F).contains(&cp) // Symbols
+            || (0x2692..=0x2697).contains(&cp) // Tool/misc symbols
+            || (0x2699).eq(&cp) // Gear
+            || (0x269B..=0x269C).contains(&cp) // Atom
+            || (0x26A0..=0x26A1).contains(&cp) // Warning, high voltage
+            || (0x26A7).eq(&cp) // Transgender
+            || (0x26AA..=0x26B1).contains(&cp) // Circles
+            || (0x26B3..=0x26BC).contains(&cp) // Symbols
+            || (0x26BD..=0x26BF).contains(&cp) // Sports
+            || (0x26C4..=0x26C8).contains(&cp) // Weather/sports
+            || (0x26CD).eq(&cp) // Disabled car
+            || (0x26CF).eq(&cp) // Pick
+            || (0x26D1..=0x26D4).contains(&cp) // Symbols
+            || (0x26E9..=0x26EA).contains(&cp) // Symbols
+            || (0x26F0..=0x26F5).contains(&cp) // Symbols
+            || (0x26F7..=0x26FA).contains(&cp) // Symbols
+            || (0x26FD).eq(&cp) // Fuel pump
+            || (0x2702).eq(&cp) // Scissors
+            || (0x2705).eq(&cp) // Check mark
+            || (0x2708..=0x270D).contains(&cp) // Plane, hand symbols
+            || (0x270F).eq(&cp) // Pencil
+            || (0x2712).eq(&cp) // Black nib
+            || (0x2714).eq(&cp) // Check mark
+            || (0x2716).eq(&cp) // X mark
+            || (0x271D).eq(&cp) // Latin cross
+            || (0x2721).eq(&cp) // Star of David
+            || (0x2728).eq(&cp) // Sparkles
+            || (0x2733..=0x2734).contains(&cp) // Symbols
+            || (0x2744).eq(&cp) // Snowflake
+            || (0x2747).eq(&cp) // Sparkle
+            || (0x274C).eq(&cp) // Cross mark
+            || (0x274E).eq(&cp) // Cross mark
+            || (0x2753..=0x2755).contains(&cp) // Question/exclamation marks
+            || (0x2757).eq(&cp) // Exclamation mark
+            || (0x2763..=0x2764).contains(&cp) // Heart
+            || (0x2795..=0x2797).contains(&cp) // Plus/minus
+            || (0x27A1).eq(&cp) // Right arrow
+            || (0x27B0).eq(&cp) // Curly loop
+            || (0x27BF).eq(&cp) // Double curly loop
+            || (0x2934..=0x2935).contains(&cp) // Arrow symbols
+            || (0x2B05..=0x2B07).contains(&cp) // Arrows
+            || (0x2B1B..=0x2B1C).contains(&cp) // Squares
+            || (0x2B50).eq(&cp) // Star
+            || (0x2B55).eq(&cp) // Circle
     })
 }
 
