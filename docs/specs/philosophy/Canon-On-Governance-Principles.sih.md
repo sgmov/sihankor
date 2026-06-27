@@ -12,7 +12,7 @@ upstream: 260627-1100-dao-on-natural-convergence
 
 ### 法在四层结构中的位置
 
-司衡架构分四层：观察、原则、指南、机制与实现。法居指南层，从原则层之四道推导而出。道回答"为什么"，法回答"怎么做"。四道定义见[《司衡道论》](./Dao-On-Natural-Convergence.sih.md)。
+司衡架构分四层：观察、原则、指南、机制与实现。法居指南层，从原则层之四道推导而出。道回答"为什么"，法回答"怎么做"。四道定义见[《司衡道论》](./Tao-On-Natural-Convergence.sih.md)。
 
 法与道的根本区别：道是被发现的工程必要性，法是从道推导的方法论指南。道不可违反，法可被校准。法若在实践中被证明不合道，应通过生命周期修正机制重新检验。
 
@@ -303,7 +303,7 @@ G5：Trend Alignment（趋势对齐）。
 
 - 260627-1100-dao-on-natural-convergence
   - 道论，四道的系统阐述，法从道生
-  - [司衡道论](./Dao-On-Natural-Convergence.sih.md)
+  - [司衡道论](./Tao-On-Natural-Convergence.sih.md)
 - 260627-1030-sihankor-philosophy
   - 哲学总纲，认识论标签制度与四层结构
   - [司衡哲学总纲](./SiHankor-Philosophy.sih.md)

@@ -451,24 +451,24 @@ Reopen 由 P4b 条件触发，而非手动可选：
 
 ### 8.2 映射表
 
-| 道家术语              | 英文对照                                                                 | 关系                                 |
-| --------------------- | ------------------------------------------------------------------------ | ------------------------------------ |
-| 道 (四道)             | Principle (P1-P4)                                                        | 设计原则                             |
-| 道一                  | P1: Output Variance Default                                              | 条件性经验假设                       |
-| 道二                  | P2: Intent Recovery                                                      | 设计推论                             |
-| 道三                  | P3: Lossy Encoding                                                       | 外部定理引用                         |
-| 道四                  | P4a+P4b: Gap Tautology + Gap Widening                                    | 重言式 + 经验假设                    |
-| 元 (四元)             | (退役)                                                                   | 功能被 O1-O5 前件条件吸收            |
-| 鉴                    | Structured Reflection                                                    | 不是验证工具，是设计前的概念分析清单 |
-| 法 (五法)             | Guideline (G1-G5)                                                        | 方法论指南                           |
-| 知止                  | Scope Boundary                                                           | 边界约束                             |
-| 顺因                  | Causal Alignment                                                         | 因果方向对齐                         |
-| 有度                  | Proportionality                                                          | 适度原则                             |
-| 损补                  | Trade-off Management                                                     | 权衡管理                             |
-| 顺势                  | Trend Alignment                                                          | 趋势顺应                             |
-| 六层 (道法术几约形迹) | 四层 (Principles -> Guidelines -> Mechanisms -> Implementation)          | 压平冗余层级                         |
-| dao_trace             | design_origin（或退役）                                                  | 见 8.3                               |
-| 元->道->法->术        | Observations -> Principles -> Guidelines -> Mechanisms -> Implementation | 方向反转                             |
+| 道家术语              | 英文对照                                                                     | 关系                                 |
+| --------------------- | ---------------------------------------------------------------------------- | ------------------------------------ |
+| 道 (Tao)              | Tao (Wade-Giles, 国际通用 Taoism/Tao Te Ching)                              | 代码工程的因果必然性                 |
+| 道一                  | Tao-1                                                                       | 发散自-然，收敛必-为                 |
+| 道二                  | Tao-2                                                                       | 意图先于代码，因果方向不可逆         |
+| 道三                  | Tao-3                                                                       | 凡编码皆为意图之有损编码             |
+| 道四                  | Tao-4a + Tao-4b                                                             | 重言式 + 经验假设                    |
+| 元 (Arche)            | (退役)                                                                       | 功能被 O1-O5 前件条件吸收            |
+| 鉴 (Assay)            | Assay                                                                        | constructed-framework，反推检验工具  |
+| 法 (Canon)            | Canon                                                                        | 从道自然生出的方法论原则             |
+| 知止                  | Zhi-Zhi                                                                      | 边界约束                             |
+| 顺因                  | Shun-Yin                                                                     | 因果方向对齐                         |
+| 有度                  | You-Du                                                                       | 适度原则                             |
+| 损补                  | Sun-Bu                                                                       | 权衡管理                             |
+| 顺势                  | Shun-Shi                                                                     | 趋势顺应                             |
+| 六层 (道法术几约形迹) | 四层 (Observations -> Tao -> Canon -> Mechanisms -> Implementation)         | 压平冗余层级                         |
+| dao_trace             | design_origin（或退役）                                                      | 见 8.3                               |
+| 元->道->法->术        | Observations -> Tao -> Canon -> Mechanisms -> Implementation                | 方向反转                             |
 
 ### 8.3 dao_trace 处置
 
