@@ -76,9 +76,21 @@ pub async fn index_document(
 
     // 度量采集: ValidationCompleted（失败不影响主流程）
     {
-        let fatal_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Fatal).count();
-        let guideline_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Guideline).count();
-        let judgment_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Judgment).count();
+        let fatal_count = result
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Fatal)
+            .count();
+        let guideline_count = result
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Guideline)
+            .count();
+        let judgment_count = result
+            .violations
+            .iter()
+            .filter(|v| v.severity == ViolationSeverity::Judgment)
+            .count();
         let event = MetricEvent::ValidationCompleted {
             doc_id: doc.id.clone(),
             nature: nature.clone(),

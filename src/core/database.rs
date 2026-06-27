@@ -367,8 +367,15 @@ impl SihDatabase for SqliteBackend {
         Ok(docs)
     }
 
-    async fn record_metric(&self, event_type: &str, payload_json: &str) -> Result<(), DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+    async fn record_metric(
+        &self,
+        event_type: &str,
+        payload_json: &str,
+    ) -> Result<(), DatabaseError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         conn.execute(
             "INSERT INTO metrics (event_type, payload_json, created_at) VALUES (?1, ?2, datetime('now'))",
             params![event_type, payload_json],
@@ -376,8 +383,15 @@ impl SihDatabase for SqliteBackend {
         Ok(())
     }
 
-    async fn query_metrics(&self, event_type: &str, limit: usize) -> Result<Vec<MetricRecord>, DatabaseError> {
-        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+    async fn query_metrics(
+        &self,
+        event_type: &str,
+        limit: usize,
+    ) -> Result<Vec<MetricRecord>, DatabaseError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
             "SELECT id, event_type, payload_json, created_at FROM metrics WHERE event_type = ?1 ORDER BY created_at DESC LIMIT ?2"
         )?;

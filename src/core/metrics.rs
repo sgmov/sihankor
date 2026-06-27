@@ -14,10 +14,7 @@ pub enum MetricEvent {
         passed: bool,
     },
     /// 文档索引完成
-    IndexCompleted {
-        doc_id: String,
-        nature: String,
-    },
+    IndexCompleted { doc_id: String, nature: String },
     /// Stage 转换
     StageTransition {
         doc_id: String,

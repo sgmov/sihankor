@@ -18,10 +18,18 @@ pub enum Stage {
 }
 
 impl Stage {
-    pub fn propose() -> Self { Stage::Propose }
-    pub fn resolve() -> Self { Stage::Resolve }
-    pub fn ratify() -> Self { Stage::Ratify }
-    pub fn deprecated() -> Self { Stage::Deprecated }
+    pub fn propose() -> Self {
+        Stage::Propose
+    }
+    pub fn resolve() -> Self {
+        Stage::Resolve
+    }
+    pub fn ratify() -> Self {
+        Stage::Ratify
+    }
+    pub fn deprecated() -> Self {
+        Stage::Deprecated
+    }
 
     pub fn as_str(&self) -> &str {
         match self {
@@ -48,7 +56,9 @@ impl Stage {
     /// 恒返回 true。Stage 枚举的 5 种状态（Propose/Resolve/Ratify/Deprecated/Superseded）
     /// 都是合法状态，"不合法"的情况（如非法字符串 "4/3"）已在 `from_str` 中通过
     /// 返回 None 处理，无法构造出非法的 Stage 枚举值。
-    pub fn is_valid(&self) -> bool { true }
+    pub fn is_valid(&self) -> bool {
+        true
+    }
 
     /// 检查从当前 stage 是否可以转换到目标 stage。
     ///
@@ -256,12 +266,20 @@ mod tests {
 
     #[test]
     fn test_cannot_transition_from_deprecated() {
-        assert!(Stage::Deprecated.can_transition_to(&Stage::Propose).is_err());
+        assert!(
+            Stage::Deprecated
+                .can_transition_to(&Stage::Propose)
+                .is_err()
+        );
     }
 
     #[test]
     fn test_cannot_transition_from_superseded() {
-        assert!(Stage::Superseded("new".into()).can_transition_to(&Stage::Propose).is_err());
+        assert!(
+            Stage::Superseded("new".into())
+                .can_transition_to(&Stage::Propose)
+                .is_err()
+        );
     }
 
     #[test]

@@ -53,7 +53,17 @@ async fn index() -> Html<String> {
 }
 
 async fn api_dashboard(State(state): State<AppState>) -> Json<DashboardResponse> {
-    let board = kanban::generate_kanban(state.db.as_ref()).await;
+    let mut board = kanban::generate_kanban(state.db.as_ref()).await;
+
+    // Inject trust_tier from project state
+    let project_state = crate::core::project_state::ProjectState::load(std::path::Path::new("."))
+        .unwrap_or_default();
+    for col in &mut board.columns {
+        for card in &mut col.cards {
+            card.trust_tier = Some(project_state.doc_trust_tier(&card.id));
+        }
+    }
+
     Json(DashboardResponse {
         columns: board.columns,
         summary: board.summary,
@@ -122,7 +132,8 @@ async fn api_assay(
         gaps.push(format!("[{:?}] {}", d.severity, d.description));
     }
 
-    Json(serde_json::json!({
+    // Track trust: record pass or fail in project state
+    let result_json = serde_json::json!({
         "ok": true,
         "doc_id": req.doc_id,
         "overall": format!("{:?}", verification.overall).to_lowercase(),
@@ -130,7 +141,18 @@ async fn api_assay(
         "dao_trace": dao_trace,
         "gaps": gaps,
         "self_question": verification.overall != crate::mind::types::Verdict::Pass,
-    }))
+    });
+
+    if let Ok(mut ps) = crate::core::project_state::ProjectState::load(std::path::Path::new(".")) {
+        if verification.overall == crate::mind::types::Verdict::Pass {
+            ps.record_doc_pass(&req.doc_id);
+        } else {
+            ps.record_doc_fail(&req.doc_id);
+        }
+        let _ = ps.save(std::path::Path::new("."));
+    }
+
+    Json(result_json)
 }
 
 /// Advance document stage: 1/3 -> 2/3, or 2/3 -> 3/3
