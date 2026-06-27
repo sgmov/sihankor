@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::core::database::{DatabaseError, SihDatabase};
+use crate::core::validator::RULE_REGISTRY;
 
 /// 度量事件类型
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -277,9 +278,269 @@ pub async fn compute_latest_snapshot_diff(
     Ok(diff)
 }
 
+/// 规则审计指标（有度/G3：规则数分布与 Fatal 占比）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuleAuditMetric {
+    pub total_rules: usize,
+    pub rules_by_domain: Vec<(String, usize)>,
+    pub rules_by_severity: Vec<(String, usize)>,
+    pub fatal_ratio: f64,
+}
+
+/// 从 RULE_REGISTRY 聚合规则审计指标（纯函数，不查数据库）
+pub fn compute_rule_audit() -> RuleAuditMetric {
+    use std::collections::HashMap;
+
+    let total_rules = RULE_REGISTRY.len();
+
+    let mut domain_map: HashMap<String, usize> = HashMap::new();
+    let mut severity_map: HashMap<String, usize> = HashMap::new();
+    let mut fatal_count: usize = 0;
+
+    for entry in RULE_REGISTRY {
+        let domain = format!("{:?}", entry.domain);
+        *domain_map.entry(domain).or_insert(0) += 1;
+        *severity_map.entry(entry.severity.as_str().to_string()).or_insert(0) += 1;
+        if entry.severity == crate::core::models::ViolationSeverity::Fatal {
+            fatal_count += 1;
+        }
+    }
+
+    let mut rules_by_domain: Vec<(String, usize)> = domain_map.into_iter().collect();
+    rules_by_domain.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let mut rules_by_severity: Vec<(String, usize)> = severity_map.into_iter().collect();
+    let severity_order = |s: &str| match s {
+        "F" => 0,
+        "G" => 1,
+        "J" => 2,
+        _ => 3,
+    };
+    rules_by_severity.sort_by_key(|(s, _)| severity_order(s));
+
+    let fatal_ratio = if total_rules > 0 {
+        fatal_count as f64 / total_rules as f64
+    } else {
+        0.0
+    };
+
+    RuleAuditMetric {
+        total_rules,
+        rules_by_domain,
+        rules_by_severity,
+        fatal_ratio,
+    }
+}
+
+/// 规则密度指标（知止/G1：治理投入 vs 产出方差）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuleDensityMetric {
+    pub total_rules: usize,
+    pub total_docs: usize,
+    pub overall_density: f64,
+    pub density_by_nature: Vec<(String, f64)>,
+    pub variance_by_nature: Vec<(String, f64)>,
+    pub correlation_note: String,
+}
+
+/// 从规则注册表 + 文档分布 + 验证记录计算规则密度
+///
+/// 规则密度 = total_rules / total_docs。按 nature 分组的密度中，
+/// 所有 nature 共享同一规则池，密度差异仅反映文档分布。
+/// variance_by_nature 取自 ValidationCompleted 记录的 avg_fatal_by_nature。
+pub fn compute_rule_density(
+    validation_records: &[MetricRecord],
+    nature_counts: &[(String, usize)],
+) -> RuleDensityMetric {
+    let total_rules = RULE_REGISTRY.len();
+    let total_docs: usize = nature_counts.iter().map(|(_, c)| c).sum();
+
+    let overall_density = if total_docs > 0 {
+        total_rules as f64 / total_docs as f64
+    } else {
+        0.0
+    };
+
+    let mut density_by_nature: Vec<(String, f64)> = nature_counts
+        .iter()
+        .map(|(n, c)| {
+            let d = if *c > 0 {
+                total_rules as f64 / *c as f64
+            } else {
+                0.0
+            };
+            (n.clone(), d)
+        })
+        .collect();
+    density_by_nature.sort_by(|a, b| a.0.cmp(&b.0));
+
+    // 从 ValidationCompleted 提取 avg_fatal_by_nature
+    let variance = compute_variance_metric(validation_records);
+    let variance_by_nature = variance.avg_fatal_by_nature;
+
+    let correlation_note = format!(
+        "样本不足：当前仅有 {} 个 nature 类别，{} 条验证记录，不足以计算统计相关性。\
+         需积累更多数据后重新检验规则密度与产出方差的关系。",
+        nature_counts.len(),
+        validation_records.len()
+    );
+
+    RuleDensityMetric {
+        total_rules,
+        total_docs,
+        overall_density,
+        density_by_nature,
+        variance_by_nature,
+        correlation_note,
+    }
+}
+
+/// 权衡文档覆盖率指标（损补/G4：ADR 覆盖率）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TradeoffCoverageMetric {
+    pub total_decisions: usize,
+    pub adr_covered: usize,
+    pub adr_coverage_rate: f64,
+    pub rule_changes_note: String,
+}
+
+/// 扫描 decision 文档内容，检测 ADR 三段式覆盖率
+///
+/// 检测 `## 背景`、`## 决策`、`## 后果` 三个 Markdown 二级标题，
+/// 标题下方必须有非空内容（非仅空白行）。
+pub fn compute_tradeoff_coverage(docs: &[crate::core::models::Document]) -> TradeoffCoverageMetric {
+    let decisions: Vec<&crate::core::models::Document> = docs
+        .iter()
+        .filter(|d| d.nature == "decision")
+        .collect();
+
+    let total_decisions = decisions.len();
+
+    let adr_covered = decisions
+        .iter()
+        .filter(|d| has_adr_sections(&d.content))
+        .count();
+
+    let adr_coverage_rate = if total_decisions > 0 {
+        adr_covered as f64 / total_decisions as f64
+    } else {
+        0.0
+    };
+
+    let rule_changes_note = if total_decisions > 0 {
+        "规则增删比率需累积 ProjectSnapshot 历史数据，当前不可计算。\
+         建议持续调用 project_status 以积累快照数据。".to_string()
+    } else {
+        "当前无 decision 文档，不可计算 ADR 覆盖率。".to_string()
+    };
+
+    TradeoffCoverageMetric {
+        total_decisions,
+        adr_covered,
+        adr_coverage_rate,
+        rule_changes_note,
+    }
+}
+
+/// 检测文档内容是否包含 ADR 三段式结构
+fn has_adr_sections(content: &str) -> bool {
+    let has_background = has_non_empty_section(content, "## 背景");
+    let has_decision = has_non_empty_section(content, "## 决策");
+    let has_consequences = has_non_empty_section(content, "## 后果");
+    has_background && has_decision && has_consequences
+}
+
+/// 检测 Markdown 二级标题 `## {section_name}` 下方是否有非空内容
+fn has_non_empty_section(content: &str, section_name: &str) -> bool {
+    let mut found_heading = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if found_heading {
+            if trimmed.is_empty() {
+                continue;
+            }
+            if trimmed.starts_with("## ") || trimmed.starts_with("# ") {
+                return false;
+            }
+            return true;
+        }
+        if trimmed == section_name {
+            found_heading = true;
+        }
+    }
+    false
+}
+
+/// 趋势对齐指标（顺势/G5：审查频率-变更频率比值）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrendAlignmentMetric {
+    pub validation_count: usize,
+    pub index_count: usize,
+    pub review_change_ratio: f64,
+    pub window_start: String,
+    pub window_end: String,
+    pub interpretation_note: String,
+}
+
+/// 从 ValidationCompleted 和 IndexCompleted 记录计算审查/变更比值
+///
+/// review_change_ratio = validation_count / index_count。
+/// 接近 1 表示审查与变更同步，远小于 1 表示审查滞后于变更。
+/// 仅覆盖时势维度，地势与人势维度未操作化。
+pub fn compute_trend_alignment(
+    validation_records: &[MetricRecord],
+    index_records: &[MetricRecord],
+) -> TrendAlignmentMetric {
+    let validation_count = validation_records.len();
+    let index_count = index_records.len();
+
+    let review_change_ratio = if index_count > 0 {
+        validation_count as f64 / index_count as f64
+    } else {
+        0.0
+    };
+
+    let window_start = validation_records
+        .iter()
+        .chain(index_records.iter())
+        .map(|r| r.created_at.as_str())
+        .min()
+        .unwrap_or("")
+        .to_string();
+
+    let window_end = validation_records
+        .iter()
+        .chain(index_records.iter())
+        .map(|r| r.created_at.as_str())
+        .max()
+        .unwrap_or("")
+        .to_string();
+
+    let interpretation_note = format!(
+        "审查频率-变更频率比值为 {:.2}（{} 次审查 / {} 次变更）。\
+         比值接近 1 表示审查与变更同步，远小于 1 表示审查滞后。\
+         仅覆盖时势维度（项目阶段），地势（代码区域差异）和人势（认知源数量变化）维度未操作化。\
+         建议积累 >= 3 个月数据后计算滑动窗口比值。",
+        review_change_ratio, validation_count, index_count
+    );
+
+    TrendAlignmentMetric {
+        validation_count,
+        index_count,
+        review_change_ratio,
+        window_start,
+        window_end,
+        interpretation_note,
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::compute_rule_audit;
+    use super::compute_rule_density;
     use super::compute_snapshot_diff;
+    use super::compute_tradeoff_coverage;
+    use super::compute_trend_alignment;
     use super::compute_variance_metric;
     use super::MetricRecord;
     use crate::core::database::SihDatabase;
@@ -508,5 +769,121 @@ mod tests {
         assert_eq!(diff.docs_by_nature_delta.len(), 2);
         assert_eq!(diff.docs_by_nature_delta[0], ("decision".to_string(), 2));
         assert_eq!(diff.docs_by_nature_delta[1], ("spec".to_string(), 0));
+    }
+
+    #[test]
+    fn test_compute_rule_audit_basic() {
+        let audit = compute_rule_audit();
+        assert_eq!(audit.total_rules, 14);
+        assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Frontmatter"));
+        assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Structure"));
+        assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Reference"));
+        assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Governance"));
+        assert!(audit.rules_by_severity.iter().any(|(s, _)| s == "F"));
+        assert!(audit.rules_by_severity.iter().any(|(s, _)| s == "G"));
+        assert!(audit.rules_by_severity.iter().any(|(s, _)| s == "J"));
+        assert!(audit.fatal_ratio > 0.0 && audit.fatal_ratio < 1.0);
+    }
+
+    #[test]
+    fn test_compute_rule_audit_registry_consistency() {
+        let audit = compute_rule_audit();
+        assert_eq!(audit.total_rules, crate::core::validator::RULE_COUNT);
+    }
+
+    #[test]
+    fn test_compute_rule_density_empty() {
+        let records: Vec<MetricRecord> = Vec::new();
+        let nature_counts: Vec<(String, usize)> = Vec::new();
+        let m = compute_rule_density(&records, &nature_counts);
+        assert_eq!(m.total_rules, 14);
+        assert_eq!(m.total_docs, 0);
+        assert_eq!(m.overall_density, 0.0);
+        assert!(m.correlation_note.contains("样本不足"));
+    }
+
+    #[test]
+    fn test_compute_rule_density_basic() {
+        let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":2,"judgment_count":1,"passed":true}"#;
+        let records = vec![
+            MetricRecord {
+                id: 1, event_type: "ValidationCompleted".to_string(),
+                payload_json: vc.to_string(), created_at: "2024-01-01T00:00:00Z".to_string(),
+            },
+        ];
+        let nature_counts = vec![("spec".to_string(), 3usize), ("proposal".to_string(), 2usize)];
+        let m = compute_rule_density(&records, &nature_counts);
+        assert_eq!(m.total_rules, 14);
+        assert_eq!(m.total_docs, 5);
+        assert!((m.overall_density - 14.0 / 5.0).abs() < 1e-9);
+        assert_eq!(m.density_by_nature.len(), 2);
+        assert!((m.density_by_nature[0].1 - 14.0 / 2.0).abs() < 1e-9);
+        assert!((m.density_by_nature[1].1 - 14.0 / 3.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_compute_tradeoff_coverage_empty() {
+        let docs: Vec<crate::core::models::Document> = Vec::new();
+        let m = compute_tradeoff_coverage(&docs);
+        assert_eq!(m.total_decisions, 0);
+        assert_eq!(m.adr_covered, 0);
+        assert_eq!(m.adr_coverage_rate, 0.0);
+        assert!(m.rule_changes_note.contains("不可计算"));
+    }
+
+    #[test]
+    fn test_compute_tradeoff_coverage_basic() {
+        use crate::core::models::{DocStatus, Document, Frontmatter, Stage};
+        use chrono::Utc;
+        let doc_with_adr = Document {
+            id: "test-01".into(), stage: Stage::Resolve, title: "Test Decision".into(),
+            upstream: None,
+            frontmatter: Frontmatter { id: "test-01".into(), stage: Stage::Resolve, upstream: None, decided_by: Some("human".into()), extra: serde_json::Value::Null },
+            content: "## 背景\n\nSome background\n\n## 决策\n\nSome decision\n\n## 后果\n\nSome consequences".into(),
+            status: DocStatus::Ok, indexed_at: Utc::now(), nature: "decision".into(),
+        };
+        let doc_without_adr = Document {
+            id: "test-02".into(), stage: Stage::Propose, title: "Test Proposal".into(),
+            upstream: None,
+            frontmatter: Frontmatter { id: "test-02".into(), stage: Stage::Propose, upstream: None, decided_by: None, extra: serde_json::Value::Null },
+            content: "Just some content without ADR sections".into(),
+            status: DocStatus::Ok, indexed_at: Utc::now(), nature: "decision".into(),
+        };
+        let m = compute_tradeoff_coverage(&[doc_with_adr, doc_without_adr]);
+        assert_eq!(m.total_decisions, 2);
+        assert_eq!(m.adr_covered, 1);
+        assert!((m.adr_coverage_rate - 0.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_compute_trend_alignment_empty() {
+        let validations: Vec<MetricRecord> = Vec::new();
+        let indexes: Vec<MetricRecord> = Vec::new();
+        let m = compute_trend_alignment(&validations, &indexes);
+        assert_eq!(m.validation_count, 0);
+        assert_eq!(m.index_count, 0);
+        assert_eq!(m.review_change_ratio, 0.0);
+        assert!(m.interpretation_note.contains("仅覆盖时势维度"));
+    }
+
+    #[test]
+    fn test_compute_trend_alignment_basic() {
+        let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":0,"judgment_count":0,"passed":true}"#;
+        let ic = r#"{"doc_id":"d1","nature":"spec"}"#;
+        let validations = vec![
+            MetricRecord { id: 1, event_type: "ValidationCompleted".to_string(), payload_json: vc.to_string(), created_at: "2024-01-01T00:00:00Z".to_string() },
+            MetricRecord { id: 2, event_type: "ValidationCompleted".to_string(), payload_json: vc.to_string(), created_at: "2024-01-02T00:00:00Z".to_string() },
+        ];
+        let indexes = vec![
+            MetricRecord { id: 3, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-01T00:00:00Z".to_string() },
+            MetricRecord { id: 4, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-02T00:00:00Z".to_string() },
+            MetricRecord { id: 5, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-03T00:00:00Z".to_string() },
+        ];
+        let m = compute_trend_alignment(&validations, &indexes);
+        assert_eq!(m.validation_count, 2);
+        assert_eq!(m.index_count, 3);
+        assert!((m.review_change_ratio - 2.0 / 3.0).abs() < 1e-9);
+        assert_eq!(m.window_start, "2024-01-01T00:00:00Z");
+        assert_eq!(m.window_end, "2024-01-03T00:00:00Z");
     }
 }
