@@ -7,7 +7,10 @@ use crate::core::database::SihDatabase;
 use crate::core::glossary::Glossary;
 use crate::core::indexer;
 use crate::core::metrics::{
-    compute_latest_snapshot_diff, compute_variance_metric, MetricEvent, SnapshotDiff, VarianceMetric,
+    compute_latest_snapshot_diff, compute_rule_audit, compute_rule_density,
+    compute_tradeoff_coverage, compute_trend_alignment, compute_variance_metric, MetricEvent,
+    RuleAuditMetric, RuleDensityMetric, SnapshotDiff, TradeoffCoverageMetric, TrendAlignmentMetric,
+    VarianceMetric,
 };
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
@@ -60,7 +63,7 @@ const fn default_depth() -> u32 {
 
 /// Empty parameters for parameterless tools (schema: type=object, no required properties)
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
-struct EmptyParams {}
+pub struct EmptyParams {}
 
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
 pub struct AnalyzeDocumentRequest {
@@ -727,6 +730,62 @@ impl SihankorService {
             Some(d) => format_snapshot_diff(&d),
         }
     }
+
+    /// 规则审计：统计各治理域和严格度的规则分布
+    #[tool(
+        description = "[SiHankor] 规则审计：统计各治理域的规则数分布与 Fatal 级规则占比"
+    )]
+    pub fn rule_audit(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let audit = compute_rule_audit();
+        format_rule_audit(&audit)
+    }
+
+    /// 规则密度：统计各 nature 的治理投入密度
+    #[tool(
+        description = "[SiHankor] 规则密度：计算各文档类型的规则密度与治理投入分布"
+    )]
+    pub async fn rule_density(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let nature_counts = match self.db.count_by_nature().await {
+            Ok(c) => c,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let records = match self.db.query_metrics("ValidationCompleted", 100).await {
+            Ok(r) => r,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let density = compute_rule_density(&records, &nature_counts);
+        format_rule_density(&density)
+    }
+
+    /// 权衡文档覆盖率：统计 decision 文档的 ADR 三段式覆盖率
+    #[tool(
+        description = "[SiHankor] 权衡文档覆盖率：统计决策文档的 ADR 三段式（背景/决策/后果）记录率"
+    )]
+    pub async fn tradeoff_coverage(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let docs = match self.db.get_all_documents().await {
+            Ok(d) => d,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let coverage = compute_tradeoff_coverage(&docs);
+        format_tradeoff_coverage(&coverage)
+    }
+
+    /// 趋势对齐：计算审查频率-变更频率比值
+    #[tool(
+        description = "[SiHankor] 趋势对齐：计算审查频率与变更频率的比值，评估治理力度适配度"
+    )]
+    pub async fn trend_alignment(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let validations = match self.db.query_metrics("ValidationCompleted", 100).await {
+            Ok(r) => r,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let indexes = match self.db.query_metrics("IndexCompleted", 100).await {
+            Ok(r) => r,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let trend = compute_trend_alignment(&validations, &indexes);
+        format_trend_alignment(&trend)
+    }
 }
 
 fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
@@ -857,6 +916,125 @@ fn format_snapshot_diff(d: &SnapshotDiff) -> String {
         docs_by_nature_delta,
         d.rules_grew,
         d.docs_grew,
+    )
+}
+
+fn format_rule_audit(audit: &RuleAuditMetric) -> String {
+    let domain_lines = audit
+        .rules_by_domain
+        .iter()
+        .map(|(d, c)| format!("  {}: {} 条", d, c))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let severity_lines = audit
+        .rules_by_severity
+        .iter()
+        .map(|(s, c)| format!("  {} 级: {} 条", s, c))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let fatal_count_approx = (audit.fatal_ratio * audit.total_rules as f64) as usize;
+
+    format!(
+        "SiHankor Rule Audit\n\
+         ===================\n\
+         总规则数: {}\n\
+         \n\
+         按治理域分布:\n\
+         {}\n\
+         \n\
+         按严格度分布:\n\
+         {}\n\
+         \n\
+         Fatal 级规则占比: {:.1}% ({}/{})",
+        audit.total_rules,
+        domain_lines,
+        severity_lines,
+        audit.fatal_ratio * 100.0,
+        fatal_count_approx,
+        audit.total_rules
+    )
+}
+
+fn format_rule_density(density: &RuleDensityMetric) -> String {
+    let nature_lines = if density.density_by_nature.is_empty() {
+        "  (无文档)".to_string()
+    } else {
+        density
+            .density_by_nature
+            .iter()
+            .map(|(n, d)| format!("  {}: {:.2} ({} 条规则 / 该类型文档)", n, d, density.total_rules))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    let variance_lines = if density.variance_by_nature.is_empty() {
+        "  (无验证记录)".to_string()
+    } else {
+        density
+            .variance_by_nature
+            .iter()
+            .map(|(n, v)| format!("  {}: 平均 Fatal {:.2}", n, v))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    format!(
+        "SiHankor Rule Density (知止/G1)\n\
+         ================================\n\
+         总规则数: {}\n\
+         总文档数: {}\n\
+         整体规则密度: {:.2}\n\
+         \n\
+         按文档类型密度:\n\
+         {}\n\
+         \n\
+         按文档类型产出方差（avg_fatal）:\n\
+         {}\n\
+         \n\
+         相关性说明: {}",
+        density.total_rules,
+        density.total_docs,
+        density.overall_density,
+        nature_lines,
+        variance_lines,
+        density.correlation_note
+    )
+}
+
+fn format_tradeoff_coverage(coverage: &TradeoffCoverageMetric) -> String {
+    format!(
+        "SiHankor Tradeoff Coverage (损补/G4)\n\
+         ====================================\n\
+         Decision 文档总数: {}\n\
+         ADR 三段式覆盖数: {}\n\
+         ADR 覆盖率: {:.1}%\n\
+         \n\
+         规则增删说明: {}",
+        coverage.total_decisions,
+        coverage.adr_covered,
+        coverage.adr_coverage_rate * 100.0,
+        coverage.rule_changes_note
+    )
+}
+
+fn format_trend_alignment(trend: &TrendAlignmentMetric) -> String {
+    format!(
+        "SiHankor Trend Alignment (顺势/G5)\n\
+         ===================================\n\
+         窗口: {} -> {}\n\
+         审查次数（ValidationCompleted）: {}\n\
+         变更次数（IndexCompleted）: {}\n\
+         审查/变更比值: {:.2}\n\
+         \n\
+         解释说明: {}",
+        trend.window_start,
+        trend.window_end,
+        trend.validation_count,
+        trend.index_count,
+        trend.review_change_ratio,
+        trend.interpretation_note
     )
 }
 
@@ -1216,11 +1394,32 @@ impl ServerHandler for SihankorService {
 mod tests {
     use super::*;
     use crate::core::database::SqliteBackend;
+    use crate::core::models::{DocStatus, Document, Frontmatter, Stage};
     use std::sync::Arc;
 
     fn make_service() -> SihankorService {
         let db = SqliteBackend::open_in_memory().unwrap();
         SihankorService::new(Arc::new(db))
+    }
+
+    fn make_test_doc(id: &str, nature: &str, stage: &str) -> Document {
+        Document {
+            id: id.to_string(),
+            stage: Stage::from_str(stage).unwrap(),
+            title: "Test Doc".to_string(),
+            upstream: None,
+            frontmatter: Frontmatter {
+                id: id.to_string(),
+                stage: Stage::from_str(stage).unwrap(),
+                upstream: None,
+                decided_by: None,
+                extra: serde_json::Value::Null,
+            },
+            content: "test content".to_string(),
+            status: DocStatus::Ok,
+            indexed_at: chrono::Utc::now(),
+            nature: nature.to_string(),
+        }
     }
 
     #[tokio::test]
@@ -1379,5 +1578,84 @@ mod tests {
         assert!(result.contains("产出方差直接度量"), "result was: {}", result);
         assert!(result.contains("spec: 100.00%"), "result was: {}", result);
         assert!(result.contains("proposal: 0.00%"), "result was: {}", result);
+    }
+
+    /// Verify rule_audit tool returns valid data
+    #[test]
+    fn test_rule_audit_tool() {
+        let svc = make_service();
+        let result = svc.rule_audit(Parameters(EmptyParams {}));
+        assert!(result.contains("SiHankor Rule Audit"));
+        assert!(result.contains("总规则数"));
+        assert!(result.contains("Frontmatter"));
+        assert!(result.contains("Structure"));
+        assert!(result.contains("Fatal 级规则占比"));
+    }
+
+    /// Verify rule_density tool returns valid data (empty db)
+    #[tokio::test]
+    async fn test_rule_density_tool_empty() {
+        let svc = make_service();
+        let result = svc.rule_density(Parameters(EmptyParams {})).await;
+        assert!(result.contains("SiHankor Rule Density"));
+        assert!(result.contains("样本不足"));
+    }
+
+    /// Verify rule_density tool with seeded data
+    #[tokio::test]
+    async fn test_rule_density_tool_with_data() {
+        let svc = make_service();
+
+        let vc = serde_json::json!({
+            "doc_id": "d1", "nature": "spec", "stage": "1/3",
+            "fatal_count": 0, "guideline_count": 2,
+            "judgment_count": 1, "passed": true
+        });
+        svc.db
+            .record_metric("ValidationCompleted", &vc.to_string())
+            .await
+            .unwrap();
+        svc.db
+            .upsert_document(make_test_doc("d1", "spec", "1/3"))
+            .await
+            .unwrap();
+
+        let result = svc.rule_density(Parameters(EmptyParams {})).await;
+        assert!(result.contains("SiHankor Rule Density"));
+        assert!(result.contains("总规则数"));
+    }
+
+    /// Verify tradeoff_coverage tool returns valid data (empty db)
+    #[tokio::test]
+    async fn test_tradeoff_coverage_tool_empty() {
+        let svc = make_service();
+        let result = svc.tradeoff_coverage(Parameters(EmptyParams {})).await;
+        assert!(result.contains("SiHankor Tradeoff Coverage"));
+        assert!(result.contains("无 decision 文档"));
+    }
+
+    /// Verify trend_alignment tool returns valid data (empty db)
+    #[tokio::test]
+    async fn test_trend_alignment_tool_empty() {
+        let svc = make_service();
+        let result = svc.trend_alignment(Parameters(EmptyParams {})).await;
+        assert!(result.contains("SiHankor Trend Alignment"));
+        assert!(result.contains("仅覆盖时势维度"));
+    }
+
+    /// Verify trend_alignment tool with seeded data
+    #[tokio::test]
+    async fn test_trend_alignment_tool_with_data() {
+        let svc = make_service();
+
+        let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":0,"judgment_count":0,"passed":true}"#;
+        let ic = r#"{"doc_id":"d1","nature":"spec"}"#;
+        svc.db.record_metric("ValidationCompleted", vc).await.unwrap();
+        svc.db.record_metric("IndexCompleted", ic).await.unwrap();
+
+        let result = svc.trend_alignment(Parameters(EmptyParams {})).await;
+        assert!(result.contains("SiHankor Trend Alignment"));
+        assert!(result.contains("审查次数"));
+        assert!(result.contains("变更次数"));
     }
 }
