@@ -293,11 +293,6 @@ function showDetail(card){
     html+='<div class="row"><span class="label">Stage</span><span class="val">'+(card.stage||'-')+'</span></div>';
     html+='<div class="row"><span class="label">Nature</span><span class="val">'+(card.nature||card.entity_type||'-')+'</span></div>';
     html+='<div class="row"><span class="label">Status</span><span class="val">'+(card.status||'-')+'</span></div>';
-    if(card.trust_tier!==undefined&&card.trust_tier!==null){
-        const trustLabels={0:'未受信任',1:'已验证',2:'可信'};
-        const trustColors={0:'#e94560',1:'#f0a500',2:'#4fc3f7'};
-        html+='<div class="row"><span class="label">信任</span><span class="val" style="color:'+trustColors[card.trust_tier]+'">'+trustLabels[card.trust_tier]+' ('+card.trust_tier+'/2)</span></div>';
-    }
     if(card.summary){
         html+='<div class="section"><h4>摘要</h4><div class="text">'+card.summary+'</div></div>';
     }

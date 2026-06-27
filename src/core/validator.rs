@@ -170,8 +170,6 @@ pub struct ValidationConfig {
     pub reference: bool,
     pub lifecycle: bool,
     pub governance: bool,
-    /// Trust tier (0-2): trusted docs (tier 2) skip G-level guidelines
-    pub trust_tier: u8,
 }
 
 impl Default for ValidationConfig {
@@ -183,7 +181,6 @@ impl Default for ValidationConfig {
             reference: true,
             lifecycle: true,
             governance: true,
-            trust_tier: 0,
         }
     }
 }
@@ -212,20 +209,6 @@ pub fn validate_document(
         result.merge(validate_governance(doc, file_path));
     }
     // reference 域需要数据库查询，在索引阶段单独执行
-
-    // Wu-wei: trusted documents skip Guideline-level violations
-    if config.trust_tier >= 2 {
-        result
-            .violations
-            .retain(|v| v.severity != ViolationSeverity::Guideline);
-    } else if config.trust_tier >= 1 {
-        // Verified documents reduce Guideline to Judgment level
-        for v in &mut result.violations {
-            if v.severity == ViolationSeverity::Guideline {
-                v.severity = ViolationSeverity::Judgment;
-            }
-        }
-    }
 
     result
 }

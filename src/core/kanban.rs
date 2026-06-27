@@ -75,10 +75,6 @@ pub struct KanbanCard {
     /// 依赖卡片 ID
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<String>,
-    /// Trust tier from project state (0=untrusted, 1=verified, 2=trusted)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub trust_tier: Option<u8>,
 }
 
 /// 看板摘要统计
@@ -264,7 +260,6 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
             summary,
             blockers,
             depends_on,
-            trust_tier: None,
         };
 
         if doc.stage.as_str() == "3/3" {
@@ -372,7 +367,6 @@ fn get_code_tasks() -> Vec<KanbanCard> {
             nature: None,
             summary: "当前 CI 只有 cargo test + clippy + fmt，缺乏 release build 验证。完成后可确保每次 push 不破坏编译，解除 crates.io 发布阻塞。".to_string(),
             blockers: Vec::new(),
-            trust_tier: None,
             depends_on: Vec::new(),
         },
         KanbanCard {
@@ -383,7 +377,6 @@ fn get_code_tasks() -> Vec<KanbanCard> {
             status: "pending".to_string(),
             nature: None,
             summary: ".sih/semantic.yml 是代码到规约的可追溯映射表（703 bytes 占位）。填充后，engine 可以自动验证 '代码是否忠实实现了规约'。当前可手动建立基础映射，Mind 成熟后自动化。".to_string(),
-            trust_tier: None,
             blockers: vec!["待 Mind 成熟后自动化，当前可手动建立基础映射".to_string()],
             depends_on: Vec::new(),
         },
@@ -394,7 +387,6 @@ fn get_code_tasks() -> Vec<KanbanCard> {
             stage: "pending".to_string(),
             status: "pending".to_string(),
             nature: None,
-            trust_tier: None,
             summary: "将 sihankor crate 发布到 crates.io，使外部项目可通过 Cargo 依赖司衡引擎。需 CI/CD 增强完成后才能安全发布（确保 release build 不破损）。".to_string(),
             blockers: vec!["CI/CD 增强完成后才能安全发布".to_string()],
             depends_on: vec!["ci-cd-enhance".to_string()],
@@ -409,7 +401,6 @@ fn get_code_tasks() -> Vec<KanbanCard> {
             summary: "将《司衡鉴论》的代码审查标准实现为自动化 lint 工具。对应 proposal 260616-2100（stage 2/3），需先完成 decision 定稿（3/3）后才能开工。".to_string(),
             blockers: vec!["proposal 260616-2100 需从 2/3 推进至 decision 3/3".to_string()],
             depends_on: vec!["260616-2100-code-lint-proposal".to_string()],
-            trust_tier: None,
         },
     ]
 }

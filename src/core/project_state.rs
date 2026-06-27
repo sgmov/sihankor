@@ -17,52 +17,7 @@ pub struct ProjectState {
     pub active_proposal: Option<String>,
     pub last_action: String,
     pub pending_checkpoints: Vec<Checkpoint>,
-    /// Per-document validation pass history for trust tracking
-    pub doc_history: Vec<DocValidationRecord>,
     pub last_updated: DateTime<Utc>,
-}
-
-/// Tracks how many times a document has passed validation without errors
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DocValidationRecord {
-    pub doc_id: String,
-    /// Consecutive validation passes (0 errors, 0 fatal)
-    pub consecutive_passes: u32,
-    /// Current trust tier: 0=untrusted, 1=verified, 2=trusted
-    pub trust_tier: u8,
-    pub last_validated: DateTime<Utc>,
-}
-
-impl DocValidationRecord {
-    pub fn new(doc_id: &str) -> Self {
-        Self {
-            doc_id: doc_id.to_string(),
-            consecutive_passes: 0,
-            trust_tier: 0,
-            last_validated: Utc::now(),
-        }
-    }
-
-    /// Record a pass - no errors/warnings at F/J level
-    pub fn record_pass(&mut self) {
-        self.consecutive_passes += 1;
-        self.last_validated = Utc::now();
-        // 3 consecutive passes → verified, 10 → trusted
-        self.trust_tier = if self.consecutive_passes >= 10 {
-            2
-        } else if self.consecutive_passes >= 3 {
-            1
-        } else {
-            0
-        };
-    }
-
-    /// Record a failure - resets trust
-    pub fn record_fail(&mut self) {
-        self.consecutive_passes = 0;
-        self.trust_tier = 0;
-        self.last_validated = Utc::now();
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,7 +35,6 @@ impl ProjectState {
             active_proposal: None,
             last_action: "project initialized".into(),
             pending_checkpoints: Vec::new(),
-            doc_history: Vec::new(),
             last_updated: Utc::now(),
         }
     }
@@ -138,36 +92,6 @@ impl ProjectState {
     pub fn advance_stage(&mut self, new_stage: &str) {
         self.current_stage = new_stage.into();
         self.last_action = format!("advanced to stage {}", new_stage);
-    }
-
-    /// 获取或创建文档的验证记录
-    pub fn get_or_create_doc_record(&mut self, doc_id: &str) -> &mut DocValidationRecord {
-        if !self.doc_history.iter().any(|r| r.doc_id == doc_id) {
-            self.doc_history.push(DocValidationRecord::new(doc_id));
-        }
-        self.doc_history
-            .iter_mut()
-            .find(|r| r.doc_id == doc_id)
-            .unwrap()
-    }
-
-    /// 记录文档验证通过（无 F/J 级违规）
-    pub fn record_doc_pass(&mut self, doc_id: &str) {
-        self.get_or_create_doc_record(doc_id).record_pass();
-    }
-
-    /// 记录文档验证失败（存在 F 或 J 级违规）
-    pub fn record_doc_fail(&mut self, doc_id: &str) {
-        self.get_or_create_doc_record(doc_id).record_fail();
-    }
-
-    /// 查询文档的信任层级
-    pub fn doc_trust_tier(&self, doc_id: &str) -> u8 {
-        self.doc_history
-            .iter()
-            .find(|r| r.doc_id == doc_id)
-            .map(|r| r.trust_tier)
-            .unwrap_or(0)
     }
 }
 
