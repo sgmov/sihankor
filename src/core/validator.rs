@@ -239,7 +239,7 @@ fn validate_frontmatter(
         result.violations.push(Violation {
             rule_id: "F-03".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: format!("invalid stage: {}", doc.stage.0),
+            message: format!("invalid stage: {}", doc.stage),
             location: "frontmatter.stage".to_string(),
             fix_suggestion: Some(
                 "Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string(),
@@ -428,7 +428,7 @@ fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
     // 这里检查：当前文档如果是 1/3，提醒它不应被其他文档引用
 
     // G-08: X 文档禁止引用
-    if doc.stage.0 == "X" {
+    if doc.stage.as_str() == "X" {
         result.violations.push(Violation {
             rule_id: "G-08".to_string(),
             severity: ViolationSeverity::Guideline,
@@ -452,7 +452,7 @@ fn validate_governance(
     let mut result = ValidationResult::new();
 
     // G-09: 2/3 和 3/3 的 decisions/ 文档应有 decided-by
-    if doc.stage.0 == "2/3" || doc.stage.0 == "3/3" {
+    if doc.stage.as_str() == "2/3" || doc.stage.as_str() == "3/3" {
         let is_decision = file_path
             .and_then(|p| infer_nature(p))
             .map(|n| n == "decision")
@@ -463,7 +463,7 @@ fn validate_governance(
                 severity: ViolationSeverity::Guideline,
                 message: format!(
                     "decision document '{}' at stage {} should have decided-by field",
-                    doc.id, doc.stage.0
+                    doc.id, doc.stage
                 ),
                 location: "frontmatter.decided-by".to_string(),
                 fix_suggestion: Some(
@@ -651,12 +651,12 @@ mod tests {
     ) -> super::super::models::Document {
         super::super::models::Document {
             id: id.to_string(),
-            stage: Stage(stage.to_string()),
+            stage: Stage::from_str(stage).unwrap_or(Stage::Deprecated),
             title: "Test Document".to_string(),
             upstream: upstream.map(|s| s.to_string()),
             frontmatter: Frontmatter {
                 id: id.to_string(),
-                stage: Stage(stage.to_string()),
+                stage: Stage::from_str(stage).unwrap_or(Stage::Deprecated),
                 upstream: upstream.map(|s| s.to_string()),
                 decided_by: None,
                 extra: serde_json::Value::Null,

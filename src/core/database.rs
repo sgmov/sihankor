@@ -99,7 +99,7 @@ impl SihDatabase for SqliteBackend {
     async fn upsert_document(&self, doc: Document) -> Result<(), DatabaseError> {
         let frontmatter_json = serde_json::to_string(&doc.frontmatter)?;
         let indexed_at = doc.indexed_at.to_rfc3339();
-        let stage = &doc.stage.0;
+        let stage = doc.stage.to_display();
         let status = doc.status.as_str();
 
         let conn = self
@@ -186,7 +186,7 @@ impl SihDatabase for SqliteBackend {
                 let snippet = extract_snippet(&content, query, 80);
                 SearchResult {
                     id,
-                    stage: Stage(stage_str),
+                    stage: Stage::from_str(&stage_str).unwrap_or(Stage::Deprecated),
                     title,
                     snippet,
                     relevance: 1.0,
@@ -228,7 +228,7 @@ impl SihDatabase for SqliteBackend {
                 let d: u32 = row.get(4)?;
                 Ok(ChainNode {
                     id,
-                    stage: Stage(stage_str),
+                    stage: Stage::from_str(&stage_str).unwrap_or(Stage::Deprecated),
                     title,
                     upstream,
                     depth: d,
@@ -358,7 +358,7 @@ fn row_to_document(row: &rusqlite::Row<'_>) -> Result<Document, DatabaseError> {
 
     Ok(Document {
         id,
-        stage: Stage(stage_str),
+        stage: Stage::from_str(&stage_str).unwrap_or(Stage::Deprecated),
         title,
         upstream,
         frontmatter,

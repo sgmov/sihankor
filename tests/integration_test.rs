@@ -84,7 +84,7 @@ fn test_parse_philosophy_docs() {
             match parser::parse_file(&path) {
                 Ok(doc) => {
                     parsed += 1;
-                    println!("Parsed: {} ({}) - {}", doc.id, doc.stage.0, doc.title);
+                    println!("Parsed: {} ({}) - {}", doc.id, doc.stage, doc.title);
                 }
                 Err(e) => {
                     errors.push((path.to_string_lossy().to_string(), e.to_string()));
@@ -229,7 +229,7 @@ async fn test_mind_full_flow() {
             id: full_doc.id.clone(),
             title: full_doc.title.clone(),
             nature: full_doc.nature.clone(),
-            stage: full_doc.stage.0.clone(),
+            stage: full_doc.stage.to_display(),
         },
         cognition: cognition.clone(),
         decision_proposal: Some(proposal),

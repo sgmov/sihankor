@@ -173,12 +173,12 @@ fn fuzz_validate_content() -> FuzzResult {
         let input_clone = input.clone();
         let doc = Document {
             id: "260618-0000-test".to_string(),
-            stage: Stage("1/3".to_string()),
+            stage: Stage::from_str("1/3").unwrap_or(Stage::Deprecated),
             title: "Test".to_string(),
             upstream: None,
             frontmatter: Frontmatter {
                 id: "260618-0000-test".to_string(),
-                stage: Stage("1/3".to_string()),
+                stage: Stage::from_str("1/3").unwrap_or(Stage::Deprecated),
                 upstream: None,
                 decided_by: None,
                 extra: serde_json::Value::Null,

@@ -94,10 +94,10 @@ fn parse_frontmatter(yaml_str: &str) -> Result<Frontmatter, ParseError> {
         .and_then(|v| v.as_str())
         .ok_or_else(|| ParseError::MissingField("stage".to_string()))?;
 
-    let stage = Stage(stage_str.to_string());
-    if !stage.is_valid() {
-        return Err(ParseError::InvalidStage(stage_str.to_string()));
-    }
+    let stage = match Stage::from_str(stage_str) {
+        Some(s) => s,
+        None => return Err(ParseError::InvalidStage(stage_str.to_string())),
+    };
 
     let upstream = raw_value
         .get("upstream")
@@ -163,7 +163,7 @@ This is the body.
 "#;
         let doc = parse_content(content).unwrap();
         assert_eq!(doc.id, "260613-1800-test-doc");
-        assert_eq!(doc.stage.0, "1/3");
+        assert_eq!(doc.stage.to_display(), "1/3");
         assert_eq!(doc.upstream, Some("240602-0900-on-sihankor".to_string()));
         assert_eq!(doc.title, "Test Document");
         assert!(doc.content.contains("This is the body."));

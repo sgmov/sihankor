@@ -208,7 +208,7 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
     let all_docs = db.get_all_documents().await.unwrap_or_default();
 
     for doc in &all_docs {
-        let phase = classify_document(&doc.nature, &doc.stage.0, &doc.status);
+        let phase = classify_document(&doc.nature, doc.stage.as_str(), &doc.status);
         if phase == "archive" {
             continue; // 终止态文档不进入看板
         }
@@ -232,13 +232,13 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
         }
 
         // 2/3 文档没有 upstream 视为阻塞
-        if doc.stage.0 == "2/3" && doc.upstream.is_none() {
+        if doc.stage.as_str() == "2/3" && doc.upstream.is_none() {
             blockers.push("stage 2/3 but no upstream defined: governance chain broken".to_string());
             blocked += 1;
         }
 
         let role = nature_to_role(&doc.nature);
-        let stage_desc = stage_to_description(&doc.stage.0, &doc.nature);
+        let stage_desc = stage_to_description(doc.stage.as_str(), &doc.nature);
         let status_note = match doc.status {
             DocStatus::Ok => String::new(),
             DocStatus::Warning => "（有格式建议，不影响功能）".to_string(),
@@ -247,14 +247,14 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
 
         let summary = format!(
             "{}：{} | stage {}{}",
-            role, stage_desc, doc.stage.0, status_note
+            role, stage_desc, doc.stage, status_note
         );
 
         let card = KanbanCard {
             id: doc.id.clone(),
             title: doc.title.clone(),
             entity_type: "document".to_string(),
-            stage: doc.stage.0.clone(),
+            stage: doc.stage.to_display(),
             status: doc.status.as_str().to_string(),
             nature: Some(doc.nature.clone()),
             summary,
@@ -262,7 +262,7 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
             depends_on,
         };
 
-        if doc.stage.0 == "3/3" {
+        if doc.stage.as_str() == "3/3" {
             done_count += 1;
         }
 

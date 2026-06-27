@@ -145,7 +145,7 @@ impl SihankorService {
                 } else {
                     results
                         .iter()
-                        .map(|r| format!("[{}] {} ({}) - {}", r.id, r.title, r.stage.0, r.snippet))
+                        .map(|r| format!("[{}] {} ({}) - {}", r.id, r.title, r.stage, r.snippet))
                         .collect::<Vec<_>>()
                         .join("\n")
                 }
@@ -167,7 +167,7 @@ impl SihankorService {
                 format!(
                     "ID: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
                     doc.id,
-                    doc.stage.0,
+                    doc.stage,
                     doc.title,
                     doc.upstream.as_deref().unwrap_or("none"),
                     doc.status,
@@ -202,7 +202,7 @@ impl SihankorService {
                                 "  ".repeat(n.depth as usize),
                                 n.depth,
                                 n.title,
-                                n.stage.0,
+                                n.stage,
                                 n.upstream.as_deref().unwrap_or("ROOT"),
                             )
                         })
@@ -251,7 +251,7 @@ impl SihankorService {
         } else {
             error_docs
                 .iter()
-                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage.0))
+                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage))
                 .collect::<Vec<_>>()
                 .join("\n")
         };
@@ -261,7 +261,7 @@ impl SihankorService {
         } else {
             warning_docs
                 .iter()
-                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage.0))
+                .map(|d| format!("  [{}] {} ({})", d.id, d.title, d.stage))
                 .collect::<Vec<_>>()
                 .join("\n")
         };
@@ -557,7 +557,7 @@ impl SihankorService {
                 id: doc.id.clone(),
                 title: doc.title.clone(),
                 nature: doc.nature.clone(),
-                stage: doc.stage.0.clone(),
+                stage: doc.stage.to_display(),
             },
             cognition,
             decision_proposal: Some(proposal),
@@ -803,7 +803,7 @@ async fn build_generation_plan(
                 id: up_doc.id.clone(),
                 title: up_doc.title.clone(),
                 nature: up_doc.nature.clone(),
-                stage: up_doc.stage.0.clone(),
+                stage: up_doc.stage.to_display(),
                 role_in_chain: format!("{:?}", cognition.governance_position.role_in_chain)
                     .to_lowercase(),
             });

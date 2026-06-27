@@ -57,7 +57,7 @@ impl ICL {
 
         GovPosition {
             nature: doc.nature.clone(),
-            stage: doc.stage.0.clone(),
+            stage: doc.stage.to_display(),
             upstream_chain,
             role_in_chain,
         }
@@ -167,10 +167,10 @@ impl ICL {
         {
             conflicts.push(ConflictInfo {
                 doc_id: upstream.clone(),
-                claim: format!("stage {} 是有效的引用来源", up_doc.stage.0),
+                claim: format!("stage {} 是有效的引用来源", up_doc.stage),
                 counter_claim: format!(
                     "stage {} 不在可引用范围内（需 2/3 或 3/3）",
-                    up_doc.stage.0
+                    up_doc.stage
                 ),
             });
         }

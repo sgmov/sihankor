@@ -154,7 +154,7 @@ async fn api_stage(
         }
     };
 
-    let next_stage = match doc.stage.0.as_str() {
+    let next_stage = match doc.stage.as_str() {
         "1/3" => "2/3",
         "2/3" => "3/3",
         _ => {
@@ -166,7 +166,7 @@ async fn api_stage(
     };
 
     let mut updated = doc.clone();
-    updated.stage = Stage(next_stage.into());
+    updated.stage = Stage::from_str(next_stage).unwrap_or(Stage::Deprecated);
 
     match state.db.upsert_document(updated.clone()).await {
         Ok(_) => Json(ActionResult {
@@ -280,7 +280,7 @@ async fn api_push_correction(
         },
         crate::mind::grilling::Answer {
             question_id: "you-du".into(),
-            content: doc.stage.0.clone(),
+            content: doc.stage.to_display(),
         },
         crate::mind::grilling::Answer {
             question_id: "zhi-zhi".into(),
