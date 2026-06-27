@@ -2,38 +2,85 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// 文档生命周期阶段
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Stage(pub String);
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum Stage {
+    /// 1/3 — 提议阶段
+    Propose,
+    /// 2/3 — 决议阶段
+    Resolve,
+    /// 3/3 — 定稿阶段
+    Ratify,
+    /// X — 废弃
+    Deprecated,
+    /// 0/<successor-id> — 已被替代
+    Superseded(String),
+}
 
 impl Stage {
-    pub fn propose() -> Self {
-        Stage("1/3".to_string())
-    }
-    pub fn resolve() -> Self {
-        Stage("2/3".to_string())
-    }
-    pub fn ratify() -> Self {
-        Stage("3/3".to_string())
-    }
-    pub fn deprecated() -> Self {
-        Stage("X".to_string())
+    pub fn propose() -> Self { Stage::Propose }
+    pub fn resolve() -> Self { Stage::Resolve }
+    pub fn ratify() -> Self { Stage::Ratify }
+    pub fn deprecated() -> Self { Stage::Deprecated }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Stage::Propose => "1/3",
+            Stage::Resolve => "2/3",
+            Stage::Ratify => "3/3",
+            Stage::Deprecated => "X",
+            Stage::Superseded(_) => "0/",
+        }
     }
 
-    /// 是否为有效阶段编码
-    pub fn is_valid(&self) -> bool {
-        let s = &self.0;
-        s == "1/3" || s == "2/3" || s == "3/3" || s == "X" || s.starts_with("0/")
+    pub fn to_display(&self) -> String {
+        match self {
+            Stage::Propose => "1/3".into(),
+            Stage::Resolve => "2/3".into(),
+            Stage::Ratify => "3/3".into(),
+            Stage::Deprecated => "X".into(),
+            Stage::Superseded(id) => format!("0/{}", id),
+        }
     }
 
-    /// 阶段是否可被引用（1/3 不可引用，X 禁止引用）
+    pub fn is_valid(&self) -> bool { true }
+
     pub fn is_referenceable(&self) -> bool {
-        let s = &self.0;
-        s == "2/3" || s == "3/3"
+        matches!(self, Stage::Resolve | Stage::Ratify)
     }
 
-    /// 是否为终止状态
     pub fn is_terminal(&self) -> bool {
-        self.0 == "X" || self.0.starts_with("0/")
+        matches!(self, Stage::Deprecated | Stage::Superseded(_))
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "1/3" => Some(Stage::Propose),
+            "2/3" => Some(Stage::Resolve),
+            "3/3" => Some(Stage::Ratify),
+            "X" => Some(Stage::Deprecated),
+            s if s.starts_with("0/") => Some(Stage::Superseded(s[2..].to_string())),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Stage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_display())
+    }
+}
+
+impl Serialize for Stage {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&self.to_display())
+    }
+}
+
+impl<'de> Deserialize<'de> for Stage {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(d)?;
+        Stage::from_str(&s).ok_or_else(|| serde::de::Error::custom(format!("invalid stage: {}", s)))
     }
 }
 
