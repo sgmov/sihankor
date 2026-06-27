@@ -6,6 +6,7 @@ use rmcp::{ServerHandler, handler::server::wrapper::Parameters, schemars, tool, 
 use crate::core::database::SihDatabase;
 use crate::core::glossary::Glossary;
 use crate::core::indexer;
+use crate::core::metrics::MetricEvent;
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
@@ -265,6 +266,18 @@ impl SihankorService {
                 .collect::<Vec<_>>()
                 .join("\n")
         };
+
+        // ProjectSnapshot 采集：记录到 metrics 表，失败不阻断概览生成
+        let snapshot = MetricEvent::ProjectSnapshot {
+            total_docs: total,
+            total_rules: 14,
+            docs_by_stage: by_stage.clone(),
+            docs_by_nature: by_nature.clone(),
+            fatal_violations_total: 0,
+        };
+        if let Ok(payload) = serde_json::to_string(&snapshot) {
+            let _ = self.db.record_metric("ProjectSnapshot", &payload).await;
+        }
 
         format!(
             "SiHankor Project Status\n\
