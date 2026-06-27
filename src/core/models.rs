@@ -43,7 +43,47 @@ impl Stage {
         }
     }
 
+    /// 检查 stage 是否为合法状态。
+    ///
+    /// 恒返回 true。Stage 枚举的 5 种状态（Propose/Resolve/Ratify/Deprecated/Superseded）
+    /// 都是合法状态，"不合法"的情况（如非法字符串 "4/3"）已在 `from_str` 中通过
+    /// 返回 None 处理，无法构造出非法的 Stage 枚举值。
     pub fn is_valid(&self) -> bool { true }
+
+    /// 检查从当前 stage 是否可以转换到目标 stage。
+    ///
+    /// 返回 Ok(()) 表示允许，Err 描述不允许的原因。
+    /// 此方法仅提供查询能力，供未来治理工具使用，当前不实现强制转换检查。
+    pub fn can_transition_to(&self, target: &Stage) -> Result<(), String> {
+        match (self, target) {
+            // 相同 stage 无需转换
+            (Stage::Propose, Stage::Propose)
+            | (Stage::Resolve, Stage::Resolve)
+            | (Stage::Ratify, Stage::Ratify)
+            | (Stage::Deprecated, Stage::Deprecated)
+            | (Stage::Superseded(_), Stage::Superseded(_)) => Err("same stage".into()),
+            // Propose -> Resolve: 允许
+            (Stage::Propose, Stage::Resolve) => Ok(()),
+            // Resolve -> Ratify: 允许
+            (Stage::Resolve, Stage::Ratify) => Ok(()),
+            // Propose -> Ratify: 允许（跳过 Resolve）
+            (Stage::Propose, Stage::Ratify) => Ok(()),
+            // Resolve -> Propose: 允许（Reopen）
+            (Stage::Resolve, Stage::Propose) => Ok(()),
+            // Ratify -> Resolve: 允许（Reopen）
+            (Stage::Ratify, Stage::Resolve) => Ok(()),
+            // Ratify -> Propose: 允许（Reopen，但应触发警告）
+            (Stage::Ratify, Stage::Propose) => Ok(()),
+            // 任何活跃 -> Deprecated: 允许
+            (Stage::Propose | Stage::Resolve | Stage::Ratify, Stage::Deprecated) => Ok(()),
+            // 任何活跃 -> Superseded: 允许
+            (Stage::Propose | Stage::Resolve | Stage::Ratify, Stage::Superseded(_)) => Ok(()),
+            // Deprecated -> 其他: 不允许
+            (Stage::Deprecated, _) => Err("deprecated stage cannot transition".into()),
+            // Superseded -> 其他: 不允许
+            (Stage::Superseded(_), _) => Err("superseded stage cannot transition".into()),
+        }
+    }
 
     pub fn is_referenceable(&self) -> bool {
         matches!(self, Stage::Resolve | Stage::Ratify)
@@ -192,5 +232,61 @@ impl ViolationSeverity {
             ViolationSeverity::Guideline => "G",
             ViolationSeverity::Judgment => "J",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_can_transition_propose_to_resolve() {
+        assert!(Stage::Propose.can_transition_to(&Stage::Resolve).is_ok());
+    }
+
+    #[test]
+    fn test_can_transition_resolve_to_ratify() {
+        assert!(Stage::Resolve.can_transition_to(&Stage::Ratify).is_ok());
+    }
+
+    #[test]
+    fn test_can_transition_ratify_to_resolve_reopen() {
+        assert!(Stage::Ratify.can_transition_to(&Stage::Resolve).is_ok());
+    }
+
+    #[test]
+    fn test_cannot_transition_from_deprecated() {
+        assert!(Stage::Deprecated.can_transition_to(&Stage::Propose).is_err());
+    }
+
+    #[test]
+    fn test_cannot_transition_from_superseded() {
+        assert!(Stage::Superseded("new".into()).can_transition_to(&Stage::Propose).is_err());
+    }
+
+    #[test]
+    fn test_same_stage_no_transition() {
+        assert!(Stage::Propose.can_transition_to(&Stage::Propose).is_err());
+    }
+
+    #[test]
+    fn test_from_str_roundtrip() {
+        let cases = [
+            ("1/3", Stage::Propose),
+            ("2/3", Stage::Resolve),
+            ("3/3", Stage::Ratify),
+            ("X", Stage::Deprecated),
+        ];
+        for (s, expected) in cases {
+            assert_eq!(Stage::from_str(s), Some(expected));
+        }
+        // Superseded
+        assert_eq!(
+            Stage::from_str("0/new-id"),
+            Some(Stage::Superseded("new-id".into()))
+        );
+        // Invalid
+        assert_eq!(Stage::from_str("4/3"), None);
+        assert_eq!(Stage::from_str(""), None);
     }
 }
