@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 use super::database::SihDatabase;
-use super::models::{DocStatus, Document};
+use super::metrics::MetricEvent;
+use super::models::{DocStatus, Document, ViolationSeverity};
 use super::parser;
 use super::validator::{ValidationConfig, validate_document};
 
@@ -71,7 +72,26 @@ pub async fn index_document(
     let nature = crate::core::validator::infer_nature(file_path)
         .unwrap_or("unknown")
         .to_string();
-    doc.nature = nature;
+    doc.nature = nature.clone();
+
+    // 度量采集: ValidationCompleted（失败不影响主流程）
+    {
+        let fatal_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Fatal).count();
+        let guideline_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Guideline).count();
+        let judgment_count = result.violations.iter().filter(|v| v.severity == ViolationSeverity::Judgment).count();
+        let event = MetricEvent::ValidationCompleted {
+            doc_id: doc.id.clone(),
+            nature: nature.clone(),
+            stage: doc.stage.to_display(),
+            fatal_count,
+            guideline_count,
+            judgment_count,
+            passed: result.is_ok(),
+        };
+        if let Ok(payload) = serde_json::to_string(&event) {
+            let _ = db.record_metric("ValidationCompleted", &payload).await;
+        }
+    }
 
     // 写入数据库
     db.upsert_document(doc.clone())
@@ -80,6 +100,17 @@ pub async fn index_document(
             path: file_path.to_string_lossy().to_string(),
             error: e.to_string(),
         })?;
+
+    // 度量采集: IndexCompleted（失败不影响主流程）
+    {
+        let event = MetricEvent::IndexCompleted {
+            doc_id: doc.id.clone(),
+            nature: nature.clone(),
+        };
+        if let Ok(payload) = serde_json::to_string(&event) {
+            let _ = db.record_metric("IndexCompleted", &payload).await;
+        }
+    }
 
     Ok(doc)
 }
