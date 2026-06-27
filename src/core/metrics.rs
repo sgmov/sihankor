@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::core::database::{DatabaseError, SihDatabase};
+
 /// 度量事件类型
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MetricEvent {
@@ -172,8 +174,112 @@ pub fn compute_variance_metric(records: &[MetricRecord]) -> VarianceMetric {
     }
 }
 
+/// 跨版本快照差异
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnapshotDiff {
+    /// 前一次快照时间
+    pub previous_time: String,
+    /// 后一次快照时间
+    pub current_time: String,
+    /// 文档数变化（当前 - 前次）
+    pub docs_delta: i64,
+    /// 规则数变化（当前 - 前次）
+    pub rules_delta: i64,
+    /// 各 stage 文档数变化
+    pub docs_by_stage_delta: Vec<(String, i64)>,
+    /// 各 nature 文档数变化
+    pub docs_by_nature_delta: Vec<(String, i64)>,
+    /// Fatal 违规总数变化
+    pub fatal_violations_delta: i64,
+    /// 间隙信号：规则数是否增长（true = 增长，支持道四b）
+    pub rules_grew: bool,
+    /// 间隙信号：文档数是否增长（true = 增长，可能扩大治理间隙）
+    pub docs_grew: bool,
+}
+
+/// ProjectSnapshot 事件的 payload 反序列化结构
+#[derive(Deserialize)]
+struct ProjectSnapshotPayload {
+    total_docs: usize,
+    total_rules: usize,
+    docs_by_stage: Vec<(String, usize)>,
+    docs_by_nature: Vec<(String, usize)>,
+    fatal_violations_total: usize,
+}
+
+/// 将两组 (key, count) 合并为按 key 排序的差值列表（current - previous）
+/// 不存在的 key 视为 0，使用 HashMap 聚合后排序确保结果确定性
+fn compute_kv_delta(
+    previous: &[(String, usize)],
+    current: &[(String, usize)],
+) -> Vec<(String, i64)> {
+    let mut map: HashMap<String, (i64, i64)> = HashMap::new();
+    for (k, v) in previous {
+        map.entry(k.clone()).or_insert((0, 0)).0 += *v as i64;
+    }
+    for (k, v) in current {
+        map.entry(k.clone()).or_insert((0, 0)).1 += *v as i64;
+    }
+    let mut result: Vec<(String, i64)> = map
+        .into_iter()
+        .map(|(k, (prev, curr))| (k, curr - prev))
+        .collect();
+    result.sort_by(|a, b| a.0.cmp(&b.0));
+    result
+}
+
+/// 比较两次 ProjectSnapshot 的差异
+/// 输入：两条 MetricRecord（event_type 应为 "ProjectSnapshot"）
+/// 输出：差异结果
+/// 如果任一记录的 payload_json 无法反序列化，返回 None
+pub fn compute_snapshot_diff(
+    previous: &MetricRecord,
+    current: &MetricRecord,
+) -> Option<SnapshotDiff> {
+    let prev: ProjectSnapshotPayload =
+        serde_json::from_str(&previous.payload_json).ok()?;
+    let curr: ProjectSnapshotPayload =
+        serde_json::from_str(&current.payload_json).ok()?;
+
+    let docs_delta = curr.total_docs as i64 - prev.total_docs as i64;
+    let rules_delta = curr.total_rules as i64 - prev.total_rules as i64;
+    let fatal_violations_delta =
+        curr.fatal_violations_total as i64 - prev.fatal_violations_total as i64;
+
+    let docs_by_stage_delta = compute_kv_delta(&prev.docs_by_stage, &curr.docs_by_stage);
+    let docs_by_nature_delta = compute_kv_delta(&prev.docs_by_nature, &curr.docs_by_nature);
+
+    Some(SnapshotDiff {
+        previous_time: previous.created_at.clone(),
+        current_time: current.created_at.clone(),
+        docs_delta,
+        rules_delta,
+        docs_by_stage_delta,
+        docs_by_nature_delta,
+        fatal_violations_delta,
+        rules_grew: rules_delta > 0,
+        docs_grew: docs_delta > 0,
+    })
+}
+
+/// 从数据库查询最近的两次快照并计算差异
+/// 需要传入 SihDatabase 引用
+/// 如果不足两条快照，返回 Ok(None)
+pub async fn compute_latest_snapshot_diff(
+    db: &dyn SihDatabase,
+) -> Result<Option<SnapshotDiff>, DatabaseError> {
+    let records = db.query_metrics("ProjectSnapshot", 2).await?;
+    if records.len() < 2 {
+        return Ok(None);
+    }
+    // query_metrics 按 created_at DESC 排序：records[0] 最新，records[1] 前一次
+    let diff = compute_snapshot_diff(&records[1], &records[0]);
+    Ok(diff)
+}
+
 #[cfg(test)]
 mod tests {
+    use super::compute_snapshot_diff;
     use super::compute_variance_metric;
     use super::MetricRecord;
     use crate::core::database::SihDatabase;
@@ -285,5 +391,122 @@ mod tests {
         assert_eq!(m.total_docs, 1);
         assert_eq!(m.pass_rate, 1.0);
         assert_eq!(m.avg_fatal_count, 0.0);
+    }
+
+    /// 构造一条 ProjectSnapshot MetricRecord
+    fn snapshot_record(
+        id: i64,
+        created_at: &str,
+        total_docs: usize,
+        total_rules: usize,
+        docs_by_stage: &[(&str, usize)],
+        docs_by_nature: &[(&str, usize)],
+        fatal_violations_total: usize,
+    ) -> MetricRecord {
+        let stage: Vec<(String, usize)> = docs_by_stage
+            .iter()
+            .map(|(k, v)| (k.to_string(), *v))
+            .collect();
+        let nature: Vec<(String, usize)> = docs_by_nature
+            .iter()
+            .map(|(k, v)| (k.to_string(), *v))
+            .collect();
+        let payload = serde_json::json!({
+            "total_docs": total_docs,
+            "total_rules": total_rules,
+            "docs_by_stage": stage,
+            "docs_by_nature": nature,
+            "fatal_violations_total": fatal_violations_total,
+        })
+        .to_string();
+        MetricRecord {
+            id,
+            event_type: "ProjectSnapshot".to_string(),
+            payload_json: payload,
+            created_at: created_at.to_string(),
+        }
+    }
+
+    #[test]
+    fn test_snapshot_diff_basic() {
+        let prev = snapshot_record(
+            1,
+            "2024-01-01T00:00:00Z",
+            10,
+            14,
+            &[("1/3", 5), ("2/3", 3), ("3/3", 2)],
+            &[("spec", 6), ("decision", 4)],
+            2,
+        );
+        let curr = snapshot_record(
+            2,
+            "2024-01-02T00:00:00Z",
+            12,
+            14,
+            &[("1/3", 6), ("2/3", 4), ("3/3", 2)],
+            &[("spec", 7), ("decision", 5)],
+            1,
+        );
+        let diff = compute_snapshot_diff(&prev, &curr).expect("should compute diff");
+        assert_eq!(diff.previous_time, "2024-01-01T00:00:00Z");
+        assert_eq!(diff.current_time, "2024-01-02T00:00:00Z");
+        assert_eq!(diff.docs_delta, 2);
+        assert_eq!(diff.rules_delta, 0);
+        assert_eq!(diff.fatal_violations_delta, -1);
+        assert!(!diff.rules_grew);
+        assert!(diff.docs_grew);
+        // docs_by_stage_delta 按 key 排序：1/3, 2/3, 3/3
+        assert_eq!(diff.docs_by_stage_delta.len(), 3);
+        assert_eq!(diff.docs_by_stage_delta[0], ("1/3".to_string(), 1));
+        assert_eq!(diff.docs_by_stage_delta[1], ("2/3".to_string(), 1));
+        assert_eq!(diff.docs_by_stage_delta[2], ("3/3".to_string(), 0));
+    }
+
+    #[test]
+    fn test_snapshot_diff_invalid_payload() {
+        let prev = MetricRecord {
+            id: 1,
+            event_type: "ProjectSnapshot".to_string(),
+            payload_json: r#"{"this is not valid":}"#.to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        };
+        let curr = snapshot_record(
+            2,
+            "2024-01-02T00:00:00Z",
+            12,
+            14,
+            &[("1/3", 6)],
+            &[("spec", 7)],
+            1,
+        );
+        let diff = compute_snapshot_diff(&prev, &curr);
+        assert!(diff.is_none());
+    }
+
+    #[test]
+    fn test_snapshot_diff_new_nature() {
+        let prev = snapshot_record(
+            1,
+            "2024-01-01T00:00:00Z",
+            10,
+            5,
+            &[("1/3", 10)],
+            &[("spec", 10)],
+            0,
+        );
+        let curr = snapshot_record(
+            2,
+            "2024-01-02T00:00:00Z",
+            12,
+            5,
+            &[("1/3", 12)],
+            &[("spec", 10), ("decision", 2)],
+            0,
+        );
+        let diff = compute_snapshot_diff(&prev, &curr).expect("should compute diff");
+        // docs_by_nature_delta 按 key 排序：decision, spec
+        assert_eq!(diff.docs_by_nature_delta.len(), 2);
+        assert_eq!(diff.docs_by_nature_delta[0], ("decision".to_string(), 2));
+        assert_eq!(diff.docs_by_nature_delta[1], ("spec".to_string(), 0));
     }
 }
