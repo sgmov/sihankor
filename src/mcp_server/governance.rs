@@ -270,7 +270,7 @@ impl SihankorService {
         // ProjectSnapshot 采集：记录到 metrics 表，失败不阻断概览生成
         let snapshot = MetricEvent::ProjectSnapshot {
             total_docs: total,
-            total_rules: 14,
+            total_rules: crate::core::validator::RULE_COUNT,
             docs_by_stage: by_stage.clone(),
             docs_by_nature: by_nature.clone(),
             fatal_violations_total: 0,

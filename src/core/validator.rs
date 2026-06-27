@@ -2,6 +2,10 @@ use std::path::Path;
 
 use super::models::{Violation, ViolationSeverity};
 
+/// 当前 validator 中定义的规则总数（V-F/V-G/V-J 规则）
+/// 每次增删规则时需要同步更新此常量
+pub const RULE_COUNT: usize = 14;
+
 /// 验证域
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValidationDomain {
