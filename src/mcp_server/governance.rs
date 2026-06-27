@@ -6,7 +6,9 @@ use rmcp::{ServerHandler, handler::server::wrapper::Parameters, schemars, tool, 
 use crate::core::database::SihDatabase;
 use crate::core::glossary::Glossary;
 use crate::core::indexer;
-use crate::core::metrics::MetricEvent;
+use crate::core::metrics::{
+    compute_latest_snapshot_diff, compute_variance_metric, MetricEvent, SnapshotDiff, VarianceMetric,
+};
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
 use crate::core::parser;
@@ -697,6 +699,34 @@ impl SihankorService {
             Err(e) => format!("Serialization error: {}", e),
         }
     }
+
+    /// 查询产出方差指标：基于最近 ValidationCompleted 记录计算通过率、违规分布和按 nature 分组统计
+    #[tool(
+        description = "[SiHankor] 查询产出方差指标，包括通过率、违规数分布和按文档类型的分组统计"
+    )]
+    pub async fn variance_metric(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let records = match self.db.query_metrics("ValidationCompleted", 100).await {
+            Ok(r) => r,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        let metric = compute_variance_metric(&records);
+        format_variance_metric(&metric)
+    }
+
+    /// 查询最近两次项目快照差异，检测治理间隙增长信号
+    #[tool(
+        description = "[SiHankor] 查询最近两次项目快照的差异，检测治理间隙增长信号"
+    )]
+    pub async fn snapshot_diff(&self, Parameters(_): Parameters<EmptyParams>) -> String {
+        let diff = match compute_latest_snapshot_diff(&*self.db).await {
+            Ok(d) => d,
+            Err(e) => return format!("Database error: {}", e),
+        };
+        match diff {
+            None => "需要至少两次 governance overview 调用才能计算快照差异".to_string(),
+            Some(d) => format_snapshot_diff(&d),
+        }
+    }
 }
 
 fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
@@ -733,6 +763,101 @@ fn format_validation_result(doc_id: &str, result: &ValidationResult) -> String {
             status, doc_id, violations
         )
     }
+}
+
+/// 格式化产出方差指标为人类可读的文本报告
+fn format_variance_metric(m: &VarianceMetric) -> String {
+    let window = if m.window_start.is_empty() || m.window_end.is_empty() {
+        "(no records)".to_string()
+    } else {
+        format!("{} -> {}", m.window_start, m.window_end)
+    };
+
+    let pass_rate_by_nature = if m.pass_rate_by_nature.is_empty() {
+        "  (none)".to_string()
+    } else {
+        m.pass_rate_by_nature
+            .iter()
+            .map(|(n, r)| format!("  {}: {:.2}%", n, r * 100.0))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    let avg_fatal_by_nature = if m.avg_fatal_by_nature.is_empty() {
+        "  (none)".to_string()
+    } else {
+        m.avg_fatal_by_nature
+            .iter()
+            .map(|(n, r)| format!("  {}: {:.2}", n, r))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    format!(
+        "SiHankor Variance Metric\n\
+         ========================\n\
+         Window: {}\n\
+         Total documents: {}\n\
+         Pass rate: {:.2}%\n\n\
+         Average Fatal violations: {:.2}\n\
+         Average Guideline violations: {:.2}\n\
+         Fatal violations stddev (产出方差直接度量): {:.4}\n\n\
+         Pass rate by nature:\n{}\n\n\
+         Average Fatal violations by nature:\n{}",
+        window,
+        m.total_docs,
+        m.pass_rate * 100.0,
+        m.avg_fatal_count,
+        m.avg_guideline_count,
+        m.fatal_count_stddev,
+        pass_rate_by_nature,
+        avg_fatal_by_nature,
+    )
+}
+
+/// 格式化快照差异为人类可读的文本报告
+fn format_snapshot_diff(d: &SnapshotDiff) -> String {
+    let docs_by_stage_delta = if d.docs_by_stage_delta.is_empty() {
+        "  (none)".to_string()
+    } else {
+        d.docs_by_stage_delta
+            .iter()
+            .map(|(s, delta)| format!("  {}: {:+}", s, delta))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    let docs_by_nature_delta = if d.docs_by_nature_delta.is_empty() {
+        "  (none)".to_string()
+    } else {
+        d.docs_by_nature_delta
+            .iter()
+            .map(|(n, delta)| format!("  {}: {:+}", n, delta))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    format!(
+        "SiHankor Snapshot Diff\n\
+         ======================\n\
+         Previous: {}\n\
+         Current: {}\n\n\
+         Documents delta: {:+}\n\
+         Rules delta: {:+}\n\
+         Fatal violations delta: {:+}\n\n\
+         Docs by stage delta:\n{}\n\n\
+         Docs by nature delta:\n{}\n\n\
+         Gap signals:\n  rules_grew: {}\n  docs_grew: {}",
+        d.previous_time,
+        d.current_time,
+        d.docs_delta,
+        d.rules_delta,
+        d.fatal_violations_delta,
+        docs_by_stage_delta,
+        docs_by_nature_delta,
+        d.rules_grew,
+        d.docs_grew,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1084,5 +1209,175 @@ impl ServerHandler for SihankorService {
         .with_instructions(
             "[SiHankor] SiHankor governance engine: document validation, search, indexing, and chain resolution",
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::database::SqliteBackend;
+    use std::sync::Arc;
+
+    fn make_service() -> SihankorService {
+        let db = SqliteBackend::open_in_memory().unwrap();
+        SihankorService::new(Arc::new(db))
+    }
+
+    #[tokio::test]
+    async fn test_variance_metric_empty() {
+        let svc = make_service();
+        let result = svc.variance_metric(Parameters(EmptyParams {})).await;
+        assert!(
+            result.contains("Total documents: 0"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("产出方差直接度量"),
+            "result was: {}",
+            result
+        );
+        assert!(result.contains("(no records)"), "result was: {}", result);
+    }
+
+    #[tokio::test]
+    async fn test_variance_metric_with_records() {
+        let svc = make_service();
+        let p1 = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":2,"judgment_count":1,"passed":true}"#;
+        let p2 = r#"{"doc_id":"d2","nature":"proposal","stage":"1/3","fatal_count":1,"guideline_count":0,"judgment_count":1,"passed":false}"#;
+        svc.db.record_metric("ValidationCompleted", p1).await.unwrap();
+        svc.db
+            .record_metric("ValidationCompleted", p2)
+            .await
+            .unwrap();
+        let result = svc.variance_metric(Parameters(EmptyParams {})).await;
+        assert!(
+            result.contains("Total documents: 2"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("Pass rate: 50.00%"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("Average Fatal violations: 0.50"),
+            "result was: {}",
+            result
+        );
+        // 按 nature 分组：spec 通过率 100%，proposal 通过率 0%
+        assert!(result.contains("spec: 100.00%"), "result was: {}", result);
+        assert!(result.contains("proposal: 0.00%"), "result was: {}", result);
+    }
+
+    #[tokio::test]
+    async fn test_snapshot_diff_insufficient() {
+        let svc = make_service();
+        // 空数据库：不足两条快照
+        let result = svc.snapshot_diff(Parameters(EmptyParams {})).await;
+        assert!(result.contains("需要至少两次"), "result was: {}", result);
+
+        // 仅一条快照：仍不足
+        let s1 = r#"{"total_docs":10,"total_rules":14,"docs_by_stage":[["1/3",5]],"docs_by_nature":[["spec",6]],"fatal_violations_total":2}"#;
+        svc.db.record_metric("ProjectSnapshot", s1).await.unwrap();
+        let result = svc.snapshot_diff(Parameters(EmptyParams {})).await;
+        assert!(result.contains("需要至少两次"), "result was: {}", result);
+    }
+
+    #[tokio::test]
+    async fn test_snapshot_diff_with_two_snapshots() {
+        let svc = make_service();
+        let s1 = r#"{"total_docs":10,"total_rules":14,"docs_by_stage":[["1/3",5],["2/3",3],["3/3",2]],"docs_by_nature":[["spec",6],["decision",4]],"fatal_violations_total":2}"#;
+        let s2 = r#"{"total_docs":12,"total_rules":14,"docs_by_stage":[["1/3",6],["2/3",4],["3/3",2]],"docs_by_nature":[["spec",7],["decision",5]],"fatal_violations_total":1}"#;
+        svc.db.record_metric("ProjectSnapshot", s1).await.unwrap();
+        svc.db.record_metric("ProjectSnapshot", s2).await.unwrap();
+        let result = svc.snapshot_diff(Parameters(EmptyParams {})).await;
+        // 不应返回提示文本，应返回格式化报告
+        assert!(
+            !result.contains("需要至少两次"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("SiHankor Snapshot Diff"),
+            "result was: {}",
+            result
+        );
+        assert!(result.contains("Documents delta:"), "result was: {}", result);
+        assert!(result.contains("Gap signals:"), "result was: {}", result);
+    }
+
+    #[test]
+    fn test_format_snapshot_diff_known_values() {
+        let d = SnapshotDiff {
+            previous_time: "2024-01-01T00:00:00Z".to_string(),
+            current_time: "2024-01-02T00:00:00Z".to_string(),
+            docs_delta: 2,
+            rules_delta: 0,
+            docs_by_stage_delta: vec![
+                ("1/3".to_string(), 1),
+                ("2/3".to_string(), 1),
+                ("3/3".to_string(), 0),
+            ],
+            docs_by_nature_delta: vec![
+                ("decision".to_string(), 2),
+                ("spec".to_string(), 0),
+            ],
+            fatal_violations_delta: -1,
+            rules_grew: false,
+            docs_grew: true,
+        };
+        let result = format_snapshot_diff(&d);
+        assert!(
+            result.contains("Documents delta: +2"),
+            "result was: {}",
+            result
+        );
+        assert!(result.contains("Rules delta: +0"), "result was: {}", result);
+        assert!(
+            result.contains("Fatal violations delta: -1"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("rules_grew: false"),
+            "result was: {}",
+            result
+        );
+        assert!(result.contains("docs_grew: true"), "result was: {}", result);
+        assert!(result.contains("1/3: +1"), "result was: {}", result);
+    }
+
+    #[test]
+    fn test_format_variance_metric_known_values() {
+        let m = VarianceMetric {
+            total_docs: 3,
+            pass_rate: 2.0 / 3.0,
+            avg_fatal_count: 1.0 / 3.0,
+            avg_guideline_count: 1.0,
+            fatal_count_stddev: (2.0_f64 / 9.0_f64).sqrt(),
+            pass_rate_by_nature: vec![
+                ("proposal".to_string(), 0.0),
+                ("spec".to_string(), 1.0),
+            ],
+            avg_fatal_by_nature: vec![
+                ("proposal".to_string(), 1.0),
+                ("spec".to_string(), 0.0),
+            ],
+            window_start: "2024-01-01T00:00:00Z".to_string(),
+            window_end: "2024-01-03T00:00:00Z".to_string(),
+        };
+        let result = format_variance_metric(&m);
+        assert!(result.contains("Total documents: 3"), "result was: {}", result);
+        assert!(result.contains("Pass rate: 66.67%"), "result was: {}", result);
+        assert!(
+            result.contains("Average Fatal violations: 0.33"),
+            "result was: {}",
+            result
+        );
+        assert!(result.contains("产出方差直接度量"), "result was: {}", result);
+        assert!(result.contains("spec: 100.00%"), "result was: {}", result);
+        assert!(result.contains("proposal: 0.00%"), "result was: {}", result);
     }
 }
