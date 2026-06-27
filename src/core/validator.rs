@@ -2,9 +2,113 @@ use std::path::Path;
 
 use super::models::{Violation, ViolationSeverity};
 
-/// 当前 validator 中定义的规则总数（V-F/V-G/V-J 规则）
-/// 每次增删规则时需要同步更新此常量
-pub const RULE_COUNT: usize = 14;
+/// 规则注册表条目：每条实际发射 violation 的规则在编译期注册
+///
+/// 注册表是治理规则的"意图"显式声明。顺因（道二）要求意图先于代码：
+/// 规则的治理域和严格度不应隐含在 if-else 控制流中，而应在此处显式声明。
+///
+/// 注意：仅包含实际发射 violation 的 14 条工程规则。
+/// V-G-07 和 V-G-10 是概念规则（声明了 ID 但不发射 violation），
+/// 未来实现时再加入注册表，避免引入"幽灵规则"导致统计失真。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RuleRegistryEntry {
+    pub rule_id: &'static str,
+    pub severity: ViolationSeverity,
+    pub domain: ValidationDomain,
+    pub description: &'static str,
+}
+
+/// 当前 validator 中实际发射 violation 的 14 条规则
+pub const RULE_REGISTRY: &[RuleRegistryEntry] = &[
+    RuleRegistryEntry {
+        rule_id: "V-F-01",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Frontmatter,
+        description: "id 格式校验（YYMMDD-HHMM[-NNN]-语义短名）",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-F-03",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Frontmatter,
+        description: "stage 必须是合法编码（1/3, 2/3, 3/3, X, 0/<id>）",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-F-04",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Frontmatter,
+        description: "upstream 必填性由 nature 决定：非 note 文档必须填写",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-F-05",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Structure,
+        description: "正文禁止 --- 水平线（仅 frontmatter 分隔符可用）",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-F-06",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Governance,
+        description: "decided-by 不得使用 ai 前缀值（ai-assist 等）",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-F-07",
+        severity: ViolationSeverity::Fatal,
+        domain: ValidationDomain::Governance,
+        description: "非 decisions/ 目录的文档不得有 decided-by 字段",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-02",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Structure,
+        description: "文档必须位于合法治理目录下",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-03",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Structure,
+        description: "子目录深度 <= 4",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-04",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Structure,
+        description: "表格列数 <= 3",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-05",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Structure,
+        description: "代码块必须声明语言标签",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-06",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Structure,
+        description: "禁止 emoji 和非 ASCII/CJK 符号",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-08",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Reference,
+        description: "stage X（废弃）文档不可被引用",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-G-09",
+        severity: ViolationSeverity::Guideline,
+        domain: ValidationDomain::Governance,
+        description: "stage 2/3 或 3/3 的 decisions/ 文档应有 decided-by",
+    },
+    RuleRegistryEntry {
+        rule_id: "V-J-01",
+        severity: ViolationSeverity::Judgment,
+        domain: ValidationDomain::Structure,
+        description: "列表嵌套不超过 2 层",
+    },
+];
+
+/// 当前 validator 中定义的规则总数
+/// 从 RULE_REGISTRY 派生，增删规则时自动同步，无需手动修改
+pub const RULE_COUNT: usize = RULE_REGISTRY.len();
 
 /// 验证域
 #[derive(Debug, Clone, PartialEq, Eq)]
