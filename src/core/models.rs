@@ -170,6 +170,13 @@ pub struct Violation {
 }
 
 /// 违规力度级别：F（戒）/ G（规）/ J（矩）
+///
+/// J 语义决策说明：旧哲学层（archive/philosophy-v1/SiHankor-Engineering-Mapping.sih.md）
+/// 将 J（矩）定义为"精确判定 pass/fail"的强机械判定。代码实现选择将其反转为
+/// "静默记录"（Judgment severity，仅计数不阻断），这是更合理的设计：J 级规则
+/// 属于风格性判断，强行 pass/fail 会产生噪声阻断。本实现以代码语义为准，
+/// J = 静默记录。详见 validator::ValidationResult::to_structured_report 的
+/// J 语义决策说明与 R4 工程映射审计 4.7 冲突二。
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ViolationSeverity {

@@ -198,27 +198,27 @@ impl GrillingEngine {
 
     fn inject_constraints(&self, nature: &str) -> Vec<String> {
         let base: Vec<String> = vec![
-            "[F-01] 文档 id 格式: YYMMDD-HHMM[-NNN]-语义短名，如 260622-1400-core-positioning".into(),
-            "[F-03] stage 取值: 1/3, 2/3, 3/3, 0/<successor-id>, X".into(),
+            "[V-F-01] 文档 id 格式: YYMMDD-HHMM[-NNN]-语义短名，如 260622-1400-core-positioning".into(),
+            "[V-F-03] stage 取值: 1/3, 2/3, 3/3, 0/<successor-id>, X".into(),
             if nature == "note" {
-                "[F-04] upstream: note 文档 upstream 可选".into()
+                "[V-F-04] upstream: note 文档 upstream 可选".into()
             } else {
-                "[F-04] upstream: 必填，指向授权本文档变更的上游文档 id".into()
+                "[V-F-04] upstream: 必填，指向授权本文档变更的上游文档 id".into()
             },
-            "[F-05] 正文禁止出现水平线 ---, ***, ___".into(),
-            "[F-06] decided-by 字段禁止值为 ai-auto".into(),
-            "[F-07] 非 decisions/ 目录文档禁止有 decided-by 字段".into(),
-            "[G-02] 文档必须放在合法目录: specs/engineering/ 或 specs/philosophy/ 或 specs/techne/ 或 proposals/ 或 decisions/ 或 reference/ 或 knowledge/notes/".into(),
-            "[G-03] 目录深度不超过 3 层（含 docs/）".into(),
-            "[G-04] 表格列数不超过 3 列".into(),
-            "[G-05] 所有 fenced code block 必须声明语言标签 (rust, yaml, json, text, mermaid)".into(),
-            "[G-06] 禁止 emoji".into(),
+            "[V-F-05] 正文禁止出现水平线 ---, ***, ___".into(),
+            "[V-F-06] decided-by 字段禁止任何 ai 前缀值（ai-auto, ai-assist 等），必须是人类标识符".into(),
+            "[V-F-07] 非 decisions/ 目录文档禁止有 decided-by 字段".into(),
+            "[V-G-02] 文档必须放在合法目录: specs/engineering/ 或 specs/philosophy/ 或 specs/techne/ 或 proposals/ 或 decisions/ 或 reference/ 或 knowledge/notes/".into(),
+            "[V-G-03] 目录深度不超过 3 层（含 docs/）".into(),
+            "[V-G-04] 表格列数不超过 3 列".into(),
+            "[V-G-05] 所有 fenced code block 必须声明语言标签 (rust, yaml, json, text, mermaid)".into(),
+            "[V-G-06] 禁止 emoji".into(),
             "[C-01] 字符替换: em-dash (U+2014) → fullwidth colon (U+FF1A); curly quotes → ASCII straight double quotes; right arrow → ->; left arrow → <-; not-equal → !=。仅允许的 CJK 标点: U+3001, U+3002, U+FF0C, U+FF1A, U+FF1B, U+FF08, U+FF09, U+300A, U+300B, U+300C, U+300D".into(),
-            "[J-01] 列表嵌套不超过 2 层".into(),
+            "[V-J-01] 列表嵌套不超过 2 层".into(),
         ];
 
         let decision_extra = if nature == "decision" {
-            vec!["[G-09] decisions/ 目录文档 stage >= 2/3 时必须有 decided-by 字段".into()]
+            vec!["[V-G-09] decisions/ 目录文档 stage >= 2/3 时必须有 decided-by 字段".into()]
         } else {
             vec![]
         };
@@ -487,11 +487,11 @@ mod tests {
         ];
         let prompt = engine.build_prompt(&answers, "test");
         let all_constraints = prompt.constraints.join(" ");
-        assert!(all_constraints.contains("F-01"));
-        assert!(all_constraints.contains("F-05"));
-        assert!(all_constraints.contains("G-02"));
-        assert!(all_constraints.contains("G-06"));
-        assert!(all_constraints.contains("J-01"));
+        assert!(all_constraints.contains("V-F-01"));
+        assert!(all_constraints.contains("V-F-05"));
+        assert!(all_constraints.contains("V-G-02"));
+        assert!(all_constraints.contains("V-G-06"));
+        assert!(all_constraints.contains("V-J-01"));
         assert!(all_constraints.contains("C-01"));
     }
 
@@ -519,8 +519,8 @@ mod tests {
         let prompt = engine.build_prompt(&answers, "test");
         let all_constraints = prompt.constraints.join(" ");
         assert!(
-            all_constraints.contains("G-09"),
-            "decision should include G-09"
+            all_constraints.contains("V-G-09"),
+            "decision should include V-G-09"
         );
     }
 

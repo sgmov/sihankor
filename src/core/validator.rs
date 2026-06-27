@@ -59,6 +59,12 @@ impl ValidationResult {
     /// F 级：阻断项，无 F 级违规时报告为空
     /// G 级：警告项，有 G 级违规时报告列出
     /// J 级：静默项，仅计数，不列明细
+    ///
+    /// J 语义决策说明：旧哲学层（archive/philosophy-v1/SiHankor-Engineering-Mapping.sih.md）
+    /// 将 J（矩）定义为"精确判定 pass/fail"的强机械判定。代码实现选择将其反转为
+    /// "静默记录"（仅计数，不列明细），这是更合理的设计：J 级规则（如列表嵌套层数）
+    /// 属于风格性判断，强行 pass/fail 会产生噪声阻断，静默计数既保留可追溯性又不
+    /// 干扰主流程。本实现以代码语义为准，J = 静默记录。详见 R4 工程映射审计 4.7 冲突二。
     pub fn to_structured_report(&self) -> String {
         let fatal: Vec<_> = self
             .violations
@@ -214,10 +220,10 @@ fn validate_frontmatter(
 ) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // F-01: id 格式校验
+    // V-F-01: id 格式校验
     if !is_valid_id(&doc.id) {
         result.violations.push(Violation {
-            rule_id: "F-01".to_string(),
+            rule_id: "V-F-01".to_string(),
             severity: ViolationSeverity::Fatal,
             message: format!(
                 "id '{}' does not match format YYMMDD-HHMM[-NNN]-slug",
@@ -231,13 +237,13 @@ fn validate_frontmatter(
         });
     }
 
-    // F-02: type 字段已废除——document nature 由目录路径推断
+    // V-F-02: type 字段已废除：document nature 由目录路径推断
     // 此规则已移除
 
-    // F-03: stage 必须是有效编码
+    // V-F-03: stage 必须是有效编码
     if !doc.stage.is_valid() {
         result.violations.push(Violation {
-            rule_id: "F-03".to_string(),
+            rule_id: "V-F-03".to_string(),
             severity: ViolationSeverity::Fatal,
             message: format!("invalid stage: {}", doc.stage),
             location: "frontmatter.stage".to_string(),
@@ -247,13 +253,13 @@ fn validate_frontmatter(
         });
     }
 
-    // F-04: upstream 必填性由 nature 决定
+    // V-F-04: upstream 必填性由 nature 决定
     // note (knowledge/notes/) 无 upstream；proposal 在 proposals/ 有 upstream
     let nature = file_path.and_then(|p| infer_nature(p));
     let upstream_required = !matches!(nature, Some("note"));
     if upstream_required && doc.upstream.is_none() {
         result.violations.push(Violation {
-            rule_id: "F-04".to_string(),
+            rule_id: "V-F-04".to_string(),
             severity: ViolationSeverity::Fatal,
             message: "upstream is required for this document nature".to_string(),
             location: "frontmatter.upstream".to_string(),
@@ -261,7 +267,7 @@ fn validate_frontmatter(
         });
     }
 
-    // G-10: upstream 自指向检查 — root docs should point to self
+    // V-G-10: upstream 自指向检查：root docs should point to self
     // root docs 应自指向自身 id，不再使用 PHILOSOPHY 等大写域标识
     if doc.frontmatter.upstream.as_deref() == Some(&doc.id) {
         // Self-referencing: valid for root documents
@@ -275,7 +281,7 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
     let mut result = ValidationResult::new();
 
     if let Some(path) = file_path {
-        // G-02: 文档必须位于合法目录
+        // V-G-02: 文档必须位于合法目录
         let path_str = path.to_string_lossy();
         let valid_dirs = [
             "specs/",
@@ -288,7 +294,7 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
 
         if !in_valid_dir {
             result.violations.push(Violation {
-                rule_id: "G-02".to_string(),
+                rule_id: "V-G-02".to_string(),
                 severity: ViolationSeverity::Guideline,
                 message: format!(
                     "document '{}' not in a recognized directory (expected: specs/, proposals/, decisions/, reference/, knowledge/notes/)",
@@ -299,12 +305,12 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
             });
         }
 
-        // G-03: 子目录深度 <= 4 (docs/{nature}/{dir1}/{dir2}/{dir3}/{dir4}/file)
+        // V-G-03: 子目录深度 <= 4 (docs/{nature}/{dir1}/{dir2}/{dir3}/{dir4}/file)
         let depth = path.components().count();
         if depth > 5 {
             // root + docs/ + dir1 + dir2 + dir3 + file = 6 components max
             result.violations.push(Violation {
-                rule_id: "G-03".to_string(),
+                rule_id: "V-G-03".to_string(),
                 severity: ViolationSeverity::Guideline,
                 message: format!(
                     "directory depth exceeds 3 levels (found {} components)",
@@ -326,13 +332,13 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
 pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // G-04: 表格列数 <= 3
+    // V-G-04: 表格列数 <= 3
     for (line_num, line) in doc.content.lines().enumerate() {
         if line.contains('|') && line.trim().starts_with('|') {
             let col_count = line.split('|').filter(|s| !s.is_empty()).count();
             if col_count > 3 {
                 result.violations.push(Violation {
-                    rule_id: "G-04".to_string(),
+                    rule_id: "V-G-04".to_string(),
                     severity: ViolationSeverity::Guideline,
                     message: format!("table has {} columns, maximum is 3", col_count),
                     location: format!("line {}", line_num + 1),
@@ -344,7 +350,7 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
         }
     }
 
-    // G-05: 代码块必须声明语言标签
+    // V-G-05: 代码块必须声明语言标签
     let mut in_code_block = false;
     for (line_num, line) in doc.content.lines().enumerate() {
         let trimmed = line.trim();
@@ -354,7 +360,7 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
                 let lang = after_fence.trim();
                 if lang.is_empty() {
                     result.violations.push(Violation {
-                        rule_id: "G-05".to_string(),
+                        rule_id: "V-G-05".to_string(),
                         severity: ViolationSeverity::Guideline,
                         message: "code block must declare a language tag".to_string(),
                         location: format!("line {}", line_num + 1),
@@ -367,12 +373,12 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
         }
     }
 
-    // F-05: 正文禁止 --- 水平线
+    // V-F-05: 正文禁止 --- 水平线
     for (line_num, line) in doc.content.lines().enumerate() {
         let trimmed = line.trim();
         if trimmed == "---" || trimmed == "***" || trimmed == "___" {
             result.violations.push(Violation {
-                rule_id: "F-05".to_string(),
+                rule_id: "V-F-05".to_string(),
                 severity: ViolationSeverity::Fatal,
                 message: "horizontal rule (---) is forbidden in document body".to_string(),
                 location: format!("line {}", line_num + 1),
@@ -384,11 +390,11 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
         }
     }
 
-    // G-06: 禁止 emoji
+    // V-G-06: 禁止 emoji
     for (line_num, line) in doc.content.lines().enumerate() {
         if contains_emoji(line) {
             result.violations.push(Violation {
-                rule_id: "G-06".to_string(),
+                rule_id: "V-G-06".to_string(),
                 severity: ViolationSeverity::Guideline,
                 message: "emoji characters are forbidden".to_string(),
                 location: format!("line {}", line_num + 1),
@@ -397,7 +403,11 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
         }
     }
 
-    // J-01: 列表嵌套不超过 2 层
+    // V-J-01: 列表嵌套不超过 2 层
+    //
+    // J 语义说明：J 级规则为静默记录（Judgment severity），仅计数不阻断。
+    // 旧哲学层将 J（矩）定义为强判定，代码实现选择静默记录，详见
+    // to_structured_report 的 J 语义决策说明。
     let max_indent = doc
         .content
         .lines()
@@ -407,7 +417,7 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
         .unwrap_or(0);
     if max_indent > 2 {
         result.violations.push(Violation {
-            rule_id: "J-01".to_string(),
+            rule_id: "V-J-01".to_string(),
             severity: ViolationSeverity::Judgment,
             message: format!("list nesting exceeds 2 levels (found {})", max_indent),
             location: "content".to_string(),
@@ -424,13 +434,13 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
 fn validate_lifecycle(doc: &super::models::Document) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // G-07: 1/3 文档不可被引用（此规则在 reference 域检查上游文档时生效）
+    // V-G-07: 1/3 文档不可被引用（此规则在 reference 域检查上游文档时生效）
     // 这里检查：当前文档如果是 1/3，提醒它不应被其他文档引用
 
-    // G-08: X 文档禁止引用
+    // V-G-08: X 文档禁止引用
     if doc.stage.as_str() == "X" {
         result.violations.push(Violation {
-            rule_id: "G-08".to_string(),
+            rule_id: "V-G-08".to_string(),
             severity: ViolationSeverity::Guideline,
             message: "deprecated (X) document should not be referenced".to_string(),
             location: format!("document {}", doc.id),
@@ -451,7 +461,7 @@ fn validate_governance(
 ) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // G-09: 2/3 和 3/3 的 decisions/ 文档应有 decided-by
+    // V-G-09: 2/3 和 3/3 的 decisions/ 文档应有 decided-by
     if doc.stage.as_str() == "2/3" || doc.stage.as_str() == "3/3" {
         let is_decision = file_path
             .and_then(|p| infer_nature(p))
@@ -459,7 +469,7 @@ fn validate_governance(
             .unwrap_or(false);
         if is_decision && doc.frontmatter.decided_by.is_none() {
             result.violations.push(Violation {
-                rule_id: "G-09".to_string(),
+                rule_id: "V-G-09".to_string(),
                 severity: ViolationSeverity::Guideline,
                 message: format!(
                     "decision document '{}' at stage {} should have decided-by field",
@@ -474,27 +484,39 @@ fn validate_governance(
         }
     }
 
-    // F-06: ai-auto 是违例签认
+    // V-F-06: decided-by 不得是 AI 前缀值
+    //
+    // 语义：decided-by 记录的是"谁决定了这个决策"，必须是人类标识符。
+    // 任何以 "ai" 开头的值（ai-auto, ai-assist, ai-anything）都表示 AI 作为决策主体，
+    // 违反"AI 不充任决议者"的治理原则（Reconstruction-Spec $7.1）。
+    //
+    // 历史背景：早期实现仅字面检查 == "ai-auto"，导致 ai-assist 等值绕过校验
+    // （见 R4 工程映射审计 4.7 冲突四）。本规则修复为前缀检查，阻断所有 AI 前缀值。
+    //
+    // 若需记录 AI 辅助级别，应使用独立字段（如 ai-assistance-level），不放入 decided-by。
     if let Some(ref decided_by) = doc.frontmatter.decided_by
-        && decided_by == "ai-auto"
+        && is_ai_prefixed_decided_by(decided_by)
     {
         result.violations.push(Violation {
-            rule_id: "F-06".to_string(),
+            rule_id: "V-F-06".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: "'ai-auto' is a forbidden decided-by value".to_string(),
+            message: format!(
+                "decided-by value '{}' starts with 'ai' and is forbidden: decided-by must be a human identifier",
+                decided_by
+            ),
             location: "frontmatter.decided-by".to_string(),
             fix_suggestion: Some(
-                "Replace 'ai-auto' with a human identifier (e.g. 'moc')".to_string(),
+                "Replace with a human identifier (e.g. 'moc'). AI assistance level, if needed, belongs in a separate field, not decided-by.".to_string(),
             ),
         });
     }
 
-    // F-07: 非 decisions/ 目录文档不得有 decided-by
+    // V-F-07: 非 decisions/ 目录文档不得有 decided-by
     if doc.frontmatter.decided_by.is_some() {
         let nature = file_path.and_then(|p| infer_nature(p));
         if nature != Some("decision") {
             result.violations.push(Violation {
-                rule_id: "F-07".to_string(),
+                rule_id: "V-F-07".to_string(),
                 severity: ViolationSeverity::Fatal,
                 message: format!(
                     "document '{}' (nature: {}) has decided-by field, which is only allowed for decisions/",
@@ -539,6 +561,15 @@ fn regex_pattern_for_id() -> regex_lite::Regex {
     {
         regex_lite::Regex::new(r"^\d{6}-\d{4}(-\d{3})?-.+$").expect("invalid id format regex")
     }
+}
+
+/// 检测 decided-by 值是否以 "ai" 开头（不区分大小写）
+///
+/// decided-by 必须是人类标识符。任何 AI 前缀值（ai-auto, ai-assist 等）
+/// 都表示 AI 作为决策主体，违反"AI 不充任决议者"的治理原则。
+/// 详见 V-F-06 规则注释与 R4 工程映射审计 4.7 冲突四。
+fn is_ai_prefixed_decided_by(value: &str) -> bool {
+    value.to_lowercase().starts_with("ai")
 }
 
 /// 检测 emoji 字符
@@ -679,7 +710,7 @@ mod tests {
         }
     }
 
-    // ── F-01: id 格式 ──
+    // ── V-F-01: id 格式 ──
 
     #[test]
     fn test_f01_valid_id_format() {
@@ -691,11 +722,11 @@ mod tests {
         assert!(!is_valid_id("260613-1800")); // no semantic name
     }
 
-    // ── F-03: stage 值合法 ──
+    // ── V-F-03: stage 值合法 ──
 
     #[test]
     fn test_f03_valid_stage_values() {
-        // Use note path to avoid F-04 (upstream required for spec)
+        // Use note path to avoid V-F-04 (upstream required for spec)
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_frontmatter(&doc, Some(make_path("note")));
         assert!(!result.has_errors()); // "1/3" is valid
@@ -712,7 +743,7 @@ mod tests {
         assert!(result.has_errors());
     }
 
-    // ── F-04: upstream 对非 note 文档必填 ──
+    // ── V-F-04: upstream 对非 note 文档必填 ──
 
     #[test]
     fn test_f04_spec_requires_upstream() {
@@ -728,7 +759,7 @@ mod tests {
         assert!(!result.has_errors());
     }
 
-    // ── F-05: 禁止 body 中的 --- ──
+    // ── V-F-05: 禁止 body 中的 --- ──
 
     #[test]
     fn test_f05_no_horizontal_rule_in_body() {
@@ -745,7 +776,7 @@ mod tests {
         assert!(!result.has_errors());
     }
 
-    // ── F-06: 禁止 decided-by: ai-auto ──
+    // ── V-F-06: 禁止 decided-by 的 ai 前缀值 ──
 
     #[test]
     fn test_f06_ai_auto_forbidden() {
@@ -756,24 +787,37 @@ mod tests {
     }
 
     #[test]
-    fn test_f06_ai_assist_ok() {
+    fn test_f06_ai_assist_forbidden() {
         let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
         doc.frontmatter.decided_by = Some("ai-assist".to_string());
         let result = validate_governance(&doc, Some(make_path("decision")));
-        // ai-assist is allowed (F-06 only blocks ai-auto)
+        // V-F-06 now blocks all ai-prefixed values, including ai-assist
         let fatal = result
             .violations
             .iter()
-            .any(|v| v.rule_id == "F-06" && matches!(v.severity, ViolationSeverity::Fatal));
+            .any(|v| v.rule_id == "V-F-06" && matches!(v.severity, ViolationSeverity::Fatal));
+        assert!(fatal);
+    }
+
+    #[test]
+    fn test_f06_human_identifier_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
+        doc.frontmatter.decided_by = Some("moc".to_string());
+        let result = validate_governance(&doc, Some(make_path("decision")));
+        // human identifier passes V-F-06
+        let fatal = result
+            .violations
+            .iter()
+            .any(|v| v.rule_id == "V-F-06" && matches!(v.severity, ViolationSeverity::Fatal));
         assert!(!fatal);
     }
 
-    // ── F-07: 非 decisions/ 文档禁止 decided-by ──
+    // ── V-F-07: 非 decisions/ 文档禁止 decided-by ──
 
     #[test]
     fn test_f07_non_decision_must_not_have_decided_by() {
         let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
-        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        doc.frontmatter.decided_by = Some("moc".to_string());
         let result = validate_governance(&doc, Some(make_path("spec")));
         assert!(result.has_errors());
     }
@@ -781,37 +825,37 @@ mod tests {
     #[test]
     fn test_f07_decision_with_decided_by_ok() {
         let mut doc = make_test_doc("260613-1800-test", "2/3", Some("260613-1700-x"));
-        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        doc.frontmatter.decided_by = Some("moc".to_string());
         let result = validate_governance(&doc, Some(make_path("decision")));
-        let err = result.violations.iter().any(|v| v.rule_id == "F-07");
+        let err = result.violations.iter().any(|v| v.rule_id == "V-F-07");
         assert!(!err);
     }
 
-    // ── G-02: 文档在可识别目录下 ──
+    // ── V-G-02: 文档在可识别目录下 ──
 
     #[test]
     fn test_g02_recognized_directory() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_structure(&doc, Some(Path::new("docs/specs/philosophy/test.sih.md")));
-        let g02 = result.violations.iter().find(|v| v.rule_id == "G-02");
-        assert!(g02.is_none()); // no G-02 violation for recognized dir
+        let g02 = result.violations.iter().find(|v| v.rule_id == "V-G-02");
+        assert!(g02.is_none()); // no V-G-02 violation for recognized dir
     }
 
     #[test]
     fn test_g02_unrecognized_directory_warns() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_structure(&doc, Some(Path::new("docs/unknown/test.sih.md")));
-        let g02 = result.violations.iter().find(|v| v.rule_id == "G-02");
+        let g02 = result.violations.iter().find(|v| v.rule_id == "V-G-02");
         assert!(g02.is_some());
     }
 
-    // ── G-03: 路径深度 ≤ 3 ──
+    // ── V-G-03: 路径深度 ≤ 3 ──
 
     #[test]
     fn test_g03_path_depth_ok() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_structure(&doc, Some(Path::new("docs/specs/test.sih.md")));
-        let g03 = result.violations.iter().find(|v| v.rule_id == "G-03");
+        let g03 = result.violations.iter().find(|v| v.rule_id == "V-G-03");
         assert!(g03.is_none());
     }
 
@@ -819,18 +863,18 @@ mod tests {
     fn test_g03_path_too_deep_warns() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_structure(&doc, Some(Path::new("docs/a/b/c/d/test.sih.md")));
-        let g03 = result.violations.iter().find(|v| v.rule_id == "G-03");
+        let g03 = result.violations.iter().find(|v| v.rule_id == "V-G-03");
         assert!(g03.is_some());
     }
 
-    // ── G-04: 表格 ≤ 3 列 ──
+    // ── V-G-04: 表格 ≤ 3 列 ──
 
     #[test]
     fn test_g04_table_cols_ok() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |".to_string();
         let result = validate_content(&doc);
-        let g04 = result.violations.iter().find(|v| v.rule_id == "G-04");
+        let g04 = result.violations.iter().find(|v| v.rule_id == "V-G-04");
         assert!(g04.is_none());
     }
 
@@ -839,18 +883,18 @@ mod tests {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |".to_string();
         let result = validate_content(&doc);
-        let g04 = result.violations.iter().find(|v| v.rule_id == "G-04");
+        let g04 = result.violations.iter().find(|v| v.rule_id == "V-G-04");
         assert!(g04.is_some());
     }
 
-    // ── G-05: 代码块语言标签 ──
+    // ── V-G-05: 代码块语言标签 ──
 
     #[test]
     fn test_g05_code_block_with_lang() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "```rust\nlet x = 1;\n```".to_string();
         let result = validate_content(&doc);
-        let g05 = result.violations.iter().find(|v| v.rule_id == "G-05");
+        let g05 = result.violations.iter().find(|v| v.rule_id == "V-G-05");
         assert!(g05.is_none());
     }
 
@@ -859,17 +903,17 @@ mod tests {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "```\nsome code\n```".to_string();
         let result = validate_content(&doc);
-        let g05 = result.violations.iter().find(|v| v.rule_id == "G-05");
+        let g05 = result.violations.iter().find(|v| v.rule_id == "V-G-05");
         assert!(g05.is_some());
     }
 
-    // ── G-06: 无 emoji ──
+    // ── V-G-06: 无 emoji ──
 
     #[test]
     fn test_g06_no_emoji() {
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_content(&doc);
-        let g06 = result.violations.iter().find(|v| v.rule_id == "G-06");
+        let g06 = result.violations.iter().find(|v| v.rule_id == "V-G-06");
         assert!(g06.is_none());
     }
 
@@ -878,17 +922,17 @@ mod tests {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "Hello 👋 world".to_string();
         let result = validate_content(&doc);
-        let g06 = result.violations.iter().find(|v| v.rule_id == "G-06");
+        let g06 = result.violations.iter().find(|v| v.rule_id == "V-G-06");
         assert!(g06.is_some());
     }
 
-    // ── G-08: Stage X 标记 ──
+    // ── V-G-08: Stage X 标记 ──
 
     #[test]
     fn test_g08_stage_x_warns() {
         let doc = make_test_doc("260613-1800-test", "X", Some("260613-1700-x"));
         let result = validate_lifecycle(&doc);
-        let g08 = result.violations.iter().find(|v| v.rule_id == "G-08");
+        let g08 = result.violations.iter().find(|v| v.rule_id == "V-G-08");
         assert!(g08.is_some());
     }
 
@@ -896,30 +940,30 @@ mod tests {
     fn test_g08_stage_3_ok() {
         let doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
         let result = validate_lifecycle(&doc);
-        let g08 = result.violations.iter().find(|v| v.rule_id == "G-08");
+        let g08 = result.violations.iter().find(|v| v.rule_id == "V-G-08");
         assert!(g08.is_none());
     }
 
-    // ── G-09: decisions/ 2/3+ 应有 decided-by ──
+    // ── V-G-09: decisions/ 2/3+ 应有 decided-by ──
 
     #[test]
     fn test_g09_decision_without_decided_by_warns() {
         let doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
         let result = validate_governance(&doc, Some(make_path("decision")));
-        let g09 = result.violations.iter().find(|v| v.rule_id == "G-09");
+        let g09 = result.violations.iter().find(|v| v.rule_id == "V-G-09");
         assert!(g09.is_some());
     }
 
     #[test]
     fn test_g09_decision_with_decided_by_ok() {
         let mut doc = make_test_doc("260613-1800-test", "3/3", Some("260613-1700-x"));
-        doc.frontmatter.decided_by = Some("ai-assist".to_string());
+        doc.frontmatter.decided_by = Some("moc".to_string());
         let result = validate_governance(&doc, Some(make_path("decision")));
-        let g09 = result.violations.iter().find(|v| v.rule_id == "G-09");
+        let g09 = result.violations.iter().find(|v| v.rule_id == "V-G-09");
         assert!(g09.is_none());
     }
 
-    // ── G-10: 根文档自指向 ──
+    // ── V-G-10: 根文档自指向 ──
 
     #[test]
     fn test_g10_root_self_reference_ok() {
@@ -929,24 +973,24 @@ mod tests {
             "3/3",
             Some("240602-0900-on-sihankor"),
         );
-        // G-10 is silent: no violation emitted for self-reference
+        // V-G-10 is silent: no violation emitted for self-reference
         let result = validate_governance(&doc, Some(path));
         let violations = result
             .violations
             .iter()
-            .filter(|v| v.rule_id == "G-10")
+            .filter(|v| v.rule_id == "V-G-10")
             .count();
-        assert_eq!(violations, 0); // G-10 should not emit violations, just validate internally
+        assert_eq!(violations, 0); // V-G-10 should not emit violations, just validate internally
     }
 
-    // ── J-01: 列表嵌套 ≤ 2 层 ──
+    // ── V-J-01: 列表嵌套 ≤ 2 层 ──
 
     #[test]
     fn test_j01_nested_list_ok() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "- item\n  - sub\n    - subsub".to_string();
         let result = validate_content(&doc);
-        let j01 = result.violations.iter().find(|v| v.rule_id == "J-01");
+        let j01 = result.violations.iter().find(|v| v.rule_id == "V-J-01");
         assert!(j01.is_none());
     }
 
@@ -955,7 +999,7 @@ mod tests {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         doc.content = "- a\n  - b\n    - c\n      - d".to_string();
         let result = validate_content(&doc);
-        let j01 = result.violations.iter().find(|v| v.rule_id == "J-01");
+        let j01 = result.violations.iter().find(|v| v.rule_id == "V-J-01");
         assert!(j01.is_some());
     }
 
