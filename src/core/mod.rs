@@ -2,6 +2,7 @@ pub mod database;
 pub mod glossary;
 pub mod indexer;
 pub mod kanban;
+pub mod metrics;
 pub mod models;
 pub mod orchestrator;
 pub mod parser;

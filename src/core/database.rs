@@ -3,6 +3,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use std::path::Path;
 use std::sync::Mutex;
 
+use super::metrics::MetricRecord;
 use super::models::{ChainNode, DocStatus, Document, SearchResult, Stage};
 
 /// 数据库抽象 trait：契约不泄漏实现细节
@@ -22,6 +23,23 @@ pub trait SihDatabase: Send + Sync {
         status: &DocStatus,
     ) -> Result<Vec<Document>, DatabaseError>;
     async fn get_all_documents(&self) -> Result<Vec<Document>, DatabaseError>;
+
+    /// 记录一条度量事件
+    async fn record_metric(
+        &self,
+        event_type: &str,
+        payload_json: &str,
+    ) -> Result<(), DatabaseError>;
+
+    /// 查询指定类型度量事件的最近 N 条
+    async fn query_metrics(
+        &self,
+        event_type: &str,
+        limit: usize,
+    ) -> Result<Vec<MetricRecord>, DatabaseError>;
+
+    /// 查询 ProjectSnapshot 类型的最近快照
+    async fn get_latest_snapshot(&self) -> Result<Option<MetricRecord>, DatabaseError>;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -88,6 +106,16 @@ impl SqliteBackend {
             CREATE INDEX IF NOT EXISTS idx_documents_upstream ON documents(upstream);
             CREATE INDEX IF NOT EXISTS idx_documents_nature ON documents(nature);
             CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+
+            CREATE TABLE IF NOT EXISTS metrics (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type      TEXT NOT NULL,
+                payload_json    TEXT NOT NULL,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_metrics_type      ON metrics(event_type);
+            CREATE INDEX IF NOT EXISTS idx_metrics_created   ON metrics(created_at);
             ",
         )?;
         Ok(())
@@ -337,6 +365,40 @@ impl SihDatabase for SqliteBackend {
             .collect();
 
         Ok(docs)
+    }
+
+    async fn record_metric(&self, event_type: &str, payload_json: &str) -> Result<(), DatabaseError> {
+        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        conn.execute(
+            "INSERT INTO metrics (event_type, payload_json, created_at) VALUES (?1, ?2, datetime('now'))",
+            params![event_type, payload_json],
+        )?;
+        Ok(())
+    }
+
+    async fn query_metrics(&self, event_type: &str, limit: usize) -> Result<Vec<MetricRecord>, DatabaseError> {
+        let conn = self.conn.lock().map_err(|_| DatabaseError::NotInitialized)?;
+        let mut stmt = conn.prepare(
+            "SELECT id, event_type, payload_json, created_at FROM metrics WHERE event_type = ?1 ORDER BY created_at DESC LIMIT ?2"
+        )?;
+        let rows = stmt.query_map(params![event_type, limit as i64], |row| {
+            Ok(MetricRecord {
+                id: row.get(0)?,
+                event_type: row.get(1)?,
+                payload_json: row.get(2)?,
+                created_at: row.get(3)?,
+            })
+        })?;
+        let mut results = Vec::new();
+        for row in rows {
+            results.push(row?);
+        }
+        Ok(results)
+    }
+
+    async fn get_latest_snapshot(&self) -> Result<Option<MetricRecord>, DatabaseError> {
+        let mut records = self.query_metrics("ProjectSnapshot", 1).await?;
+        Ok(records.pop())
     }
 }
 
