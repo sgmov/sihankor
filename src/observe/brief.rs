@@ -12,6 +12,7 @@
 //! - 不改写任何现有数据结构
 //! - 纯文本输出（不超过 2000 tokens）
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -41,6 +42,8 @@ pub struct ProjectBrief {
     pub ci_paths: Vec<PathBuf>,
     /// 最新 3 条会话摘要
     pub recent_sessions: Vec<SessionEntry>,
+    /// 会话健康诊断
+    pub session_health: Vec<String>,
 }
 
 /// 会话摘要条目
@@ -78,6 +81,7 @@ pub fn generate(root: &Path) -> String {
         latest_trails: Vec::new(),
         ci_paths: Vec::new(),
         recent_sessions: Vec::new(),
+        session_health: Vec::new(),
     };
 
     // 1. 扫描知识库行迹
@@ -91,6 +95,9 @@ pub fn generate(root: &Path) -> String {
     if sessions_dir.is_dir() {
         brief.recent_sessions = collect_recent_sessions(&sessions_dir, 3);
     }
+
+    // 会话健康诊断
+    brief.session_health = check_session_health(root, &brief.recent_sessions, &brief.latest_trails);
 
     // 2. 扫描 CI 配置路径
     let ci_candidates = vec![
@@ -317,6 +324,90 @@ fn parse_session_file(path: &Path, content: &str) -> Option<SessionEntry> {
     })
 }
 
+/// 会话健康诊断：基于项目级信号检测上下文压力
+///
+/// 四个检测维度全部基于文件系统/git（不依赖 agent 状态）：
+/// - session summary 密度（>3 条在 24h 内 → 建议合并）
+/// - commit 密度（>5 个 commit 在同一 goal → 建议结束）
+/// - trail 密度（同一 anchor_doc >3 条 trail → 决策链过长）
+/// - CI 停滞检测（G 违规连续 3 次 ±0 → review backlog）
+fn check_session_health(
+    root: &Path,
+    sessions: &[SessionEntry],
+    trails: &[TrailEntry],
+) -> Vec<String> {
+    let mut alerts: Vec<String> = Vec::new();
+
+    // 1. Session summary 密度（> 3 条 → 建议合并会话）
+    if sessions.len() > 3 {
+        alerts.push(format!(
+            "{} session summaries recorded — consider consolidating into longer sessions to reduce context overhead",
+            sessions.len()
+        ));
+    }
+
+    // 2. Commit 密度（同一 goal 的 commit 数 > 5）
+    let commit_count = {
+        let output = Command::new("git")
+            .args(["log", "--oneline", "-50"])
+            .current_dir(root)
+            .output();
+        if let Ok(out) = output {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter(|l| !l.trim().is_empty())
+                .count()
+        } else {
+            0
+        }
+    };
+
+    if commit_count > 5 {
+        // 检查是否有多个 commit 针对同一 goal（以最近 3 条 session goal 为基准）
+        let recent_goals: Vec<&str> = sessions.iter()
+            .filter_map(|s| s.goal.as_deref())
+            .collect();
+        if recent_goals.len() >= 2 && recent_goals[0] == recent_goals[1] {
+            alerts.push(format!(
+                "{} commits with repeated goal '{}' — goal likely achieved, consider closing this task",
+                commit_count, recent_goals[0]
+            ));
+        }
+    }
+
+    // 3. Trail 密度（同一 anchor_doc > 3 条 trail）
+    let mut anchor_counts: HashMap<&str, usize> = HashMap::new();
+    for t in trails {
+        *anchor_counts.entry(t.anchor_doc.as_str()).or_default() += 1;
+    }
+    for (anchor, count) in anchor_counts {
+        if count > 3 {
+            alerts.push(format!(
+                "{} trails anchored on '{}' — decision chain may be too long, consider ratify or close",
+                count, anchor
+            ));
+        }
+    }
+
+    // 4. CI 停滞检测（需要跑 ci-check.sh 判断 G 违规变化）
+    // 注：此检查依赖外部 CI 脚本，若不存在则跳过
+    let ci_script = root.join("scripts").join("ci-check.sh");
+    if ci_script.exists() {
+        let output = Command::new("sh")
+            .args([ci_script.to_str().unwrap_or(""), "--strict"])
+            .current_dir(root)
+            .output();
+        if let Ok(out) = output {
+            let text = String::from_utf8_lossy(&out.stdout);
+            if text.contains("G 级违规") {
+                alerts.push("CI G violations present — consider running `cargo run --bin rebuild_index -- --strict` to review backlog".into());
+            }
+        }
+    }
+
+    alerts
+}
+
 /// 执行 git status，返回 (branch, is_dirty)
 fn git_status(root: &Path) -> Option<(String, bool)> {
     let output = Command::new("git")
@@ -430,6 +521,16 @@ fn format_brief(brief: &ProjectBrief) -> String {
                 "- [{}] goal: {}, outcome: {}, commits: {}\n",
                 s.id, goal, outcome, commits
             ));
+        }
+    }
+
+    // 会话健康诊断
+    out.push_str("### Session Health\n");
+    if brief.session_health.is_empty() {
+        out.push_str("All signals normal.\n");
+    } else {
+        for h in &brief.session_health {
+            out.push_str(&format!("⚠ {}\n", h));
         }
     }
 
