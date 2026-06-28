@@ -1,7 +1,7 @@
 ---
 id: 260628-2200-dsr3-implications
-stage: 1/3
-upstream: 260628-1700-dsr-cycle
+stage: 3/3
+upstream: 260628-1700-dsr-cycle-initiation
 ---
 
 # DSR-3 对司衡定位的影响
