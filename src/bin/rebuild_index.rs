@@ -139,6 +139,15 @@ struct IndexSummary {
     indexed: usize,
     parse_errors: usize,
     db_errors: usize,
+    /// parse/db 错误的明细（path, message）—— 暴露给 CI 解析定位问题
+    error_details: Vec<ErrorDetail>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ErrorDetail {
+    path: String,
+    kind: String, // "parse" | "db"
+    message: String,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -195,6 +204,16 @@ fn build_report(
         .count();
     let db_errors = index.errors.len() - parse_errors;
 
+    let error_details: Vec<ErrorDetail> = index
+        .errors
+        .iter()
+        .map(|(p, m)| ErrorDetail {
+            kind: if p.ends_with(".sih.md") { "parse" } else { "db" }.to_string(),
+            path: p.clone(),
+            message: m.clone(),
+        })
+        .collect();
+
     // 阻断判定
     let f_block = !index.fatal_violations.is_empty();
     let upstream_block = false; // 当前默认所有 upstream_issues 仅报告；plan 决策后再升级
@@ -222,6 +241,7 @@ fn build_report(
             indexed: index.indexed,
             parse_errors,
             db_errors,
+            error_details,
         },
         fatal_violations: index.fatal_violations,
         guideline_violations: index.guideline_violations,
