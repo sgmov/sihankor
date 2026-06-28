@@ -168,8 +168,10 @@ impl SihankorService {
     ) -> String {
         match self.db.get_document(&id).await {
             Ok(Some(doc)) => {
+                let nature = doc.nature.clone();
+                let synthetic_path = std::path::PathBuf::from(format!("docs/{}/doc.md", nature));
                 let violations =
-                    validator::validate_document(&doc, None, &ValidationConfig::default());
+                    validator::validate_document(&doc, Some(&synthetic_path), &ValidationConfig::default());
                 format!(
                     "ID: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
                     doc.id,

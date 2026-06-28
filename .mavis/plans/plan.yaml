@@ -1,0 +1,123 @@
+version: 1
+plan:
+  name: "司衡 agent 团队 bootstrap"
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 5
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers: [verifier]
+    audit_sample_rate: 0.0
+tasks:
+  - id: bootstrap-sihankor-team
+    title: "司衡项目 agent 团队 bootstrap（含哲学推导与哲学映射工程两个专用 reins）"
+    prompt: |
+      你被指派为司衡（SiHankor）项目的 bootstrap worker。
+
+      项目路径：/Users/moc/projects/SiHankor/sihankor
+      项目性质：基于道家思想的代码工程治理运行时（Governance Runtime），Rust 实现，
+                已部署 22+ MCP 工具，已存在治理文档体系（specs/ proposals/ decisions/ knowledge/）。
+      用户身份：项目维护者与创始人。
+      用户明确需求：multi-agents，核心是哲学推导、哲学映射工程两个领域。
+
+      关键背景：项目根 AGENTS.md 已存在（包含 SiHankor Document Style Guide），
+      用户未要求重写。按 init skill 的 "existing file -> ASK user" 处理：用户没明确
+      选择，所以默认 SKIP，不要覆盖。在 deliverable summary 里说明这一点。
+
+      ## 任务
+
+      1. 加载 init skill 并按其指引执行 bootstrap 流程。init skill 已在本会话上下文，
+         可直接执行其 step 3-6，无需重复加载（除非你需要它的细节 schema）。
+
+      2. inspect codebase（已经知道）：
+         - 生态：Rust（Cargo.toml）
+         - 关键命令：cargo build / cargo test / cargo clippy / cargo fmt
+         - 测试：tests/ 目录
+         - 已存在：docs/ 治理文档、AGENTS.md、Cargo.toml、README.md
+         - 缺失：.harness/ 目录
+
+      3. AGENTS.md 处理：项目根已存在 AGENTS.md，默认 SKIP 不要覆盖。
+
+      4. 生成 .harness/ 基础团队。最小必要结构：
+         - .harness/agent.md（orchestrator/router 路由层）
+         - .harness/reins/developer/agent.md（Rust 实现、Metric 管道、MCP 工具、Trail 数据结构）
+         - .harness/reins/tester/agent.md（cargo test、集成测试、L 级别验证）
+         - .harness/reins/doc-validator/agent.md（SiHankor Document Style 校验、
+           stage 流转、upstream 链、F/G/J 违规扫描）
+
+      5. 创建用户明确要求的两个专用 reins（项目级，路径 .harness/reins/<name>/）：
+
+         philosophical-derivator（哲学推导）：
+         - Scope：哲学主张的推导链记录与维护、应辨（Ying-Bian）条目沉淀、
+           认识论标签核查（external-anchor / empirical-hypothesis / tautology /
+           design-corollary / constructed-framework）、外部锚定验证
+           （热力学第二定律 / Shannon 信息论 / Godel 不完备性定理等）、
+           哲学论证集开放研究方向追踪、司衡哲学七论的内部一致性检查、
+           重新推导后设计内核假设集的演化追踪。
+         - Don't own：工程实现（handoff to developer）、哲学内容裁决
+           （handoff to 用户/维护者）。
+         - Stop when：交付哲学推导文档（含推导链、认识论标签、外部锚定声明、
+           可证伪条件），遵守 SiHankor Document Style Guide（含 .sih.md frontmatter
+           规则），upstream 链完整可溯源到哲学总纲。
+
+         philosophy-engineering-mapper（哲学映射工程）：
+         - Scope：哲学主张到工程映射的 L1-L5 评估与维护、映射链偏差量化、
+           链升级验证（基于实际源码而非文档）、Engineering-Mapping.sih.md
+           的 L 级别标注与代码状态对齐、Trail 机制与 DDD 候选术的映射评估、
+           iCL/iWW/iCT 三机的哲学-工程映射检查。
+         - Don't own：工程实现本身（handoff to developer）、哲学主张裁决
+           （handoff to 用户/维护者）。
+         - Stop when：交付工程映射评估报告（每条链的 L 级别、偏差量化、
+           升级路径证据），并产出对应实现补丁提案或 .harness/crons/ 维护任务。
+
+      6. 验证所有 agent 都能 boot：
+         - mavis agent list --project /Users/moc/projects/SiHankor/sihankor
+           列出所有 reins，无错误
+         - 对每个 rein：mavis agent info <name> 成功
+         - 抽查 agent.md 的 frontmatter（name 必须匹配 folder name，
+           description 必须具体不是 general-purpose 等空话）
+
+      7. 写 deliverable summary：
+         - 路径：scratchpad（$MAVIS_SCRATCHPAD）或 plan dir
+         - 内容：
+           - AGENTS.md 处理结果（SKIP）
+           - 创建的 reins 列表（路径 + 一行职责描述）
+           - 每个 rein 的 stop condition
+           - 验证命令的输出
+           - 任何风险或注意事项
+
+      ## 注意事项
+      - 不要修改项目根 AGENTS.md
+      - 不要 git commit（用户会自己 commit）
+      - agent.md body 应包含四要素：Scope、Don't own、How you work、Stop when
+      - 不要在 orchestrator body 里列出 reins（daemon 自动注入 team roster）
+      - 在 SiHankor 哲学语境下，scope 描述应反映"治理运行时"特征
+        （不是普通软件工程团队）
+    assigned_to: general
+    verified_by: verifier
+    verify_prompt: |
+      独立验证司衡 agent 团队 bootstrap 结果。
+
+      步骤：
+      1. 确认项目根 AGENTS.md 未被修改（git status 应无变更或仅 .harness/ 相关）
+      2. 确认 .harness/ 目录存在，包含 agent.md
+      3. 确认以下 reins 目录和 agent.md 文件存在：
+         - .harness/reins/developer/agent.md
+         - .harness/reins/tester/agent.md
+         - .harness/reins/doc-validator/agent.md
+         - .harness/reins/philosophical-derivator/agent.md
+         - .harness/reins/philosophy-engineering-mapper/agent.md
+      4. 运行 mavis agent list --project /Users/moc/projects/SiHankor/sihankor，
+         确认列出所有 reins 且无错误
+      5. 对每个 rein 运行 mavis agent info <name>，确认不报错
+      6. 抽查 .harness/agent.md 和 reins 的 agent.md，确认：
+         - frontmatter 的 name 和 description 字段符合 schema
+         - body 包含 Scope / Don't own / Stop when 等关键章节
+         - description 是具体的角色描述，不是 general-purpose 等空话
+      7. 重点验证 philosophical-derivator 和 philosophy-engineering-mapper：
+         - scope 与项目哲学体系（道法鉴应 / 认识论标签 / 外部锚定）一致
+         - handoff 边界明确（don't own 区分）
+         - stop condition 可验证
+
+      产出 PASS/FAIL 报告，列出所有发现的问题。
+    max_retries: 2

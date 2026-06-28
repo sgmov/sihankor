@@ -520,10 +520,15 @@ fn contains_mandatory_language(desc: &str) -> bool {
     mandatory_words.iter().any(|w| desc.contains(w))
 }
 
-const fn would_create_cycle(_action: &Action, _upstream_chain: &[String]) -> bool {
-    // 环检测需 resolve_chain DB 查询，MVP 返回 false
-    // 未来实现：检查 action 的 upstream 变更是否会使文档的 id 出现在新 upstream 的 chain 中
-    false
+fn would_create_cycle(action: &Action, upstream_chain: &[String]) -> bool {
+    // 检查 action 描述中是否引用了上游链中的文档 ID，若引用则形成环
+    // 注意：此检查依赖 ID 在描述中被引用，未来可实现 resolve_chain DB 查询做精确检测
+    if upstream_chain.is_empty() {
+        return false;
+    }
+    upstream_chain
+        .iter()
+        .any(|upstream_id| action.description.contains(upstream_id.as_str()))
 }
 
 #[cfg(test)]

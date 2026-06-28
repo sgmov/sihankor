@@ -347,15 +347,16 @@ fn validate_frontmatter(
     // V-F-02: type 字段已废除：document nature 由目录路径推断
     // 此规则已移除
 
-    // V-F-03: stage 必须是有效编码
-    if !doc.stage.is_valid() {
+    // V-F-03: stage 必须是有效编码且非终态
+    // is_valid() 恒 true（Stage 枚举构造时即有效），故检查终态
+    if doc.stage.is_terminal() {
         result.violations.push(Violation {
             rule_id: "V-F-03".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: format!("invalid stage: {}", doc.stage),
+            message: format!("terminal stage: {} — document in terminal state should not be modified", doc.stage),
             location: "frontmatter.stage".to_string(),
             fix_suggestion: Some(
-                "Set stage to one of: 1/3, 2/3, 3/3, X, or 0/<successor-id>".to_string(),
+                "Deprecated/Superseded documents should remain in terminal state".to_string(),
             ),
         });
     }
@@ -835,11 +836,12 @@ mod tests {
         // Use note path to avoid V-F-04 (upstream required for spec)
         let doc = make_test_doc("260613-1800-test", "1/3", None);
         let result = validate_frontmatter(&doc, Some(make_path("note")));
-        assert!(!result.has_errors()); // "1/3" is valid
+        assert!(!result.has_errors()); // "1/3" is valid (Propose, non-terminal)
 
+        // "X" = Deprecated, terminal stage — V-F-03 now reports this
         let doc = make_test_doc("260613-1800-test-x", "X", None);
         let result = validate_frontmatter(&doc, Some(make_path("note")));
-        assert!(!result.has_errors()); // "X" is valid
+        assert!(result.has_errors()); // terminal stage triggers V-F-03
     }
 
     #[test]

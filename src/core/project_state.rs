@@ -7,6 +7,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+use super::models::Stage;
+
 // ---------------------------------------------------------------------------
 // ProjectState
 // ---------------------------------------------------------------------------
@@ -88,10 +90,12 @@ impl ProjectState {
         self.last_action = format!("activated proposal {}", proposal_id);
     }
 
-    /// 推进阶段
-    pub fn advance_stage(&mut self, new_stage: &str) {
-        self.current_stage = new_stage.into();
-        self.last_action = format!("advanced to stage {}", new_stage);
+    /// 推进阶段（需通过 can_transition_to 校验）
+    pub fn advance_stage(&mut self, from: &Stage, to: &Stage) -> Result<(), String> {
+        from.can_transition_to(to)?;
+        self.current_stage = to.as_str().into();
+        self.last_action = format!("advanced from stage {} to {}", from.as_str(), to.as_str());
+        Ok(())
     }
 }
 
@@ -246,8 +250,8 @@ mod tests {
     #[test]
     fn test_advance_stage() {
         let mut state = ProjectState::new();
-        state.advance_stage("proposal");
-        assert_eq!(state.current_stage, "proposal");
+        state.advance_stage(&Stage::Propose, &Stage::Resolve).unwrap();
+        assert_eq!(state.current_stage, "2/3");
     }
 
     #[test]
