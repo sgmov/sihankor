@@ -1,6 +1,6 @@
 ---
 id: 260628-1700-observation-window
-stage: 1/3
+stage: 3/3
 upstream: 260628-2300-sih-entry-model
 ---
 
