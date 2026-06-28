@@ -44,3 +44,6 @@ inline_always = "warn"
 missing_const_for_fn = "warn"
 todo = "warn"
 unreachable = "warn"
+
+[dev-dependencies]
+tempfile = "3"
