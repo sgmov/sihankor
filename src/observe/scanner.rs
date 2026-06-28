@@ -195,12 +195,8 @@ fn analyze_file(_content: &str, lines: &[&str], path: &Path, obs: &mut ProjectOb
     // 4. 代码块检测
     analyze_code_blocks(&body_lines, &mut obs.code_block_stats);
 
-    // 5. --- 水平线（body 中，且不是 frontmatter 边界）
-    for line in &body_lines {
-        if line.trim() == "---" {
-            obs.horizontal_rule_count += 1;
-        }
-    }
+    // 5. 水平线（上下文感知：排除代码块 / 表格 / 列表项内的 ---）
+    obs.horizontal_rule_count = count_horizontal_rules(&body_lines);
 
     // 6. emoji 行数
     for line in &body_lines {
@@ -323,6 +319,82 @@ fn analyze_code_blocks(lines: &[&str], stats: &mut CodeBlockStats) {
             }
         }
     }
+}
+
+/// 统计水平线数量：仅计算真正的独立水平线，
+/// 排除代码块内、表格内、列表项内的 ---。
+///
+/// 状态机：
+/// - 遇到 ``` 切换 in_code_block
+/// - 遇到 | 开头 + | 结尾的行进入 in_table
+/// - 遇到 -/* /+/digit. 开头的行进入 list
+/// - 只有在以上三种上下文外、且行严格等于 `---`（无 leading whitespace）才计为水平线
+fn count_horizontal_rules(lines: &[&str]) -> usize {
+    let mut count = 0;
+    let mut in_code_block = false;
+    let mut in_table = false;
+
+    for line in lines {
+        let trimmed = line.trim_start();
+
+        // Code block 边界
+        if trimmed.starts_with("```") {
+            in_code_block = !in_code_block;
+            in_table = false; // 进入/退出 code block 时重置 table 状态
+            continue;
+        }
+        if in_code_block {
+            continue;
+        }
+
+        // Table 行：以 | 开头并以 | 结尾
+        if is_table_line(trimmed) {
+            in_table = true;
+            continue;
+        }
+        // 退出 table 状态：空行
+        if in_table && trimmed.is_empty() {
+            in_table = false;
+            continue;
+        }
+        if in_table {
+            continue; // table 内部的非 | 行（虽然少见）跳过
+        }
+
+        // List item：-/* /+/digit. 开头
+        if is_list_item(trimmed) {
+            continue;
+        }
+
+        // 真正的水平线：行严格等于 `---`（无 leading whitespace）
+        if *line == "---" {
+            count += 1;
+        }
+    }
+
+    count
+}
+
+/// 是否是 markdown 表格行
+fn is_table_line(trimmed: &str) -> bool {
+    trimmed.starts_with('|') && trimmed.ends_with('|') && trimmed.contains('|')
+}
+
+/// 是否是 markdown 列表项
+fn is_list_item(trimmed: &str) -> bool {
+    if trimmed.starts_with("- ") || trimmed.starts_with("* ") || trimmed.starts_with("+ ") {
+        return true;
+    }
+    // 有序列表：1. 2. 3. ...
+    let bytes = trimmed.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() && bytes[i].is_ascii_digit() {
+        i += 1;
+    }
+    if i > 0 && i + 1 < bytes.len() && &bytes[i..i + 2] == b". " {
+        return true;
+    }
+    false
 }
 
 /// 检查一行是否含 emoji
@@ -461,6 +533,57 @@ mod tests {
         write_file(dir.path(), "rule.md", "# Title\n\n---\n\nMore content");
         let obs = scan_project(dir.path()).unwrap();
         assert_eq!(obs.horizontal_rule_count, 1);
+    }
+
+    #[test]
+    fn test_horizontal_rule_inside_code_block_not_counted() {
+        let dir = make_temp_dir();
+        let content = "```\n---\nsome code\n---\n```\n";
+        write_file(dir.path(), "code.md", content);
+        let obs = scan_project(dir.path()).unwrap();
+        assert_eq!(obs.horizontal_rule_count, 0);
+    }
+
+    #[test]
+    fn test_horizontal_rule_inside_list_not_counted() {
+        let dir = make_temp_dir();
+        let content = "- item 1\n  - sub item\n  ---\n  more text\n- item 2\n";
+        write_file(dir.path(), "list.md", content);
+        let obs = scan_project(dir.path()).unwrap();
+        assert_eq!(obs.horizontal_rule_count, 0);
+    }
+
+    #[test]
+    fn test_horizontal_rule_inside_table_not_counted() {
+        let dir = make_temp_dir();
+        let content = "| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n";
+        write_file(dir.path(), "table.md", content);
+        let obs = scan_project(dir.path()).unwrap();
+        assert_eq!(obs.horizontal_rule_count, 0);
+    }
+
+    #[test]
+    fn test_horizontal_rule_mixed_real_and_false() {
+        // 混合：2 个真水平线 + 几个 false positive
+        let dir = make_temp_dir();
+        let content = "# Title\n\n---\n\n```\n---\n```\n\n- item\n  ---\n  text\n\n---\n\n| a | b |\n|---|---|\n";
+        write_file(dir.path(), "mixed.md", content);
+        let obs = scan_project(dir.path()).unwrap();
+        assert_eq!(
+            obs.horizontal_rule_count, 2,
+            "expected 2 real rules, got {}",
+            obs.horizontal_rule_count
+        );
+    }
+
+    #[test]
+    fn test_indented_dashes_not_counted() {
+        // 缩进的 --- 是 setext h2 标记，不是水平线
+        let dir = make_temp_dir();
+        let content = "Paragraph\n  ---\nMore text\n";
+        write_file(dir.path(), "setext.md", content);
+        let obs = scan_project(dir.path()).unwrap();
+        assert_eq!(obs.horizontal_rule_count, 0);
     }
 
     #[test]
