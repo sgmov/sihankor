@@ -1,6 +1,6 @@
 ---
 id: 260629-230000-techne-orchestration-trio
-stage: 2/3
+stage: 3/3
 verified: 260629
 ---
 
@@ -43,3 +43,10 @@ verified: 260629
 ### 已知遗留
 
 CI 自身的 V-G-04/V-G-05 警告来自 `docs/specs/260616-2100-code-lint-proposal.sih.md` 等预先存在文档，与本分支无关。Main 分支单独跑 `./scripts/ci-check.sh` 也返回 1。
+
+### 后续动作（已执行）
+
+- `git merge --squash feat/techne-orchestration` → main commit `4ee693d`
+- 删除本地与远程 `feat/techne-orchestration` 分支
+- 文档 ratify：proposal + decision 由 2/3 晋升至 3/3（main commit `7576351`）
+- 跨 agent 干扰：曾被并发 agent checkout 切到 `index-stale-prune`，通过 stash 恢复并继续，未污染 main。
