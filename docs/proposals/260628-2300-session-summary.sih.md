@@ -1,6 +1,6 @@
 ---
 id: 260628-2300-session-summary
-stage: 1/3
+stage: 3/3
 upstream: 260628-2300-project-brief-mcp-tool
 ---
 # 会话摘要提案
@@ -34,7 +34,7 @@ Session summary 填补第 2 项的空白。
 
 在 `docs/knowledge/session-summaries/` 目录下存储，命名格式：
 
-```
+```text
 YYYYMMDD-HHMMSS-summary.sih.md
 ```
 
@@ -56,7 +56,6 @@ YYYYMMDD-HHMMSS-summary.sih.md
    - <治理决策>: <依据>
  risks: <风险描述，可空>
  ```
-```
 
 若本次会话无实际产出，frontmatter 中添加：
 
@@ -80,7 +79,7 @@ outcome: 无产出
 
 更新 `sihankor_project_brief` 输出，新增 "Recent Sessions" 段：
 
-```
+```text
 ## Recent Sessions
 - [260628-1430] goal: DSR-4 ripgrep review, outcome: ripgrep 22 .md / 0 .sih.md confirmed, commits: 66d1cfe
 - [260628-1500] goal: Trail mechanism implementation, outcome: 2 tools + proposal ratified, commits: d7c973a
