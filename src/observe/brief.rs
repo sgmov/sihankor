@@ -141,6 +141,11 @@ pub fn generate(root: &Path) -> String {
 }
 
 /// 从 knowledge/trails/ 目录收集最新 N 条行迹
+pub fn collect_trails(root: &Path, limit: usize) -> Vec<TrailEntry> {
+    let trails_dir = root.join("knowledge").join("trails");
+    collect_latest_trails(&trails_dir, limit)
+}
+
 fn collect_latest_trails(trails_dir: &Path, limit: usize) -> Vec<TrailEntry> {
     let mut entries: Vec<_> = WalkDir::new(trails_dir)
         .follow_links(false)

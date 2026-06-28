@@ -368,6 +368,38 @@ impl SihankorService {
         generate_project_brief(root)
     }
 
+    /// 行迹上下文：读取 knowledge/trails/ 最新 N 条，以结构化文本输出
+    #[tool(
+        description = "[SiHankor] Get trail context: latest trail entries from knowledge/trails/ directory"
+    )]
+    pub async fn sihankor_trail_context(
+        &self,
+        Parameters(_): Parameters<EmptyParams>,
+    ) -> String {
+        use crate::observe::collect_trails;
+
+        let root = std::path::Path::new(&self.config.docs_dir)
+            .parent()
+            .map(|p| p.as_ref())
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        let trails = collect_trails(root, 5);
+        if trails.is_empty() {
+            return "No trail entries found.".to_string();
+        }
+
+        trails
+            .iter()
+            .map(|t| {
+                format!(
+                    "[{}] {} | type: {} | anchor: {} | created: {}",
+                    t.trace_id, t.summary, t.trail_type, t.anchor_doc, t.created_at
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     /// 触发全量索引重建
     #[tool(
         description = "[SiHankor] Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents"

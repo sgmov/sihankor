@@ -20,9 +20,12 @@ stage: 3/3
 
 ## 二、方案
 
-### 2.1 新增 MCP 工具：sihankor_project_brief
+### 2.1 新增 MCP 工具：sihankor_project_brief + sihankor_trail_context
 
-在 `src/observe/brief.rs` 中实现，约 100 行 Rust。工具调用时从已有数据源聚合信息，拼成纯文本返回。
+在 `src/observe/brief.rs` 中实现。工具调用时从已有数据源聚合信息，拼成纯文本返回。
+
+`sihankor_project_brief`：聚合 git 状态 + 行迹摘要 + 文档统计，一次调用获取全局上下文
+`sihankor_trail_context`：独立读取 knowledge/trails/ 最新 5 条，用于行迹专项查询
 
 ### 2.2 数据源
 

@@ -26,6 +26,7 @@ pub mod predictor;
 pub mod scanner;
 
 pub use brief::generate as generate_project_brief;
+pub use brief::collect_trails;
 pub use predictor::{RulePredictions, predict};
 pub use scanner::{
     CodeBlockStats, FileStats, FrontmatterStats, ProjectObservation, TableStats, scan_project,
