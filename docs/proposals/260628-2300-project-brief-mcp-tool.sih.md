@@ -1,6 +1,7 @@
 ---
 id: 260628-2300-project-brief-mcp-tool
 stage: 3/3
+upstream: 260628-2300-sih-entry-model
 ---
 # 项目简报 MCP 工具提案
 
