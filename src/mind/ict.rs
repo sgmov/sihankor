@@ -1,13 +1,13 @@
 use super::types::{
-    Action, ActionKind, ChainRole, Cognition, DaoTrace, DecisionProposal, Divergence,
-    DivergenceSeverity, DivergenceType, GovPosition, LawCheck, LawCheckResult, OverlapDegree,
-    Verdict, Verification,
+    Action, ActionKind, ChainRole, Cognition, DecisionProposal, Divergence,
+    DivergenceSeverity, DivergenceType, GovPosition, LawCheck, LawCheckResult,
+    LawViolationSummary, OverlapDegree, Verdict, Verification,
 };
 
 /// iCT 方圆机 —— 三机第三机
 ///
 /// 对 decision_proposal 执行五法检验（顺因/有度/知止/损补/顺势），
-/// 产出 Verification（逐条结果 + overall verdict + dao_trace）。
+/// 产出 Verification（逐条结果 + overall verdict + law_violation_summary）。
 pub struct ICT;
 
 impl ICT {
@@ -22,12 +22,12 @@ impl ICT {
         ];
 
         let overall = Self::overall_verdict(&checks);
-        let dao_trace = Self::build_dao_trace(&checks, cognition, proposal);
+        let law_violation_summary = Self::build_law_violation_summary(&checks, cognition, proposal);
 
         Verification {
             five_law_check: checks,
             overall,
-            dao_trace,
+            law_violation_summary,
         }
     }
 
@@ -393,60 +393,60 @@ impl ICT {
         Verdict::Pass
     }
 
-    fn build_dao_trace(
+    fn build_law_violation_summary(
         checks: &[LawCheck],
         cognition: &Cognition,
         proposal: &DecisionProposal,
-    ) -> Vec<DaoTrace> {
-        let mut traces = Vec::new();
+    ) -> Vec<LawViolationSummary> {
+        let mut summaries = Vec::new();
 
         for c in checks {
             if c.result == LawCheckResult::Pass {
                 continue;
             }
-            let (dao, trace) = match c.law.as_str() {
+            let (laws, detail) = match c.law.as_str() {
                 "顺因" => (
-                    "道二 + 道三",
+                    "顺因",
                     format!(
-                        "逆因果链：action '{}' 可能修改上游文档，违反道二（意图先于代码）",
+                        "逆因果链：action '{}' 可能修改上游文档",
                         proposal.recommended_action.description
                     ),
                 ),
                 "有度" => (
-                    "道一",
-                    "力度失配：action severity vs 发散 severity，违反道一（过犹不及）".to_string(),
+                    "有度",
+                    "力度失配：action severity vs 发散 severity".to_string(),
                 ),
                 "知止" => (
-                    "道一 + 道四",
+                    "知止",
                     format!(
-                        "逾矩：action '{}' 超出治理边界，违反道四（治理不完备）",
+                        "逾矩：action '{}' 超出治理边界",
                         proposal.recommended_action.description
                     ),
                 ),
                 "损补" => (
-                    "道一 + 道四",
+                    "损补",
                     format!(
-                        "方向错误：action '{}' 的损补方向可能不正确，违反道一（定向调节）",
+                        "方向错误：action '{}' 的损补方向可能不正确",
                         proposal.recommended_action.description
                     ),
                 ),
                 "顺势" => (
-                    "道一",
+                    "顺势",
                     format!(
-                        "力度失时：action '{}' 在 stage {} 力度不匹配，违反道一（治理有节奏）",
+                        "力度失时：action '{}' 在 stage {} 力度不匹配",
                         proposal.recommended_action.description,
                         cognition.governance_position.stage
                     ),
                 ),
-                _ => ("道四", "未分类的合道偏差".into()),
+                _ => ("未分类", "未分类的合道偏差".into()),
             };
-            traces.push(DaoTrace {
-                dao: dao.into(),
-                trace,
+            summaries.push(LawViolationSummary {
+                laws: laws.into(),
+                detail,
             });
         }
 
-        traces
+        summaries
     }
 }
 

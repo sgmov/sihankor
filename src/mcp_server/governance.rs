@@ -425,7 +425,7 @@ impl SihankorService {
 
     /// 决策验证：对已有的 decision_proposal 执行五法检验（iCT only）
     #[tool(
-        description = "[SiHankor] Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + dao trace"
+        description = "[SiHankor] Verify a decision proposal through iCT five-law check: 顺因/有度/知止/损补/顺势 → pass/fail/conditional + law violation summary"
     )]
     pub async fn verify_decision(
         &self,

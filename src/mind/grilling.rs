@@ -52,7 +52,6 @@ pub struct PromptTemplate {
     pub sections: Vec<SectionHint>,
     pub constraints: Vec<String>,
     pub falsifiability: String,
-    pub dao_trace: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -166,7 +165,6 @@ impl GrillingEngine {
         let constraints = self.inject_constraints(&nature);
         let sections = self.build_sections(&nature, &zhi_zhi);
         let falsifiability = self.build_falsifiability(&nature);
-        let dao_trace = self.build_dao_trace(&nature);
 
         PromptTemplate {
             frontmatter: FrontmatterHint {
@@ -182,7 +180,6 @@ impl GrillingEngine {
             sections,
             constraints,
             falsifiability,
-            dao_trace,
         }
     }
 
@@ -326,12 +323,6 @@ impl GrillingEngine {
         }
     }
 
-    // ---------- 道追溯 ----------
-
-    fn build_dao_trace(&self, _nature: &str) -> String {
-        "本文档的声明性主张需溯源至道/法原则。道四（规约与实现必有间隙）要求声明已知的不完备之处。"
-            .into()
-    }
 }
 
 // ---------------------------------------------------------------------------

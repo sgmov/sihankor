@@ -168,11 +168,10 @@ impl ValidationResult {
     /// G 级：警告项，有 G 级违规时报告列出
     /// J 级：静默项，仅计数，不列明细
     ///
-    /// J 语义决策说明：旧哲学层（archive/philosophy-v1/SiHankor-Engineering-Mapping.sih.md）
-    /// 将 J（矩）定义为"精确判定 pass/fail"的强机械判定。代码实现选择将其反转为
-    /// "静默记录"（仅计数，不列明细），这是更合理的设计：J 级规则（如列表嵌套层数）
-    /// 属于风格性判断，强行 pass/fail 会产生噪声阻断，静默计数既保留可追溯性又不
-    /// 干扰主流程。本实现以代码语义为准，J = 静默记录。详见 R4 工程映射审计 4.7 冲突二。
+    /// J 语义校准说明（260628-1600）：法论 §有度原定义将 J（矩）的判定方式与阻断行为混淆。
+    /// 经 G3 校准：J = 精确机械判定 + 静默记录。判定方式保留机械精确性，
+    /// 阻断行为由"pass/fail"校准为"静默记录"——风格性规则不应阻断，但机械判定确保可复现性。
+    /// 见法论校准 2026-06-28。
     pub fn to_structured_report(&self) -> String {
         let fatal: Vec<_> = self
             .violations
@@ -513,9 +512,8 @@ pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
 
     // V-J-01: 列表嵌套不超过 2 层
     //
-    // J 语义说明：J 级规则为静默记录（Judgment severity），仅计数不阻断。
-    // 旧哲学层将 J（矩）定义为强判定，代码实现选择静默记录，详见
-    // to_structured_report 的 J 语义决策说明。
+    // J 语义校准说明（260628-1600）：J 级规则为精确机械判定 + 静默记录，
+    // 仅计数不阻断。经 G3 校准，见法论校准 2026-06-28。
     let max_indent = doc
         .content
         .lines()

@@ -208,7 +208,7 @@ pub struct BeforeAfter {
 pub struct Verification {
     pub five_law_check: Vec<LawCheck>,
     pub overall: Verdict,
-    pub dao_trace: Vec<DaoTrace>,
+    pub law_violation_summary: Vec<LawViolationSummary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -235,9 +235,9 @@ pub enum Verdict {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DaoTrace {
-    pub dao: String,
-    pub trace: String,
+pub struct LawViolationSummary {
+    pub laws: String,
+    pub detail: String,
 }
 
 // ---------------------------------------------------------------------------

@@ -105,10 +105,10 @@ async fn api_assay(
         })
         .collect();
 
-    let dao_trace: Vec<String> = verification
-        .dao_trace
+    let law_violation_summary: Vec<String> = verification
+        .law_violation_summary
         .iter()
-        .map(|dt| format!("{}: {}", dt.dao, dt.trace))
+        .map(|ls| format!("{}: {}", ls.laws, ls.detail))
         .collect();
 
     let mut gaps: Vec<String> = Vec::new();
@@ -127,7 +127,7 @@ async fn api_assay(
         "doc_id": req.doc_id,
         "overall": format!("{:?}", verification.overall).to_lowercase(),
         "laws": laws,
-        "dao_trace": dao_trace,
+        "law_violation_summary": law_violation_summary,
         "gaps": gaps,
         "self_question": verification.overall != crate::mind::types::Verdict::Pass,
     }))
