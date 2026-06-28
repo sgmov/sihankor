@@ -15,7 +15,7 @@ pub struct RulePredictions {
     pub v_f01_predicted: usize,
     /// V-F-05（禁止 --- 水平线）— body 中含独立 --- 水平线的文件数
     pub v_f05_predicted: usize,
-    /// V-G-04（表格列数 ≤ 3）— 含 ≥ 4 列表格的文件数
+    /// V-G-04（表格列数 ≤ 4）— 含 ≥ 5 列表格的文件数
     pub v_g04_predicted: usize,
     /// V-G-05（代码块必须声明语言）— 缺 lang 的代码块数
     pub v_g05_predicted: usize,

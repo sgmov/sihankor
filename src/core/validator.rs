@@ -443,15 +443,16 @@ fn validate_structure(doc: &super::models::Document, file_path: Option<&Path>) -
 pub fn validate_content(doc: &super::models::Document) -> ValidationResult {
     let mut result = ValidationResult::new();
 
-    // V-G-04: 表格列数 <= 3
+    // V-G-04: 表格列数 <= 4
+    // 注：法论四列表（4 列）是合法语义结构（决策维度对比等），从 >3 调整为 >4
     for (line_num, line) in doc.content.lines().enumerate() {
         if line.contains('|') && line.trim().starts_with('|') {
             let col_count = line.split('|').filter(|s| !s.is_empty()).count();
-            if col_count > 3 {
+            if col_count > 4 {
                 result.violations.push(Violation {
                     rule_id: "V-G-04".to_string(),
                     severity: ViolationSeverity::Guideline,
-                    message: format!("table has {} columns, maximum is 3", col_count),
+                    message: format!("table has {} columns, maximum is 4", col_count),
                     location: format!("line {}", line_num + 1),
                     fix_suggestion: Some(
                         "Split wide table into bullet lists or subsections".to_string(),
@@ -995,10 +996,21 @@ mod tests {
     #[test]
     fn test_g04_table_too_wide() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
-        doc.content = "| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |".to_string();
+        // 5 columns triggers V-G-04 (max is 4); 4 columns is now OK
+        doc.content = "| a | b | c | d | e |\n|---|---|---|---|---|\n| 1 | 2 | 3 | 4 | 5 |".to_string();
         let result = validate_content(&doc);
         let g04 = result.violations.iter().find(|v| v.rule_id == "V-G-04");
         assert!(g04.is_some());
+    }
+
+    #[test]
+    fn test_g04_table_4_cols_ok() {
+        let mut doc = make_test_doc("260613-1800-test", "1/3", None);
+        // 4 columns is now within the limit (max is 4)
+        doc.content = "| a | b | c | d |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |".to_string();
+        let result = validate_content(&doc);
+        let g04 = result.violations.iter().find(|v| v.rule_id == "V-G-04");
+        assert!(g04.is_none());
     }
 
     // ── V-G-05: 代码块语言标签 ──

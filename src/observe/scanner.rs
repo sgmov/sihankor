@@ -266,7 +266,7 @@ fn analyze_tables(lines: &[&str], path: &Path, stats: &mut TableStats) -> usize 
             if col_count > 0 {
                 count += 1;
                 *stats.column_distribution.entry(col_count).or_insert(0) += 1;
-                if col_count >= 4 {
+                if col_count >= 5 {
                     if !stats.files_with_wide_table.contains(&path.to_path_buf()) {
                         stats.files_with_wide_table.push(path.to_path_buf());
                     }
@@ -593,12 +593,14 @@ mod tests {
     #[test]
     fn test_table_analysis() {
         let dir = make_temp_dir();
-        let content = "| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n\n| x | y | z | w |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |\n";
+        let content = "| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n\n| x | y | z | w |\n|---|---|---|---|\n| 1 | 2 | 3 | 4 |\n\n| p | q | r | s | t |\n|---|---|---|---|---|\n| 1 | 2 | 3 | 4 | 5 |\n";
         write_file(dir.path(), "tables.md", content);
         let obs = scan_project(dir.path()).unwrap();
-        assert_eq!(obs.table_stats.total_tables, 2);
+        assert_eq!(obs.table_stats.total_tables, 3);
         assert_eq!(*obs.table_stats.column_distribution.get(&3).unwrap(), 1);
         assert_eq!(*obs.table_stats.column_distribution.get(&4).unwrap(), 1);
+        assert_eq!(*obs.table_stats.column_distribution.get(&5).unwrap(), 1);
+        // wide table: only 5+ columns (>= 5), not 4
         assert_eq!(obs.table_stats.files_with_wide_table.len(), 1);
     }
 

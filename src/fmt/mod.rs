@@ -524,7 +524,8 @@ pub fn check_c09(lines: &[&str], file: &str) -> Vec<Violation> {
     violations
 }
 
-// ── C-10: table columns > 3 ──
+// ── C-10: table columns > 4 ──
+// 注：从 >3 调整为 >4，与 validator V-G-04 阈值对齐（法论四列表为合法语义）
 
 pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
     let mut violations = Vec::new();
@@ -542,28 +543,28 @@ pub fn check_c10(lines: &[&str], file: &str) -> Vec<Violation> {
             if is_separator {
                 let parts: Vec<&str> = trimmed.split('|').collect();
                 let count = if parts.len() > 2 { parts.len() - 2 } else { 0 };
-                if count > 3 && !last_table_violation {
+                if count > 4 && !last_table_violation {
                     violations.push(Violation {
                         file: file.to_string(),
                         line: i + 1,
                         col: 1,
                         code: "C10".to_string(),
                         level: Level::Error,
-                        message: format!("table has {} columns; maximum is 3", count),
+                        message: format!("table has {} columns; maximum is 4", count),
                         fix_suggestion: Some(
                             "Split wide table into bullet lists or subsections".to_string(),
                         ),
                     });
                     last_table_violation = true;
                 }
-            } else if cols.len() > 3 && !last_table_violation {
+            } else if cols.len() > 4 && !last_table_violation {
                 violations.push(Violation {
                     file: file.to_string(),
                     line: i + 1,
                     col: 1,
                     code: "C10".to_string(),
                     level: Level::Error,
-                    message: format!("table has {} columns; maximum is 3", cols.len()),
+                    message: format!("table has {} columns; maximum is 4", cols.len()),
                     fix_suggestion: Some(
                         "Split wide table into bullet lists or subsections".to_string(),
                     ),
@@ -881,7 +882,8 @@ mod tests {
 
     #[test]
     fn test_c10_table_too_wide() {
-        let lines: Vec<&str> = vec!["| A | B | C | D |", "|---|---|---|---|"];
+        // 5 columns triggers C10 (max is 4); 4 columns is now OK
+        let lines: Vec<&str> = vec!["| A | B | C | D | E |", "|---|---|---|---|---|"];
         let v = check_c10(&lines, "test.md");
         assert_eq!(v.len(), 1);
         assert_eq!(v[0].code, "C10");
