@@ -1,5 +1,4 @@
 target/
-target/
 .vscode/
 .DS_Store
 .sih/index.db
@@ -7,3 +6,7 @@ target/
 .codegraph/
 reasonix.toml
 .reasonix/
+
+# mavis / OpenCode 运行时状态（不属于项目源码）
+.harness/**/memory/
+.harness/**/opencode/
