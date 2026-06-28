@@ -353,7 +353,10 @@ fn validate_frontmatter(
         result.violations.push(Violation {
             rule_id: "V-F-03".to_string(),
             severity: ViolationSeverity::Fatal,
-            message: format!("terminal stage: {} — document in terminal state should not be modified", doc.stage),
+            message: format!(
+                "terminal stage: {} — document in terminal state should not be modified",
+                doc.stage
+            ),
             location: "frontmatter.stage".to_string(),
             fix_suggestion: Some(
                 "Deprecated/Superseded documents should remain in terminal state".to_string(),

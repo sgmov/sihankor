@@ -1,7 +1,7 @@
 use super::types::{
-    Action, ActionKind, ChainRole, Cognition, DecisionProposal, Divergence,
-    DivergenceSeverity, DivergenceType, GovPosition, LawCheck, LawCheckResult,
-    LawViolationSummary, OverlapDegree, Verdict, Verification,
+    Action, ActionKind, ChainRole, Cognition, DecisionProposal, Divergence, DivergenceSeverity,
+    DivergenceType, GovPosition, LawCheck, LawCheckResult, LawViolationSummary, OverlapDegree,
+    Verdict, Verification,
 };
 // ict.rs:561 在 #[cfg(test)] 模块内使用，lib 编译时触发 unused_imports false positive
 #[allow(unused_imports)]

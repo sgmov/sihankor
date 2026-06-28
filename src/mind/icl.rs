@@ -73,7 +73,11 @@ impl ICL {
 
         for doc_id in &pos.upstream_chain {
             // 通过 content 搜索匹配 anchor_doc: {doc_id}
-            if let Ok(results) = self.db.search_content(&format!("anchor_doc: \"{}\"", doc_id)).await {
+            if let Ok(results) = self
+                .db
+                .search_content(&format!("anchor_doc: \"{}\"", doc_id))
+                .await
+            {
                 for r in results {
                     if seen.insert(r.id.clone()) {
                         trail_refs.push(TrailRef {
@@ -202,10 +206,7 @@ impl ICL {
             conflicts.push(ConflictInfo {
                 doc_id: upstream.clone(),
                 claim: format!("stage {} 是有效的引用来源", up_doc.stage),
-                counter_claim: format!(
-                    "stage {} 不在可引用范围内（需 2/3 或 3/3）",
-                    up_doc.stage
-                ),
+                counter_claim: format!("stage {} 不在可引用范围内（需 2/3 或 3/3）", up_doc.stage),
             });
         }
 

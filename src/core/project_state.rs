@@ -250,7 +250,9 @@ mod tests {
     #[test]
     fn test_advance_stage() {
         let mut state = ProjectState::new();
-        state.advance_stage(&Stage::Propose, &Stage::Resolve).unwrap();
+        state
+            .advance_stage(&Stage::Propose, &Stage::Resolve)
+            .unwrap();
         assert_eq!(state.current_stage, "2/3");
     }
 

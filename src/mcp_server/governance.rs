@@ -384,7 +384,9 @@ impl SihankorService {
     }
 
     /// 记录行迹：方向性转折 / 方法选择 / 间隙发现
-    #[tool(description = "[SiHankor] Record a trail entry: direction shift / method selection / discovery")]
+    #[tool(
+        description = "[SiHankor] Record a trail entry: direction shift / method selection / discovery"
+    )]
     pub async fn record_trail(
         &self,
         Parameters(TrailRecord {

@@ -237,10 +237,8 @@ pub fn compute_snapshot_diff(
     previous: &MetricRecord,
     current: &MetricRecord,
 ) -> Option<SnapshotDiff> {
-    let prev: ProjectSnapshotPayload =
-        serde_json::from_str(&previous.payload_json).ok()?;
-    let curr: ProjectSnapshotPayload =
-        serde_json::from_str(&current.payload_json).ok()?;
+    let prev: ProjectSnapshotPayload = serde_json::from_str(&previous.payload_json).ok()?;
+    let curr: ProjectSnapshotPayload = serde_json::from_str(&current.payload_json).ok()?;
 
     let docs_delta = curr.total_docs as i64 - prev.total_docs as i64;
     let rules_delta = curr.total_rules as i64 - prev.total_rules as i64;
@@ -300,7 +298,9 @@ pub fn compute_rule_audit() -> RuleAuditMetric {
     for entry in RULE_REGISTRY {
         let domain = format!("{:?}", entry.domain);
         *domain_map.entry(domain).or_insert(0) += 1;
-        *severity_map.entry(entry.severity.as_str().to_string()).or_insert(0) += 1;
+        *severity_map
+            .entry(entry.severity.as_str().to_string())
+            .or_insert(0) += 1;
         if entry.severity == crate::core::models::ViolationSeverity::Fatal {
             fatal_count += 1;
         }
@@ -409,10 +409,8 @@ pub struct TradeoffCoverageMetric {
 /// 检测 `## 背景`、`## 决策`、`## 后果` 三个 Markdown 二级标题，
 /// 标题下方必须有非空内容（非仅空白行）。
 pub fn compute_tradeoff_coverage(docs: &[crate::core::models::Document]) -> TradeoffCoverageMetric {
-    let decisions: Vec<&crate::core::models::Document> = docs
-        .iter()
-        .filter(|d| d.nature == "decision")
-        .collect();
+    let decisions: Vec<&crate::core::models::Document> =
+        docs.iter().filter(|d| d.nature == "decision").collect();
 
     let total_decisions = decisions.len();
 
@@ -429,7 +427,8 @@ pub fn compute_tradeoff_coverage(docs: &[crate::core::models::Document]) -> Trad
 
     let rule_changes_note = if total_decisions > 0 {
         "规则增删比率需累积 ProjectSnapshot 历史数据，当前不可计算。\
-         建议持续调用 project_status 以积累快照数据。".to_string()
+         建议持续调用 project_status 以积累快照数据。"
+            .to_string()
     } else {
         "当前无 decision 文档，不可计算 ADR 覆盖率。".to_string()
     };
@@ -536,13 +535,13 @@ pub fn compute_trend_alignment(
 
 #[cfg(test)]
 mod tests {
+    use super::MetricRecord;
     use super::compute_rule_audit;
     use super::compute_rule_density;
     use super::compute_snapshot_diff;
     use super::compute_tradeoff_coverage;
     use super::compute_trend_alignment;
     use super::compute_variance_metric;
-    use super::MetricRecord;
     use crate::core::database::SihDatabase;
     use crate::core::database::SqliteBackend;
 
@@ -775,7 +774,12 @@ mod tests {
     fn test_compute_rule_audit_basic() {
         let audit = compute_rule_audit();
         assert_eq!(audit.total_rules, 14);
-        assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Frontmatter"));
+        assert!(
+            audit
+                .rules_by_domain
+                .iter()
+                .any(|(d, _)| d == "Frontmatter")
+        );
         assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Structure"));
         assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Reference"));
         assert!(audit.rules_by_domain.iter().any(|(d, _)| d == "Governance"));
@@ -805,13 +809,16 @@ mod tests {
     #[test]
     fn test_compute_rule_density_basic() {
         let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":2,"judgment_count":1,"passed":true}"#;
-        let records = vec![
-            MetricRecord {
-                id: 1, event_type: "ValidationCompleted".to_string(),
-                payload_json: vc.to_string(), created_at: "2024-01-01T00:00:00Z".to_string(),
-            },
+        let records = vec![MetricRecord {
+            id: 1,
+            event_type: "ValidationCompleted".to_string(),
+            payload_json: vc.to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        }];
+        let nature_counts = vec![
+            ("spec".to_string(), 3usize),
+            ("proposal".to_string(), 2usize),
         ];
-        let nature_counts = vec![("spec".to_string(), 3usize), ("proposal".to_string(), 2usize)];
         let m = compute_rule_density(&records, &nature_counts);
         assert_eq!(m.total_rules, 14);
         assert_eq!(m.total_docs, 5);
@@ -843,11 +850,21 @@ mod tests {
             status: DocStatus::Ok, indexed_at: Utc::now(), nature: "decision".into(),
         };
         let doc_without_adr = Document {
-            id: "test-02".into(), stage: Stage::Propose, title: "Test Proposal".into(),
+            id: "test-02".into(),
+            stage: Stage::Propose,
+            title: "Test Proposal".into(),
             upstream: None,
-            frontmatter: Frontmatter { id: "test-02".into(), stage: Stage::Propose, upstream: None, decided_by: None, extra: serde_json::Value::Null },
+            frontmatter: Frontmatter {
+                id: "test-02".into(),
+                stage: Stage::Propose,
+                upstream: None,
+                decided_by: None,
+                extra: serde_json::Value::Null,
+            },
             content: "Just some content without ADR sections".into(),
-            status: DocStatus::Ok, indexed_at: Utc::now(), nature: "decision".into(),
+            status: DocStatus::Ok,
+            indexed_at: Utc::now(),
+            nature: "decision".into(),
         };
         let m = compute_tradeoff_coverage(&[doc_with_adr, doc_without_adr]);
         assert_eq!(m.total_decisions, 2);
@@ -871,13 +888,38 @@ mod tests {
         let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":0,"judgment_count":0,"passed":true}"#;
         let ic = r#"{"doc_id":"d1","nature":"spec"}"#;
         let validations = vec![
-            MetricRecord { id: 1, event_type: "ValidationCompleted".to_string(), payload_json: vc.to_string(), created_at: "2024-01-01T00:00:00Z".to_string() },
-            MetricRecord { id: 2, event_type: "ValidationCompleted".to_string(), payload_json: vc.to_string(), created_at: "2024-01-02T00:00:00Z".to_string() },
+            MetricRecord {
+                id: 1,
+                event_type: "ValidationCompleted".to_string(),
+                payload_json: vc.to_string(),
+                created_at: "2024-01-01T00:00:00Z".to_string(),
+            },
+            MetricRecord {
+                id: 2,
+                event_type: "ValidationCompleted".to_string(),
+                payload_json: vc.to_string(),
+                created_at: "2024-01-02T00:00:00Z".to_string(),
+            },
         ];
         let indexes = vec![
-            MetricRecord { id: 3, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-01T00:00:00Z".to_string() },
-            MetricRecord { id: 4, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-02T00:00:00Z".to_string() },
-            MetricRecord { id: 5, event_type: "IndexCompleted".to_string(), payload_json: ic.to_string(), created_at: "2024-01-03T00:00:00Z".to_string() },
+            MetricRecord {
+                id: 3,
+                event_type: "IndexCompleted".to_string(),
+                payload_json: ic.to_string(),
+                created_at: "2024-01-01T00:00:00Z".to_string(),
+            },
+            MetricRecord {
+                id: 4,
+                event_type: "IndexCompleted".to_string(),
+                payload_json: ic.to_string(),
+                created_at: "2024-01-02T00:00:00Z".to_string(),
+            },
+            MetricRecord {
+                id: 5,
+                event_type: "IndexCompleted".to_string(),
+                payload_json: ic.to_string(),
+                created_at: "2024-01-03T00:00:00Z".to_string(),
+            },
         ];
         let m = compute_trend_alignment(&validations, &indexes);
         assert_eq!(m.validation_count, 2);
