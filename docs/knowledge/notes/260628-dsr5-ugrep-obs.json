@@ -1,0 +1,69 @@
+{
+  "root": "/tmp/dsr5-candidates/ugrep",
+  "scanned_at": "2026-06-28T16:31:02Z",
+  "skipped_dirs": [
+    "node_modules",
+    "target",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".next",
+    "vendor"
+  ],
+  "file_stats": {
+    "total_files": 26,
+    "total_bytes": 305691,
+    "total_lines": 6323,
+    "avg_lines": 243.19230769230768
+  },
+  "dir_depth_distribution": [
+    [
+      0,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      2,
+      19
+    ]
+  ],
+  "table_stats": {
+    "total_tables": 0,
+    "column_distribution": [],
+    "files_with_wide_table_count": 0,
+    "files_with_wide_table": []
+  },
+  "code_block_stats": {
+    "total_blocks": 0,
+    "with_lang": 0,
+    "without_lang": 0
+  },
+  "frontmatter_stats": {
+    "files_with_frontmatter": 0,
+    "files_with_id_field": 0,
+    "files_with_stage_field": 0,
+    "files_with_sihankor_stage": 0,
+    "stage_without_id_count": 0,
+    "stage_without_id": []
+  },
+  "horizontal_rule_count": 0,
+  "emoji_line_count": 61,
+  "predictions": {
+    "v_f01_predicted": 0,
+    "v_f05_predicted": 0,
+    "v_g04_predicted": 0,
+    "v_g05_predicted": 0,
+    "v_g06_predicted": 61,
+    "f_predicted_total": 0,
+    "g_predicted_total": 61,
+    "j_predicted_total": 0
+  },
+  "max_depth_filter": 4
+}
