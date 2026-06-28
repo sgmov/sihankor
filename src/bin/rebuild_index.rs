@@ -208,7 +208,12 @@ fn build_report(
         .errors
         .iter()
         .map(|(p, m)| ErrorDetail {
-            kind: if p.ends_with(".sih.md") { "parse" } else { "db" }.to_string(),
+            kind: if p.ends_with(".sih.md") {
+                "parse"
+            } else {
+                "db"
+            }
+            .to_string(),
             path: p.clone(),
             message: m.clone(),
         })
