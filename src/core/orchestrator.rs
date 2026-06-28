@@ -15,8 +15,10 @@ pub struct PipelineConfig {
 impl Default for PipelineConfig {
     fn default() -> Self {
         Self {
-            docs_dir: "docs/".to_string(),
-            db_path: ".sih/index.db".to_string(),
+            docs_dir: std::env::var("SIHANKOR_DOCS_DIR")
+                .unwrap_or_else(|_| "docs/".to_string()),
+            db_path: std::env::var("SIHANKOR_DB_PATH")
+                .unwrap_or_else(|_| ".sih/index.db".to_string()),
             validation: ValidationConfig::default(),
         }
     }
