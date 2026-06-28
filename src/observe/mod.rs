@@ -21,8 +21,10 @@
 //! - V-G-05：缺 lang 的代码块数
 //! - V-G-06：含 emoji 的行数
 
-pub mod scanner;
 pub mod predictor;
+pub mod scanner;
 
-pub use scanner::{scan_project, ProjectObservation, FileStats, FrontmatterStats, CodeBlockStats, TableStats};
 pub use predictor::{RulePredictions, predict};
+pub use scanner::{
+    CodeBlockStats, FileStats, FrontmatterStats, ProjectObservation, TableStats, scan_project,
+};

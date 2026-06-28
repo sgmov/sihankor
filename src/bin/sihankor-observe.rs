@@ -12,7 +12,7 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use sihankor::observe::{predict, scan_project, ProjectObservation, RulePredictions};
+use sihankor::observe::{ProjectObservation, RulePredictions, predict, scan_project};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum OutputFormat {
@@ -187,14 +187,8 @@ fn render_text(obs: &ProjectObservation, pred: &RulePredictions, max_depth: Opti
     println!();
 
     println!("[P] Rule Trigger Predictions (if SiHankor governance introduced)");
-    println!(
-        "    V-F-01 (id 必填):          {}",
-        pred.v_f01_predicted
-    );
-    println!(
-        "    V-F-05 (禁止 --- 水平线):  {}",
-        pred.v_f05_predicted
-    );
+    println!("    V-F-01 (id 必填):          {}", pred.v_f01_predicted);
+    println!("    V-F-05 (禁止 --- 水平线):  {}", pred.v_f05_predicted);
     println!(
         "    V-G-04 (表格 ≤ 3 列):      {} (files with wide tables)",
         pred.v_g04_predicted
@@ -211,7 +205,10 @@ fn render_text(obs: &ProjectObservation, pred: &RulePredictions, max_depth: Opti
     println!("    Summary:");
     println!("      F predicted total: {}", pred.f_predicted_total);
     println!("      G predicted total: {}", pred.g_predicted_total);
-    println!("      J predicted total: {} (V-J-01 not yet predicted in MVP)", pred.j_predicted_total);
+    println!(
+        "      J predicted total: {} (V-J-01 not yet predicted in MVP)",
+        pred.j_predicted_total
+    );
 }
 
 fn render_json(obs: &ProjectObservation, pred: &RulePredictions, max_depth: Option<usize>) {

@@ -102,8 +102,12 @@ mod tests {
     #[test]
     fn test_predict_wide_tables() {
         let mut obs = empty_obs();
-        obs.table_stats.files_with_wide_table.push(PathBuf::from("/a"));
-        obs.table_stats.files_with_wide_table.push(PathBuf::from("/b"));
+        obs.table_stats
+            .files_with_wide_table
+            .push(PathBuf::from("/a"));
+        obs.table_stats
+            .files_with_wide_table
+            .push(PathBuf::from("/b"));
         let p = predict(&obs);
         assert_eq!(p.v_g04_predicted, 2);
         assert_eq!(p.g_predicted_total, 2);

@@ -172,7 +172,9 @@ fn analyze_file(_content: &str, lines: &[&str], path: &Path, obs: &mut ProjectOb
                 if is_sihankor_stage(&stage_val) {
                     obs.frontmatter_stats.files_with_sihankor_stage += 1;
                     if !has_id {
-                        obs.frontmatter_stats.stage_without_id.push(path.to_path_buf());
+                        obs.frontmatter_stats
+                            .stage_without_id
+                            .push(path.to_path_buf());
                     }
                 }
             }
@@ -407,7 +409,9 @@ fn line_contains_emoji(line: &str) -> bool {
 
 fn current_rfc3339() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
     let secs = now.as_secs();
     // 简单 RFC 3339 格式：YYYY-MM-DDTHH:MM:SSZ
     // 不依赖 chrono：手动算
