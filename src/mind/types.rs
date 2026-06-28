@@ -45,6 +45,7 @@ pub struct Cognition {
     pub governance_position: GovPosition,
     pub relation_graph: RelationGraph,
     pub divergence_diagnosis: Vec<Divergence>,
+    pub trail_context: TrailContext,
 }
 
 /// 文档治理定位
@@ -81,6 +82,25 @@ pub struct RelationGraph {
     pub conflicts: Vec<ConflictInfo>,
     /// 被引用但目标缺失的文档 id
     pub gaps: Vec<String>,
+}
+
+/// 行迹引用
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrailRef {
+    pub trace_id: String,
+    pub summary: String,
+    pub r#type: String,
+}
+
+/// 行迹上下文（iCL analyze 第四项产出）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrailContext {
+    /// 与上游链关联的行迹列表
+    pub trails: Vec<TrailRef>,
+    /// 行迹数量
+    pub trail_count: usize,
+    /// 是否存在未闭合的行迹（stage < 3/3）
+    pub has_open_trails: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

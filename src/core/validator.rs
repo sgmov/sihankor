@@ -652,7 +652,10 @@ pub fn infer_nature(path: &Path) -> Option<&str> {
         "proposals" => Some("proposal"),
         "decisions" => Some("decision"),
         "reference" => Some("reference"),
-        dir if dir.starts_with("knowledge") => Some("note"),
+        "knowledge" => match components.next()?.as_os_str().to_str()? {
+            "trails" => Some("trail"),
+            _ => Some("note"),
+        },
         _ => None,
     }
 }

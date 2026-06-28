@@ -226,6 +226,7 @@ mod tests {
     use crate::mind::types::{ChainRole, GovPosition, RelationGraph};
 
     fn make_test_cognition(divs: Vec<Divergence>) -> Cognition {
+        use crate::mind::types::TrailContext;
         Cognition {
             governance_position: GovPosition {
                 nature: "spec".into(),
@@ -240,6 +241,11 @@ mod tests {
                 gaps: vec![],
             },
             divergence_diagnosis: divs,
+            trail_context: TrailContext {
+                trails: vec![],
+                trail_count: 0,
+                has_open_trails: false,
+            },
         }
     }
 

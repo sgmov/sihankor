@@ -86,7 +86,7 @@ Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory field
 | `decided-by` | decision only                    | human identifier                             | Who decided this decision. Only allowed in decisions/ directory.                                                                                                                                                         |
 | `verified`   | note only                        | `YYMMDD`                                     | Date the note's insight was last confirmed as valid.                                                                                                                                                                     |
 
-`type` field is abolished. Document identity (nature) is determined by directory: `specs/` -> spec, `proposals/` -> proposal, `decisions/` -> decision, `reference/` -> reference, `knowledge/notes/` -> note.
+`type` field is abolished. Document identity (nature) is determined by directory: `specs/` -> spec, `proposals/` -> proposal, `decisions/` -> decision, `reference/` -> reference, `knowledge/notes/` -> note, `knowledge/trails/` -> trail.
 
 ### Directory Structure
 
@@ -97,6 +97,7 @@ Frontmatter must be valid YAML wrapped between `---` delimiters. Mandatory field
 | `decisions/`        | decision  | 2/3->3/3       | Decision records (ADR): why we chose this                               |
 | `reference/`        | reference | typically 3/3 | Reference standards: what terms mean                                    |
 | `knowledge/notes/`  | note      | 1/3->2/3->3/3   | Practice insights: what we learned. Stage expresses lifecycle maturity. |
+| `knowledge/trails/` | trail     | 1/3->2/3->3/3   | Intent turning points and direction shifts                              |
 | `knowledge/drafts/` | ：         | none          | Idea fragments, not .sih.md                                             |
 | `archive/`          | ：         | X or 0        | Deprecated documents                                                    |
 

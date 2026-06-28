@@ -5,7 +5,7 @@ use crate::core::models::Document;
 
 use super::types::{
     ChainRole, Cognition, ConflictInfo, Divergence, DivergenceSeverity, DivergenceType,
-    DuplicateInfo, GovPosition, OverlapDegree, RelationGraph,
+    DuplicateInfo, GovPosition, OverlapDegree, RelationGraph, TrailContext, TrailRef,
 };
 
 /// iCL 明晰机 —— 三机第一机
@@ -32,11 +32,13 @@ impl ICL {
         let relation_graph = self.relation_graph(doc).await;
         let divergence_diagnosis =
             self.diagnose_divergences(doc, &governance_position, &relation_graph);
+        let trail_context = self.collect_trail_context(&governance_position).await;
 
         Cognition {
             governance_position,
             relation_graph,
             divergence_diagnosis,
+            trail_context,
         }
     }
 
@@ -60,6 +62,38 @@ impl ICL {
             stage: doc.stage.to_display(),
             upstream_chain,
             role_in_chain,
+        }
+    }
+
+    /// 收集与上游链关联的行迹
+    async fn collect_trail_context(&self, pos: &GovPosition) -> TrailContext {
+        // 收集所有与上游链中文档关联的行迹
+        let mut trail_refs: Vec<TrailRef> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+
+        for doc_id in &pos.upstream_chain {
+            // 通过 content 搜索匹配 anchor_doc: {doc_id}
+            if let Ok(results) = self.db.search_content(&format!("anchor_doc: \"{}\"", doc_id)).await {
+                for r in results {
+                    if seen.insert(r.id.clone()) {
+                        trail_refs.push(TrailRef {
+                            trace_id: r.id.clone(),
+                            summary: r.title.clone(),
+                            r#type: "trail".to_string(),
+                        });
+                    }
+                }
+            }
+        }
+
+        trail_refs.sort_by(|a, b| a.trace_id.cmp(&b.trace_id));
+        let trail_count = trail_refs.len();
+        let has_open_trails = trail_count > 0; // 简化判断：有关联行迹即视为 open
+
+        TrailContext {
+            trails: trail_refs,
+            trail_count,
+            has_open_trails,
         }
     }
 

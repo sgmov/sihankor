@@ -112,6 +112,17 @@ struct ValidationCompletedFatalCount {
     fatal_count: usize,
 }
 
+/// record_trail 工具参数
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct TrailRecord {
+    pub anchor_doc: String,
+    pub r#type: String,
+    pub turning_point: String,
+    pub rationale: String,
+    pub consequences: String,
+    pub agents_involved: Option<String>,
+}
+
 #[tool_router]
 impl SihankorService {
     pub fn new(db: Arc<dyn SihDatabase>) -> Self {
@@ -370,6 +381,79 @@ impl SihankorService {
             report.warnings.len(),
             errors,
         )
+    }
+
+    /// 记录行迹：方向性转折 / 方法选择 / 间隙发现
+    #[tool(description = "[SiHankor] Record a trail entry: direction shift / method selection / discovery")]
+    pub async fn record_trail(
+        &self,
+        Parameters(TrailRecord {
+            anchor_doc,
+            r#type,
+            turning_point,
+            rationale,
+            consequences,
+            agents_involved,
+        }): Parameters<TrailRecord>,
+    ) -> String {
+        use chrono::Local;
+        use std::fs;
+        use std::io::Write;
+
+        let now = Local::now();
+        let trail_id = now.format("%H%M%S").to_string();
+        let date = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        // 构造 trail 文档内容
+        let mut content = String::new();
+        content.push_str("---\n");
+        content.push_str(&format!("trace_id: \"trail-{}\"\n", trail_id));
+        content.push_str(&format!("created_at: \"{}\"\n", date));
+        content.push_str(&format!("anchor_doc: \"{}\"\n", anchor_doc));
+        content.push_str(&format!("type: \"{}\"\n", r#type));
+        if let Some(ref agent) = agents_involved {
+            content.push_str(&format!("agents_involved: \"{}\"\n", agent));
+        }
+        content.push_str("---\n\n");
+        content.push_str(&format!("## 转折\n\n{}\n\n", turning_point));
+        content.push_str(&format!("## 理由\n\n{}\n\n", rationale));
+        content.push_str(&format!("## 后果\n\n{}\n", consequences));
+
+        // 写入 knowledge/trails/
+        let trails_dir = std::path::PathBuf::from(&self.config.docs_dir)
+            .parent()
+            .map(|p| p.join("knowledge").join("trails"))
+            .unwrap_or_else(|| {
+                PathBuf::from(&self.config.docs_dir)
+                    .parent()
+                    .map(|p| p.join("knowledge").join("trails"))
+                    .unwrap_or_else(|| PathBuf::from("knowledge/trails"))
+            });
+
+        if let Err(e) = fs::create_dir_all(&trails_dir) {
+            return format!("错误：无法创建 trails 目录: {}", e);
+        }
+
+        let filename = trails_dir.join(format!("trail-{}.sih.md", trail_id));
+        match fs::File::create(&filename) {
+            Ok(mut file) => {
+                if let Err(e) = file.write_all(content.as_bytes()) {
+                    format!("错误：写入行迹失败: {}", e)
+                } else {
+                    format!(
+                        "行迹已记录：{}\n\
+                         anchor_doc: {}\n\
+                         type: {}\n\
+                         文件: {}",
+                        filename.display(),
+                        anchor_doc,
+                        r#type,
+                        chrono::Local::now().format("%H:%M:%S"),
+                    )
+                }
+            }
+            Err(e) => format!("错误：创建行迹文件失败: {}", e),
+        }
     }
 
     /// 文档认知分析：意图定位 + 关系照见 + 发散诊断

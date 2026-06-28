@@ -1,7 +1,7 @@
 use super::types::{
     Action, ActionKind, ChainRole, Cognition, DecisionProposal, Divergence,
     DivergenceSeverity, DivergenceType, GovPosition, LawCheck, LawCheckResult,
-    LawViolationSummary, OverlapDegree, Verdict, Verification,
+    LawViolationSummary, OverlapDegree, TrailContext, Verdict, Verification,
 };
 
 /// iCT 方圆机 —— 三机第三机
@@ -558,6 +558,11 @@ mod tests {
                 gaps: vec![],
             },
             divergence_diagnosis: divs,
+            trail_context: TrailContext {
+                trails: vec![],
+                trail_count: 0,
+                has_open_trails: false,
+            },
         };
 
         let proposal = DecisionProposal {
