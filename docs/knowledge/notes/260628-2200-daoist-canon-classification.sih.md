@@ -1,6 +1,6 @@
 ---
 id: 260628-2200-daoist-canon-classification
-stage: 1/3
+stage: 3/3
 verified: 260628
 ---
 
