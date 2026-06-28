@@ -2,7 +2,7 @@
 id: 260616-1200-engine-dev-governance-chain-decision
 stage: 3/3
 upstream: 260616-1200-engine-dev-governance-chain
-decided-by: ai-assist
+decided-by: moc
 ---
 
 # 引擎开发治理链采纳决策

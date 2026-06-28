@@ -1,7 +1,7 @@
 ---
 id: 260616-2100-code-lint-proposal
 stage: 3/3
-upstream: 240610-1500-sihankor-assay
+upstream: 260627-1100-jian-on-verification
 ---
 # code-lint：基于鉴的 Rust 代码质量约束
 

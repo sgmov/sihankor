@@ -2,7 +2,7 @@
 id: 260616-1210-post-restructure-doc-cleanup-decision
 stage: 3/3
 upstream: 260616-1210-post-restructure-doc-cleanup
-decided-by: ai-assist
+decided-by: moc
 ---
 
 # 重构后文档残余引用清理决策

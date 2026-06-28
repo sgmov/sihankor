@@ -2,7 +2,7 @@
 id: 260615-1500-docs-restructure-v2-decision
 stage: 3/3
 upstream: 260615-1430-docs-restructure-v2
-decided-by: ai-assist
+decided-by: moc
 ---
 
 # 司衡文档体系重构 v2 决策记录

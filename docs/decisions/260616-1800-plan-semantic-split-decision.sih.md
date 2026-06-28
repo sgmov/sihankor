@@ -2,7 +2,7 @@
 id: 260616-1800-plan-semantic-split-decision
 stage: 3/3
 upstream: 240602-0900-on-sihankor
-decided-by: ai-assist
+decided-by: moc
 ---
 
 # plan 语义拆分决策
