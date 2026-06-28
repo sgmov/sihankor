@@ -1,5 +1,49 @@
 # SiHankor Document Style Guide
 
+## Branch Convention — Multi-Session Parallel Development
+
+This project uses three or more agent sessions simultaneously. A simple branch protocol prevents write conflicts and merge overhead.
+
+**Before starting any work, read this section. Your session must follow these rules.**
+
+### Branch naming
+
+```
+{topic}-{short-description}
+```
+
+Examples: `chain-5-fix`, `trail-mcp-tool`, `doc-archive-cleanup`, `dsr-2-metrics`.
+
+### Workflow
+
+```mermaid
+flowchart LR
+    A["1. Create branch<br/>from latest main"] --> B["2. Work & commit<br/>in your branch"]
+    B --> C["3. cargo build + test<br/>must pass"]
+    C --> D["4. Rebase onto<br/>latest main"]
+    D --> E["5. Squash merge<br/>to main"]
+    E --> F["6. Delete branch"]
+```
+
+### Rules
+
+1. **One session, one branch.** Each agent session creates its own branch at start. Branch name reflects the session's task topic.
+2. **Start from main.** `git checkout main && git pull && git checkout -b {topic}-{name}`
+3. **Commit prefixes.** Use `fix:`, `feat:`, `docs:`, `refactor:`, `test:` prefixes (conventional commit style) so other sessions can scan commit history.
+4. **Build gate before merge.** `cargo build` and `cargo test --all-targets` must pass before merging. No exceptions.
+5. **Rebase, not merge from main.** If main has advanced since your branch was created: `git rebase main`. Do not use `git merge main`.
+6. **Squash merge to main.** One linear commit per branch topic. No merge commits.
+7. **Delete branch after merge.** Non-negotiable. Stale branches accumulate noise.
+8. **If you see a branch conflict:** notify the user (moc). Do not resolve conflicts between agent branches without human oversight.
+
+### Emergency: need to stop work
+
+If a session is interrupted before completing its work:
+
+- Commit all changes with a clear `WIP:` prefix
+- Push the branch
+- The next session or the user will decide whether to continue or discard
+
 ## Character Constraints
 
 - Use only ASCII characters and CJK characters. Do not use emojis or other non-ASCII symbols.
