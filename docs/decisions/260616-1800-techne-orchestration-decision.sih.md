@@ -1,8 +1,9 @@
 ---
 id: 260616-1800-techne-orchestration-decision
-stage: 2/3
+stage: 3/3
 upstream: 260616-1700-techne-orchestration-proposal
 decided-by: sihankor
+verified: 260629
 ---
 # Techne 术层编排工具：设计决策
 
