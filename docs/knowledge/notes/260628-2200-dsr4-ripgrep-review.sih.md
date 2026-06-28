@@ -1,6 +1,6 @@
 ---
 id: 260628-2200-dsr4-ripgrep-review
-stage: 2/3
+stage: 3/3
 upstream: 260628-1700-dsr-cycle
 verified: 260628
 ---
