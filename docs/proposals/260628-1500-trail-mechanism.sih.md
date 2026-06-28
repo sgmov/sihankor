@@ -1,6 +1,6 @@
 ---
 id: 260628-1500-trail-mechanism
-stage: 2/3
+stage: 3/3
 upstream: 260627-1030-sihankor-philosophy
 ---
 # 行迹机制提案
