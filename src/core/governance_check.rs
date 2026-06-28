@@ -114,6 +114,11 @@ pub fn check_upstream_chain(docs: &[Document]) -> Vec<UpstreamChainIssue> {
             continue;
         }
 
+        // session_summary 文档不强制 upstream
+        if doc.nature == "session_summary" {
+            continue;
+        }
+
         let upstream_id = match &doc.upstream {
             Some(id) => id,
             None => continue, // V-F-04 已处理必填性

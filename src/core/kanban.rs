@@ -292,8 +292,8 @@ pub async fn generate_kanban(db: &dyn SihDatabase) -> Kanban {
     // 对 verify 列按 nature 分组：Ok 项折叠计数，Warning/Error 展开详情
     if let Some(verify_col) = columns.iter_mut().find(|c| c.phase == "verify") {
         let mut groups: Vec<VerifyGroup> = Vec::new();
-        let nature_order = ["spec", "proposal", "decision", "reference", "note"];
-        let nature_labels = ["技术规约", "变更提案", "架构决策", "参照文档", "实践笔记"];
+        let nature_order = ["spec", "proposal", "decision", "reference", "note", "session_summary"];
+        let nature_labels = ["技术规约", "变更提案", "架构决策", "参照文档", "实践笔记", "会话摘要"];
 
         for (i, nat) in nature_order.iter().enumerate() {
             let nature_cards: Vec<&KanbanCard> = verify_col

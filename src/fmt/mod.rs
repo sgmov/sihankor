@@ -644,7 +644,7 @@ pub fn lint_document(file: &str, content: &str, config: &FormatConfig) -> Vec<Vi
         if nature == "spec" || nature == "decision" {
             for v in &mut c10_violations {
                 v.level = Level::Warning;
-                v.message = "table has >3 columns (spec/decision docs: warning only; split if for narrative purpose)".to_string();
+                v.message = "table has >4 columns (spec/decision docs: warning only; split if for narrative purpose)".to_string();
                 v.fix_suggestion = Some("Consider splitting this table if it serves narrative rather than structural purpose".to_string());
             }
         }

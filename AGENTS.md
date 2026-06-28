@@ -4,6 +4,10 @@
 
 Agent 启动后第一件事是调用 `sihankor_project_brief` 获取上下文，以工具调用替代人工复述。
 
+## Session Summary Convention
+
+Agent 在会话结束前必须产出 session summary（或声明"无产出"），存为 `docs/knowledge/session-summaries/YYYYMMDD-HHMMSS-summary.sih.md`。若会话无任何 commit 或治理决策，直接写入 `outcome: 无产出`。V-G-SS01 规则会自动检查最近摘要新鲜度（> 24 小时未写则 warn）。
+
 ## Branch Convention — Multi-Session Parallel Development
 
 This project uses three or more agent sessions simultaneously. A simple branch protocol prevents write conflicts and merge overhead.

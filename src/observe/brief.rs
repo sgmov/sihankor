@@ -39,6 +39,18 @@ pub struct ProjectBrief {
     pub latest_trails: Vec<TrailEntry>,
     /// CI 配置路径
     pub ci_paths: Vec<PathBuf>,
+    /// 最新 3 条会话摘要
+    pub recent_sessions: Vec<SessionEntry>,
+}
+
+/// 会话摘要条目
+#[derive(Debug)]
+pub struct SessionEntry {
+    pub id: String,
+    pub session_id: Option<String>,
+    pub goal: Option<String>,
+    pub outcome: Option<String>,
+    pub commits: Option<String>,
 }
 
 #[derive(Debug)]
@@ -65,12 +77,19 @@ pub fn generate(root: &Path) -> String {
         git_dirty: false,
         latest_trails: Vec::new(),
         ci_paths: Vec::new(),
+        recent_sessions: Vec::new(),
     };
 
     // 1. 扫描知识库行迹
     let trails_dir = root.join("knowledge").join("trails");
     if trails_dir.is_dir() {
         brief.latest_trails = collect_latest_trails(&trails_dir, 5);
+    }
+
+    // 1b. 扫描会话摘要（最新 3 条）
+    let sessions_dir = root.join("docs").join("knowledge").join("session-summaries");
+    if sessions_dir.is_dir() {
+        brief.recent_sessions = collect_recent_sessions(&sessions_dir, 3);
     }
 
     // 2. 扫描 CI 配置路径
@@ -233,6 +252,71 @@ fn parse_trail_file(path: &Path, content: &str) -> Option<TrailEntry> {
     })
 }
 
+/// 从 session-summaries/ 目录收集最新 N 条会话摘要
+fn collect_recent_sessions(sessions_dir: &Path, limit: usize) -> Vec<SessionEntry> {
+    let mut entries: Vec<_> = WalkDir::new(sessions_dir)
+        .follow_links(false)
+        .max_depth(1)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path().is_file()
+                && e.path()
+                    .extension()
+                    .map(|s| s == "md" || s == "sih.md")
+                    .unwrap_or(false)
+        })
+        .collect();
+
+    // 按修改时间倒序
+    entries.sort_by(|a, b| {
+        let ta = a
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let tb = b
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        tb.cmp(&ta)
+    });
+
+    let mut sessions = Vec::new();
+    for entry in entries.into_iter().take(limit) {
+        if let Ok(content) = std::fs::read_to_string(entry.path()) {
+            if let Some(s) = parse_session_file(entry.path(), &content) {
+                sessions.push(s);
+            }
+        }
+    }
+    sessions
+}
+
+/// 解析单个 session summary 文件，提取元信息
+fn parse_session_file(path: &Path, content: &str) -> Option<SessionEntry> {
+    let lines: Vec<&str> = content.lines().collect();
+    let (fm_end, has_fm) = detect_frontmatter(&lines);
+    if !has_fm {
+        return None;
+    }
+
+    let fm_text = lines[..fm_end].join("\n");
+    let id = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    Some(SessionEntry {
+        id,
+        session_id: get_field(&fm_text, "session_id").map(|s| s.trim_matches('"').to_string()),
+        goal: get_field(&fm_text, "goal").map(|s| s.trim_matches('"').to_string()),
+        outcome: get_field(&fm_text, "outcome").map(|s| s.trim_matches('"').to_string()),
+        commits: get_field(&fm_text, "commits").map(|s| s.trim_matches('"').to_string()),
+    })
+}
+
 /// 执行 git status，返回 (branch, is_dirty)
 fn git_status(root: &Path) -> Option<(String, bool)> {
     let output = Command::new("git")
@@ -328,6 +412,23 @@ fn format_brief(brief: &ProjectBrief) -> String {
                 trail.summary,
                 trail.trail_type,
                 trail.anchor_doc
+            ));
+        }
+    }
+    out.push('\n');
+
+    // 最新会话摘要
+    out.push_str("### Recent Sessions\n");
+    if brief.recent_sessions.is_empty() {
+        out.push_str("Sessions: none recorded (use sihankor_session_summary before ending a session)\n");
+    } else {
+        for s in &brief.recent_sessions {
+            let goal = s.goal.as_deref().unwrap_or("(no goal)");
+            let outcome = s.outcome.as_deref().unwrap_or("(no outcome)");
+            let commits = s.commits.as_deref().unwrap_or("(no commits)");
+            out.push_str(&format!(
+                "- [{}] goal: {}, outcome: {}, commits: {}\n",
+                s.id, goal, outcome, commits
             ));
         }
     }

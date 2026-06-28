@@ -292,6 +292,62 @@ impl Default for ValidationConfig {
     }
 }
 
+// ── V-G-SS01: 会话摘要新鲜度检查 ──
+
+/// 检查 session-summaries/ 目录下最近一条摘要是否过期（> 24 小时）
+/// 若过期，返回 warn 消息；若未过期或目录不存在，返回 None
+fn check_session_summary_staleness(doc_path: &Path) -> Option<String> {
+    use std::time::SystemTime;
+
+    // 从文档路径推算项目根目录：docs/knowledge/session-summaries/X.sih.md -> 项目根
+    let project_root = doc_path
+        .ancestors()
+        .nth(4) // session-summaries/ -> knowledge/ -> docs/ -> 项目根
+        .or_else(|| doc_path.ancestors().nth(3)); // fallback
+
+    let project_root = project_root?;
+
+    let summaries_dir = project_root
+        .join("docs")
+        .join("knowledge")
+        .join("session-summaries");
+    if !summaries_dir.is_dir() {
+        return None; // 目录不存在，暂不触发（首次使用）
+    }
+
+    // 找最近修改的文件
+    let entries = std::fs::read_dir(&summaries_dir).ok()?;
+    let mut newest: Option<SystemTime> = None;
+    for entry in entries.flatten() {
+        if entry.path().is_file() {
+            if let Ok(meta) = entry.metadata() {
+                if let Ok(modified) = meta.modified() {
+                    match newest {
+                        None => newest = Some(modified),
+                        Some(t) if modified > t => newest = Some(modified),
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    let newest = newest?;
+
+    // 计算时间差
+    let now = SystemTime::now();
+    let age_hours = now.duration_since(newest).ok()?.as_secs() / 3600;
+
+    if age_hours > 24 {
+        Some(format!(
+            "most recent session summary is {} hours old; create a new summary before ending this session",
+            age_hours
+        ))
+    } else {
+        None
+    }
+}
+
 /// 验证单篇文档
 pub fn validate_document(
     doc: &super::models::Document,
@@ -315,6 +371,25 @@ pub fn validate_document(
     if config.governance {
         result.merge(validate_governance(doc, file_path));
     }
+
+    // V-G-SS01: 会话摘要新鲜度检查
+    // 扫描 session-summaries/ 目录，若最近一条摘要的 mtime > 24 小时，发出 warn
+    if doc.nature == "session_summary" {
+        if let Some(fp) = file_path {
+            if let Some(stale_msg) = check_session_summary_staleness(fp) {
+                result.violations.push(Violation {
+                    rule_id: "V-G-SS01".to_string(),
+                    severity: ViolationSeverity::Guideline,
+                    message: stale_msg,
+                    location: "project".to_string(),
+                    fix_suggestion: Some(
+                        "Create a new session summary before ending this session".to_string(),
+                    ),
+                });
+            }
+        }
+    }
+
     // reference 域需要数据库查询，在索引阶段单独执行
 
     result
@@ -658,6 +733,7 @@ pub fn infer_nature(path: &Path) -> Option<&str> {
         "reference" => Some("reference"),
         "knowledge" => match components.next()?.as_os_str().to_str()? {
             "trails" => Some("trail"),
+            "session-summaries" => Some("session_summary"),
             _ => Some("note"),
         },
         _ => None,
