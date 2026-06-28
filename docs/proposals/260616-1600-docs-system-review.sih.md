@@ -31,22 +31,22 @@ upstream: 260615-1500-docs-restructure-v2-decision
 
 ## 二、13 项已确认决策
 
-| #   | 决策                             | 核心内容                                                                                                                       | 来源                                       |
-| --- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| 1   | 目录即身份                       | 文档 nature 由目录唯一确定，`type` 字段废除                                                                                    | restructure-v2 decision                    |
-| 2   | type 字段废除                    | frontmatter 不得包含 `type`                                                                                                    | restructure-v2 decision                    |
-| 3   | stage 语义按 nature 分化         | spec/proposal/decision/reference：stage = 治理可信度；**note：stage = 生命周期**（1/3, 2/3, 3/3, 0, X）                        | restructure-v2 decision                    |
-| 4   | frontmatter 字段精简             | 必填：id、stage；spec/proposal/decision/reference 必填 upstream（note 可选）；decided-by 仅 decisions/；stage 0 时含 successor | restructure-v2 decision                    |
-| 5   | upstream 自指向                  | 根文档 upstream 指向自身 id，不用大写域标识（如 PHILOSOPHY）                                                                   | restructure-v2 decision                    |
-| 6   | decided-by 限于 decisions/       | 其他目录 frontmatter 不得有 decided-by                                                                                         | decided-by-placement decision              |
-| 7   | _concepts.yml 废除               | glossary 不再需要此文件                                                                                                        | restructure-v2 decision                    |
-| 8   | glossary 置于项目根              | 与 docs/ 同级，不在 docs/ 下                                                                                                   | restructure-v2 decision                    |
-| 9   | 通过 upstream 链溯源             | 无 resolve_ref                                                                                                                 | restructure-v2 decision                    |
-| 10  | scope.yaml / sih-docs / po/ 废除 | 这些目录/文件不再存在                                                                                                          | restructure-v2 decision                    |
-| 11  | "单向不可逆"替换为修正模型       | 不使用"单向不可逆"作为现行术语（历史分析语境除外）                                                                             | Canon $3.1                                 |
-| 12  | knowledge/ 拆分                  | drafts/（非 .sih.md）和 notes/（.sih.md，nature=note）                                                                         | restructure-v2 decision                    |
-| 13  | note 2/3 推进需人类确认          | 非自动晋升                                                                                                                     | External-Validation decision               |
-| ：   | id 格式                          | **`YYMMDD-HHMM[-NNN]-语义短名`**（强制连字符）。此为决策漂移结果，以 validator.rs 正则为准                                     | format-hyphen-drift note + batch1 proposal |
+| 决策                                | 核心内容                                                                                                                       | 来源                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| 1. 目录即身份                       | 文档 nature 由目录唯一确定，`type` 字段废除                                                                                    | restructure-v2 decision                    |
+| 2. type 字段废除                    | frontmatter 不得包含 `type`                                                                                                    | restructure-v2 decision                    |
+| 3. stage 语义按 nature 分化         | spec/proposal/decision/reference：stage = 治理可信度；**note：stage = 生命周期**（1/3, 2/3, 3/3, 0, X）                        | restructure-v2 decision                    |
+| 4. frontmatter 字段精简             | 必填：id、stage；spec/proposal/decision/reference 必填 upstream（note 可选）；decided-by 仅 decisions/；stage 0 时含 successor | restructure-v2 decision                    |
+| 5. upstream 自指向                  | 根文档 upstream 指向自身 id，不用大写域标识（如 PHILOSOPHY）                                                                   | restructure-v2 decision                    |
+| 6. decided-by 限于 decisions/       | 其他目录 frontmatter 不得有 decided-by                                                                                         | decided-by-placement decision              |
+| 7. _concepts.yml 废除               | glossary 不再需要此文件                                                                                                        | restructure-v2 decision                    |
+| 8. glossary 置于项目根              | 与 docs/ 同级，不在 docs/ 下                                                                                                   | restructure-v2 decision                    |
+| 9. 通过 upstream 链溯源             | 无 resolve_ref                                                                                                                 | restructure-v2 decision                    |
+| 10. scope.yaml / sih-docs / po/ 废除 | 这些目录/文件不再存在                                                                                                          | restructure-v2 decision                    |
+| 11. "单向不可逆"替换为修正模型      | 不使用"单向不可逆"作为现行术语（历史分析语境除外）                                                                             | Canon $3.1                                 |
+| 12. knowledge/ 拆分                 | drafts/（非 .sih.md）和 notes/（.sih.md，nature=note）                                                                         | restructure-v2 decision                    |
+| 13. note 2/3 推进需人类确认         | 非自动晋升                                                                                                                     | External-Validation decision               |
+| 14. id 格式                         | **`YYMMDD-HHMM[-NNN]-语义短名`**（强制连字符）。此为决策漂移结果，以 validator.rs 正则为准                                     | format-hyphen-drift note + batch1 proposal |
 
 > **关键更新**：决策 #3 确认 note 有 stage，语义为生命周期（与 spec/proposal/decision/reference 的"可信度"语义不同，但编码复用 `1/3, 2/3, 3/3, 0, X`）。此定义来自 `260615-1500-docs-restructure-v2-decision`（stage 3/3），覆盖 Canon $5.3 的旧表述。AGENTS.md 中"Notes have no stage"是历次审阅修复的遗漏，属过时定义。
 > **id 格式漂移**：batch1 提案曾统一为无连字符格式 `YYMMDDHHMM`，但后续决策漂移回强制连字符格式 `YYMMDD-HHMM`。当前 validator.rs 正则 `^\d{6}-\d{4}(-\d{3})?-.+$` 为权威标准。Document-Conventions $2.1 定义和 AGENTS.md 的 id 格式说明需同步更新。
@@ -441,19 +441,19 @@ upstream:
 
 ### 按决策维度
 
-| 决策                        | B 级 | D 级 | 说明                                                                                                |
-| --------------------------- | ---- | ---- | --------------------------------------------------------------------------------------------------- |
-| #1 目录即身份/type 废除     | 0    | 1    | D-13 Mind-Design type 残留                                                                          |
-| #3 note 有 stage            | 1    | 2    | B-04 AGENTS.md 矛盾；D-02 3 文档称"note 无 stage"；D-08 note 缺 stage                               |
-| #4 frontmatter 精简         | 0    | 1    | D-12 AGENTS.md 缺 decided-by/successor 定义                                                         |
-| #5 upstream 自指向          | 0    | 1    | D-11 validator 缺自指向检查                                                                         |
-| #6 decided-by 限 decisions/ | 3    | 0    | B-01 specs/ 清理；B-02 proposals/ 清理；B-07/B-08 代码模型                                          |
-| #8 glossary 项目根          | 1    | 0    | B-06 README 位置错误                                                                                |
-| #10 po/ 废除                | 1    | 1    | B-05 Roadmap；D-05 Legacy-Migration 历史引用                                                        |
-| #11 "单向不可逆"替换        | 0    | 1    | D-03 3 文件术语残留                                                                                 |
-| #id 格式强制连字符          | 0    | 5    | B-03 upstream 断裂；D-01 全局漂移；D-09 note id；D-14 validator vs Conventions；D-16 Dev-Governance |
-| 文件名规范（无时间戳/驼峰） | 0    | 0    | S-10 建议确立文件名规范                                                                             |
-| ： 其他                      | 1    | 2    | B-03（同 id 格式）；D-06 External-Validation 迁移 note；D-15 upstream 数组；D-17 search_by_nature   |
+| 决策                          | B/D 数  | 说明                                                                                                |
+| ----------------------------- | ------- | --------------------------------------------------------------------------------------------------- |
+| #1 目录即身份/type 废除       | 0/1     | D-13 Mind-Design type 残留                                                                          |
+| #3 note 有 stage              | 1/2     | B-04 AGENTS.md 矛盾；D-02 3 文档称"note 无 stage"；D-08 note 缺 stage                               |
+| #4 frontmatter 精简           | 0/1     | D-12 AGENTS.md 缺 decided-by/successor 定义                                                         |
+| #5 upstream 自指向            | 0/1     | D-11 validator 缺自指向检查                                                                         |
+| #6 decided-by 限 decisions/   | 3/0     | B-01 specs/ 清理；B-02 proposals/ 清理；B-07/B-08 代码模型                                          |
+| #8 glossary 项目根            | 1/0     | B-06 README 位置错误                                                                                |
+| #10 po/ 废除                  | 1/1     | B-05 Roadmap；D-05 Legacy-Migration 历史引用                                                        |
+| #11 "单向不可逆"替换          | 0/1     | D-03 3 文件术语残留                                                                                 |
+| #id 格式强制连字符            | 0/5     | B-03 upstream 断裂；D-01 全局漂移；D-09 note id；D-14 validator vs Conventions；D-16 Dev-Governance |
+| 文件名规范（无时间戳/驼峰）   | 0/0     | S-10 建议确立文件名规范                                                                             |
+| 其他                          | 1/2     | B-03（同 id 格式）；D-06 External-Validation 迁移 note；D-15 upstream 数组；D-17 search_by_nature   |
 
 
 ## 七、总体评价
