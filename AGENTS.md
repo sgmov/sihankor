@@ -1,5 +1,9 @@
 # SiHankor Document Style Guide
 
+## Agent Startup Convention
+
+Agent 启动后第一件事是调用 `sihankor_project_brief` 获取上下文，以工具调用替代人工复述。
+
 ## Branch Convention — Multi-Session Parallel Development
 
 This project uses three or more agent sessions simultaneously. A simple branch protocol prevents write conflicts and merge overhead.

@@ -347,6 +347,27 @@ impl SihankorService {
         )
     }
 
+    /// 项目简报：从已有数据源聚合上下文摘要（git 状态 + 行迹 + 文档统计）
+    ///
+    /// 数据源：knowledge/trails/ 目录、git 命令、.sih.md 文件扫描
+    /// 输出：纯文本，不超过 2000 tokens
+    #[tool(
+        description = "[SiHankor] Get project brief: git status, latest trails, document stats — pure text summary for agent context"
+    )]
+    pub async fn sihankor_project_brief(
+        &self,
+        Parameters(_): Parameters<EmptyParams>,
+    ) -> String {
+        use crate::observe::generate_project_brief;
+
+        let root = std::path::Path::new(&self.config.docs_dir)
+            .parent()
+            .map(|p| p.as_ref())
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        generate_project_brief(root)
+    }
+
     /// 触发全量索引重建
     #[tool(
         description = "[SiHankor] Trigger a full index rebuild: discover, parse, validate, and index all .sih.md documents"

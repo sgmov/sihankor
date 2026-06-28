@@ -21,9 +21,11 @@
 //! - V-G-05：缺 lang 的代码块数
 //! - V-G-06：含 emoji 的行数
 
+pub mod brief;
 pub mod predictor;
 pub mod scanner;
 
+pub use brief::generate as generate_project_brief;
 pub use predictor::{RulePredictions, predict};
 pub use scanner::{
     CodeBlockStats, FileStats, FrontmatterStats, ProjectObservation, TableStats, scan_project,

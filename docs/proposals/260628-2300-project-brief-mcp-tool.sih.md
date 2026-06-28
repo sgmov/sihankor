@@ -1,6 +1,6 @@
 ---
 id: 260628-2300-project-brief-mcp-tool
-stage: 1/3
+stage: 3/3
 ---
 # 项目简报 MCP 工具提案
 
