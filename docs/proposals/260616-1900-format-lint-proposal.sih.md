@@ -1,7 +1,7 @@
 ---
 id: 260616-1900-format-lint-proposal
 stage: 3/3
-upstream: 240610-1500-sihankor-document-conventions
+upstream: 260628-1100-document-conventions
 ---
 # format-lint：文档格式约束引擎化
 
