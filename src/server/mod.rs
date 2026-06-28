@@ -362,7 +362,7 @@ async fn api_fix_refs(
                                         }
                                         if content.contains(&d.id) {}
                                     }
-                                    Err(e) => {}
+                                    Err(_e) => {}
                                 }
                             }
                         }

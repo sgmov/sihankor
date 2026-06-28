@@ -349,8 +349,9 @@ fn check_session_health(
     // 2. Commit 密度（同一 goal 的 commit 数 > 5）
     let commit_count = {
         let output = Command::new("git")
-            .args(["log", "--oneline", "-50"])
+            .args(["--no-pager", "log", "--oneline", "-50"])
             .current_dir(root)
+            .env("GIT_TERMINAL_PROMPT", "0")
             .output();
         if let Ok(out) = output {
             String::from_utf8_lossy(&out.stdout)
@@ -676,4 +677,16 @@ mod tests {
         assert_eq!(get_field(fm, "stage"), Some("1/3".to_string()));
         assert_eq!(get_field(fm, "id"), Some("test".to_string()));
     }
+
+    #[test]
+    fn test_generate_contains_session_health_section() {
+        // generate() returns a String - check it contains the Session Health section
+        let output = generate(Path::new("."));
+        assert!(output.contains("### Session Health"), "Output should contain Session Health section");
+        // Session Health section: either "All signals normal." OR "⚠" warning
+        let has_normal = output.contains("All signals normal.");
+        let has_warning = output.contains("⚠");
+        assert!(has_normal || has_warning, "Should show normal status or ⚠ warning. Output:\n{}", output);
+    }
 }
+
