@@ -82,6 +82,27 @@ pub struct GenerateDocumentPlanRequest {
     pub topic_hint: String,
 }
 
+/// 术层编排请求：审阅文档并规划 stage 推进
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct ReviewProgressionPlanRequest {
+    /// 待审文档 ID
+    pub doc_id: String,
+}
+
+/// 术层编排请求：规划治理链依赖操作顺序
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct ChainPlanRequest {
+    /// 目标文档 ID
+    pub doc_id: String,
+}
+
+/// 术层编排请求：按概念检索并审计代码与治理文档一致性
+#[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
+pub struct CodeAuditPlanRequest {
+    /// 概念或关键词，用于在文档库中检索涉及的概念
+    pub concept_hint: String,
+}
+
 /// 追问引擎请求：用户提供意图，引擎生成四个元规则追问
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
 pub struct ProposeRequest {
@@ -354,10 +375,7 @@ impl SihankorService {
     #[tool(
         description = "[SiHankor] Get project brief: git status, latest trails, document stats — pure text summary for agent context"
     )]
-    pub async fn sihankor_project_brief(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    pub async fn sihankor_project_brief(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         use crate::observe::generate_project_brief;
 
         let root = std::path::Path::new(&self.config.docs_dir)
@@ -372,10 +390,7 @@ impl SihankorService {
     #[tool(
         description = "[SiHankor] Get trail context: latest trail entries from knowledge/trails/ directory"
     )]
-    pub async fn sihankor_trail_context(
-        &self,
-        Parameters(_): Parameters<EmptyParams>,
-    ) -> String {
+    pub async fn sihankor_trail_context(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         use crate::observe::collect_trails;
 
         let root = std::path::Path::new(&self.config.docs_dir)
@@ -876,6 +891,67 @@ impl SihankorService {
         }
     }
 
+    /// 术层编排：审阅文档并规划 stage 推进
+    ///
+    /// 编排 iCL 认知 + iWW 决策 + iCT 验证三机全调，产出 ProgressionPlan。
+    /// 包含当前 stage、目标 stage、每条发散的修复步骤、引用更新清单、
+    /// stage 推进的前置条件、五法检验结果及需人工确认项。
+    #[tool(
+        description = "[SiHankor] Techne orchestration: review a document and produce a ProgressionPlan for stage advancement, invoking iCL + iWW + iCT in sequence"
+    )]
+    pub async fn review_progression_plan(
+        &self,
+        Parameters(ReviewProgressionPlanRequest { doc_id }): Parameters<
+            ReviewProgressionPlanRequest,
+        >,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+        let plan = build_progression_plan(&icl, &doc_id).await;
+        match serde_json::to_string_pretty(&plan) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 术层编排：规划治理链依赖操作
+    ///
+    /// 编排 iCL 认知 + 扩展 resolve_chain，产出 ChainPlan。
+    /// 遍历上游链健康状态，找下游文档（search_docs），输出操作顺序
+    /// （先修上游，再推进目标，最后更新下游引用）。
+    #[tool(
+        description = "[SiHankor] Techne orchestration: produce a ChainPlan that traverses the upstream chain health and downstream references, ordered for safe governance operations"
+    )]
+    pub async fn governance_chain_plan(
+        &self,
+        Parameters(ChainPlanRequest { doc_id }): Parameters<ChainPlanRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+        let plan = build_chain_plan(&icl, self.db.as_ref(), &doc_id).await;
+        match serde_json::to_string_pretty(&plan) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
+    /// 术层编排：代码与治理文档一致性审计
+    ///
+    /// search_docs 检索匹配概念 -> 对每份匹配文档跑 iCL 认知 -> 拼装 AuditPlan。
+    /// 输出治理声明到代码检查点的映射、不一致清单、修复建议及优先级。
+    #[tool(
+        description = "[SiHankor] Techne orchestration: produce a code AuditPlan that maps governance declarations to code checkpoints and lists inconsistencies for a given concept"
+    )]
+    pub async fn code_audit_plan(
+        &self,
+        Parameters(CodeAuditPlanRequest { concept_hint }): Parameters<CodeAuditPlanRequest>,
+    ) -> String {
+        let icl = ICL::new(self.db.clone());
+        let plan = build_audit_plan(&icl, self.db.as_ref(), &concept_hint).await;
+        match serde_json::to_string_pretty(&plan) {
+            Ok(json) => json,
+            Err(e) => format!("Serialization error: {}", e),
+        }
+    }
+
     /// 查询产出方差指标：基于最近 ValidationCompleted 记录计算通过率、违规分布和按 nature 分组统计
     #[tool(
         description = "[SiHankor] 查询产出方差指标，包括通过率、违规数分布和按文档类型的分组统计"
@@ -1258,6 +1334,116 @@ struct SectionOutline {
     points: Vec<String>,
 }
 
+/// 术层产出：审阅与 stage 推进蓝图
+#[derive(Debug, Clone, serde::Serialize)]
+struct ProgressionPlan {
+    plan_id: String,
+    plan_type: String,
+    target_doc: TargetDocSummary,
+    current_stage: String,
+    target_stage: String,
+    divergence_fixes: Vec<DivergenceFix>,
+    reference_updates: Vec<String>,
+    prerequisites: Vec<String>,
+    five_law_check: Vec<LawCheckEntry>,
+    overall_verdict: String,
+    human_review_items: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct TargetDocSummary {
+    id: String,
+    title: String,
+    nature: String,
+    stage: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct DivergenceFix {
+    severity: String,
+    div_type: String,
+    description: String,
+    fix_step: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct LawCheckEntry {
+    law: String,
+    result: String,
+    note: String,
+}
+
+/// 术层产出：治理链操作顺序蓝图
+#[derive(Debug, Clone, serde::Serialize)]
+struct ChainPlan {
+    plan_id: String,
+    plan_type: String,
+    target_doc_id: String,
+    upstream_health: Vec<UpstreamHealth>,
+    downstream_impact: Vec<DownstreamRef>,
+    operation_order: Vec<ChainOperation>,
+    success_criteria: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct UpstreamHealth {
+    doc_id: String,
+    stage: String,
+    status: String,
+    note: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct DownstreamRef {
+    doc_id: String,
+    title: String,
+    nature: String,
+    stage: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct ChainOperation {
+    order: u32,
+    phase: String,
+    action: String,
+    affected_docs: Vec<String>,
+    revert_step: String,
+}
+
+/// 术层产出：代码与治理文档一致性审计蓝图
+#[derive(Debug, Clone, serde::Serialize)]
+struct AuditPlan {
+    plan_id: String,
+    plan_type: String,
+    concept: String,
+    involved_docs: Vec<TargetDocSummary>,
+    checkpoints: Vec<AuditCheckpoint>,
+    inconsistencies: Vec<AuditInconsistency>,
+    fix_recommendations: Vec<AuditFix>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct AuditCheckpoint {
+    doc_id: String,
+    declaration: String,
+    code_checkpoint: String,
+    status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct AuditInconsistency {
+    doc_id: String,
+    severity: String,
+    description: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct AuditFix {
+    priority: String,
+    doc_id: String,
+    recommendation: String,
+}
+
 /// 编排 iCL 认知 + 上下文，生成文档蓝图
 async fn build_generation_plan(
     icl: &ICL,
@@ -1516,6 +1702,403 @@ fn build_success_criteria(nature: &str) -> Vec<String> {
     }
 
     criteria
+}
+
+/// 计算 stage 推进的目标 stage。
+///
+/// 正常推进：Propose(1/3) -> Resolve(2/3) -> Ratify(3/3)。
+/// Deprecated(X) 和 Superseded(0/) 为终态，无下一阶段。
+/// 已达 Ratify(3/3) 返回 None，由调用方决定 Reopen 或保持。
+fn next_stage(stage: &crate::core::models::Stage) -> Option<String> {
+    use crate::core::models::Stage;
+    match stage {
+        Stage::Propose => Some("2/3".to_string()),
+        Stage::Resolve => Some("3/3".to_string()),
+        Stage::Ratify => None,
+        Stage::Deprecated | Stage::Superseded(_) => None,
+    }
+}
+
+/// 将 iCT 五法检验结果映射为可序列化的快照（避免直接序列化依赖 iCT 内部枚举）。
+fn map_law_check(checks: &[crate::mind::types::LawCheck]) -> Vec<LawCheckEntry> {
+    checks
+        .iter()
+        .map(|c| LawCheckEntry {
+            law: c.law.clone(),
+            result: format!("{:?}", c.result).to_lowercase(),
+            note: c.note.clone(),
+        })
+        .collect()
+}
+
+/// 编排 iCL 认知 + iWW 决策 + iCT 验证，生成 stage 推进蓝图。
+async fn build_progression_plan(icl: &ICL, doc_id: &str) -> ProgressionPlan {
+    let now = chrono::Utc::now();
+    let date_part = now.format("%y%m%d-%H%M").to_string();
+    let plan_id = format!("plan-progression-{}-{}", date_part, doc_id);
+
+    let target_stage_disp;
+    let mut target_doc = TargetDocSummary {
+        id: String::new(),
+        title: String::new(),
+        nature: String::new(),
+        stage: String::new(),
+    };
+    let mut divergence_fixes: Vec<DivergenceFix> = Vec::new();
+    let mut reference_updates: Vec<String> = Vec::new();
+    let mut prerequisites: Vec<String> = Vec::new();
+    let mut five_law: Vec<LawCheckEntry> = Vec::new();
+    let mut verdict = "pass".to_string();
+    let mut human_review: Vec<String> = Vec::new();
+
+    match icl.db().get_document(doc_id).await {
+        Ok(Some(doc)) => {
+            target_doc = TargetDocSummary {
+                id: doc.id.clone(),
+                title: doc.title.clone(),
+                nature: doc.nature.clone(),
+                stage: doc.stage.to_display(),
+            };
+            target_stage_disp = next_stage(&doc.stage).unwrap_or_else(|| "3/3".to_string());
+
+            let cognition = icl.analyze(&doc).await;
+            let proposal = IWW::propose(&cognition);
+            let verification = ICT::verify(&cognition, &proposal);
+
+            for div in &cognition.divergence_diagnosis {
+                let fix = div
+                    .suggestion
+                    .clone()
+                    .unwrap_or_else(|| "需人工决定".to_string());
+                divergence_fixes.push(DivergenceFix {
+                    severity: format!("{:?}", div.severity).to_lowercase(),
+                    div_type: format!("{:?}", div.div_type).to_lowercase(),
+                    description: div.description.clone(),
+                    fix_step: fix,
+                });
+            }
+
+            reference_updates = cognition.relation_graph.references.clone();
+            if !cognition.relation_graph.gaps.is_empty() {
+                prerequisites.push(format!("补齐缺失引用：{:?}", cognition.relation_graph.gaps));
+            }
+
+            if let Some(ref up) = doc.upstream {
+                prerequisites.push(format!(
+                    "确认上游 '{}' stage 在可引用范围（2/3 或 3/3）",
+                    up
+                ));
+            }
+            if target_stage_disp == "2/3" {
+                prerequisites.push("完成发散修复并通过五法检验".into());
+            }
+            if target_stage_disp == "3/3" {
+                prerequisites.push("resolved 阶段文档已沉淀证据，五法检验需无 Fail".into());
+            }
+
+            five_law = map_law_check(&verification.five_law_check);
+            verdict = format!("{:?}", verification.overall).to_lowercase();
+            for check in &verification.five_law_check {
+                if check.result != crate::mind::types::LawCheckResult::Pass {
+                    human_review.push(format!(
+                        "[{}] {:?}: {}",
+                        check.law, check.result, check.note
+                    ));
+                }
+            }
+            if verification.law_violation_summary.is_empty() {
+                human_review.push("最终推进前需 Agent 复核 verification.overall".into());
+            }
+        }
+        Ok(None) => {
+            target_stage_disp = "1/3".to_string();
+            prerequisites.push(format!("文档 '{}' 未索引，需先 index_rebuild", doc_id));
+            human_review.push(format!("文档 '{}' 不存在，无法推进 stage", doc_id));
+        }
+        Err(e) => {
+            target_stage_disp = "1/3".to_string();
+            prerequisites.push(format!("数据库错误：{}", e));
+            human_review.push("数据库不可达，请稍后重试".into());
+        }
+    }
+
+    ProgressionPlan {
+        plan_id,
+        plan_type: "review".to_string(),
+        target_doc: target_doc.clone(),
+        current_stage: target_doc.stage,
+        target_stage: target_stage_disp,
+        divergence_fixes,
+        reference_updates,
+        prerequisites,
+        five_law_check: five_law,
+        overall_verdict: verdict,
+        human_review_items: human_review,
+    }
+}
+
+/// 编排 iCL 认知 + resolve_chain 遍历，生成治理链操作顺序蓝图。
+async fn build_chain_plan(
+    icl: &ICL,
+    db: &dyn crate::core::database::SihDatabase,
+    doc_id: &str,
+) -> ChainPlan {
+    let now = chrono::Utc::now();
+    let date_part = now.format("%y%m%d-%H%M").to_string();
+    let plan_id = format!("plan-chain-{}-{}", date_part, doc_id);
+
+    let mut upstream_health: Vec<UpstreamHealth> = Vec::new();
+    let mut downstream_impact: Vec<DownstreamRef> = Vec::new();
+    let mut operation_order: Vec<ChainOperation> = Vec::new();
+
+    match db.resolve_chain(doc_id, 20).await {
+        Ok(nodes) => {
+            for node in &nodes {
+                if node.id == *doc_id {
+                    continue;
+                }
+                let status = if node.stage.is_referenceable() {
+                    "ratified"
+                } else {
+                    "not_referenceable"
+                };
+                let note = match status {
+                    "ratified" => "上游已 ratify，可作为合法授权源".to_string(),
+                    _ => format!("上游 stage {} 不可直接引用，需先推进", node.stage),
+                };
+                upstream_health.push(UpstreamHealth {
+                    doc_id: node.id.clone(),
+                    stage: node.stage.to_display(),
+                    status: status.to_string(),
+                    note,
+                });
+            }
+        }
+        Err(e) => {
+            upstream_health.push(UpstreamHealth {
+                doc_id: "chain".to_string(),
+                stage: "?".to_string(),
+                status: "error".to_string(),
+                note: format!("resolve_chain 失败：{}", e),
+            });
+        }
+    }
+
+    let unhealthy: Vec<String> = upstream_health
+        .iter()
+        .filter(|u| u.status == "not_referenceable")
+        .map(|u| u.doc_id.clone())
+        .collect();
+
+    match db.search_content(doc_id).await {
+        Ok(results) => {
+            for r in &results {
+                if r.id == *doc_id {
+                    continue;
+                }
+                downstream_impact.push(DownstreamRef {
+                    doc_id: r.id.clone(),
+                    title: r.title.clone(),
+                    nature: "unknown".to_string(),
+                    stage: r.stage.to_display(),
+                });
+            }
+        }
+        Err(e) => {
+            operation_order.push(ChainOperation {
+                order: 0,
+                phase: "diagnose".to_string(),
+                action: format!("下游文档搜索失败：{}", e),
+                affected_docs: vec![],
+                revert_step: "无需回退".to_string(),
+            });
+        }
+    }
+
+    let mut order = 1u32;
+    for up_id in &unhealthy {
+        operation_order.push(ChainOperation {
+            order,
+            phase: "fix_upstream".to_string(),
+            action: format!("先推进上游 '{}' 到 2/3 或 3/3", up_id),
+            affected_docs: vec![up_id.clone()],
+            revert_step: "git revert 上游 stage 推进".to_string(),
+        });
+        order += 1;
+    }
+
+    operation_order.push(ChainOperation {
+        order,
+        phase: "advance_target".to_string(),
+        action: format!("推进目标文档 '{}' 的 stage", doc_id),
+        affected_docs: vec![doc_id.to_string()],
+        revert_step: "git revert 目标 stage 变更".to_string(),
+    });
+    order += 1;
+
+    if !downstream_impact.is_empty() {
+        let downstream_ids: Vec<String> =
+            downstream_impact.iter().map(|d| d.doc_id.clone()).collect();
+        operation_order.push(ChainOperation {
+            order,
+            phase: "update_downstream".to_string(),
+            action: "通知下游文档更新 upstream 引用".to_string(),
+            affected_docs: downstream_ids,
+            revert_step: "git revert 下游引用变更".to_string(),
+        });
+    }
+
+    let success_criteria = vec![
+        "上游链全部 ratified 或 resolved".to_string(),
+        "目标 stage 通过 validate_sihmd 和 full_analysis".to_string(),
+        "下游文档引用更新完毕".to_string(),
+    ];
+
+    let _ = icl;
+    ChainPlan {
+        plan_id,
+        plan_type: "chain".to_string(),
+        target_doc_id: doc_id.to_string(),
+        upstream_health,
+        downstream_impact,
+        operation_order,
+        success_criteria,
+    }
+}
+
+/// 编排 search_docs + 对每份文档跑 iCL，生成代码与治理文档一致性审计蓝图。
+async fn build_audit_plan(
+    icl: &ICL,
+    db: &dyn crate::core::database::SihDatabase,
+    concept_hint: &str,
+) -> AuditPlan {
+    let now = chrono::Utc::now();
+    let date_part = now.format("%y%m%d-%H%M").to_string();
+    let slug = concept_hint
+        .to_lowercase()
+        .split_whitespace()
+        .take(4)
+        .collect::<Vec<_>>()
+        .join("-");
+    let plan_id = format!("plan-audit-{}-{}", date_part, slug);
+
+    let mut involved: Vec<TargetDocSummary> = Vec::new();
+    let mut checkpoints: Vec<AuditCheckpoint> = Vec::new();
+    let mut inconsistencies: Vec<AuditInconsistency> = Vec::new();
+    let mut fixes: Vec<AuditFix> = Vec::new();
+
+    let search_results = match db.search_content(concept_hint).await {
+        Ok(r) => r,
+        Err(e) => {
+            involved.push(TargetDocSummary {
+                id: "search-error".to_string(),
+                title: format!("search_content failed: {}", e),
+                nature: "diagnostic".to_string(),
+                stage: "?".to_string(),
+            });
+            return AuditPlan {
+                plan_id,
+                plan_type: "audit".to_string(),
+                concept: concept_hint.to_string(),
+                involved_docs: involved,
+                checkpoints,
+                inconsistencies,
+                fix_recommendations: fixes,
+            };
+        }
+    };
+
+    for r in &search_results {
+        let doc_opt = match db.get_document(&r.id).await {
+            Ok(o) => o,
+            Err(_) => None,
+        };
+        let Some(doc) = doc_opt else { continue };
+        involved.push(TargetDocSummary {
+            id: doc.id.clone(),
+            title: doc.title.clone(),
+            nature: doc.nature.clone(),
+            stage: doc.stage.to_display(),
+        });
+
+        let declaration = format!("# {} ({})", doc.title, doc.stage);
+        let code_checkpoint = infer_code_checkpoint(&doc.nature);
+        let status = if doc.nature.is_empty() || doc.nature == "unknown" {
+            "unmapped"
+        } else {
+            "mapped"
+        };
+        checkpoints.push(AuditCheckpoint {
+            doc_id: doc.id.clone(),
+            declaration,
+            code_checkpoint: code_checkpoint.clone(),
+            status: status.to_string(),
+        });
+
+        let cognition = icl.analyze(&doc).await;
+        for div in &cognition.divergence_diagnosis {
+            inconsistencies.push(AuditInconsistency {
+                doc_id: doc.id.clone(),
+                severity: format!("{:?}", div.severity).to_lowercase(),
+                description: div.description.clone(),
+            });
+            fixes.push(AuditFix {
+                priority: format!("{:?}", div.severity).to_lowercase(),
+                doc_id: doc.id.clone(),
+                recommendation: div
+                    .suggestion
+                    .clone()
+                    .unwrap_or_else(|| "需人工审查".to_string()),
+            });
+        }
+
+        for gap in &cognition.relation_graph.gaps {
+            inconsistencies.push(AuditInconsistency {
+                doc_id: doc.id.clone(),
+                severity: "warning".to_string(),
+                description: format!("引用 '{}' 缺失，可能影响代码 checkpoint 一致性", gap),
+            });
+            fixes.push(AuditFix {
+                priority: "warning".to_string(),
+                doc_id: doc.id.clone(),
+                recommendation: format!("补齐文档 '{}' 或更正引用", gap),
+            });
+        }
+    }
+
+    fixes.sort_by(|a, b| priority_rank(&b.priority).cmp(&priority_rank(&a.priority)));
+
+    AuditPlan {
+        plan_id,
+        plan_type: "audit".to_string(),
+        concept: concept_hint.to_string(),
+        involved_docs: involved,
+        checkpoints,
+        inconsistencies,
+        fix_recommendations: fixes,
+    }
+}
+
+/// 根据文档 nature 推断代码检查点（治理声明到代码实现的映射占位）。
+fn infer_code_checkpoint(nature: &str) -> String {
+    match nature {
+        "spec" => "src/core/ 下的 validator / models 字段定义".to_string(),
+        "decision" => "src/mcp_server/ 下的工具行为 / src/core/database.rs trait 实现".to_string(),
+        "proposal" => "尚未映射代码（proposal 阶段）".to_string(),
+        "reference" => "src/ 与 glossary/ 字段命名一致性".to_string(),
+        "note" => "无代码检查点（note 是经验记录）".to_string(),
+        _ => format!("未知 nature '{}'，无法映射代码检查点", nature),
+    }
+}
+
+/// 优先级排序权重，Critical > Warning > Info。
+fn priority_rank(p: &str) -> u32 {
+    match p {
+        "critical" => 3,
+        "warning" => 2,
+        "info" => 1,
+        _ => 0,
+    }
 }
 
 impl ServerHandler for SihankorService {
@@ -1836,5 +2419,197 @@ mod tests {
         assert!(result.contains("SiHankor Trend Alignment"));
         assert!(result.contains("审查次数"));
         assert!(result.contains("变更次数"));
+    }
+
+    fn make_test_doc_with_upstream(
+        id: &str,
+        nature: &str,
+        stage: &str,
+        upstream: Option<&str>,
+    ) -> Document {
+        let stage_enum = Stage::from_str(stage).unwrap();
+        Document {
+            id: id.to_string(),
+            stage: stage_enum.clone(),
+            title: format!("Test Doc {}", id),
+            upstream: upstream.map(String::from),
+            frontmatter: Frontmatter {
+                id: id.to_string(),
+                stage: stage_enum,
+                upstream: upstream.map(String::from),
+                decided_by: None,
+                extra: serde_json::Value::Null,
+            },
+            content: format!("content for {} matching concept techne", id),
+            status: DocStatus::Ok,
+            indexed_at: chrono::Utc::now(),
+            nature: nature.to_string(),
+        }
+    }
+
+    /// 验证 review_progression_plan 对已索引文档返回目标 stage = 2/3
+    #[tokio::test]
+    async fn test_review_progression_plan_existing_doc() {
+        let svc = make_service();
+        svc.db
+            .upsert_document(make_test_doc_with_upstream(
+                "260616-1615-techne-spec",
+                "spec",
+                "1/3",
+                Some("240610-1030-on-sihankor-canon"),
+            ))
+            .await
+            .unwrap();
+
+        let req = ReviewProgressionPlanRequest {
+            doc_id: "260616-1615-techne-spec".to_string(),
+        };
+        let result = svc.review_progression_plan(Parameters(req)).await;
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["plan_type"], "review");
+        assert_eq!(parsed["current_stage"], "1/3");
+        assert_eq!(parsed["target_stage"], "2/3");
+        assert_eq!(parsed["target_doc"]["id"], "260616-1615-techne-spec");
+        let five_law = parsed["five_law_check"].as_array().unwrap();
+        assert_eq!(five_law.len(), 5);
+    }
+
+    /// 验证 review_progression_plan 对缺失文档返回明确错误前提
+    #[tokio::test]
+    async fn test_review_progression_plan_missing_doc() {
+        let svc = make_service();
+        let req = ReviewProgressionPlanRequest {
+            doc_id: "999999-0000-missing".to_string(),
+        };
+        let result = svc.review_progression_plan(Parameters(req)).await;
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["current_stage"], "");
+        assert_eq!(parsed["target_stage"], "1/3");
+        let prereqs = parsed["prerequisites"].as_array().unwrap();
+        assert!(
+            prereqs
+                .iter()
+                .any(|p| p.as_str().unwrap().contains("未索引")),
+            "result was: {}",
+            result
+        );
+    }
+
+    /// 验证 governance_chain_plan 输出包含上游健康状态和操作顺序
+    #[tokio::test]
+    async fn test_governance_chain_plan_basic() {
+        let svc = make_service();
+        svc.db
+            .upsert_document(make_test_doc_with_upstream(
+                "240610-1030-on-sihankor-canon",
+                "spec",
+                "3/3",
+                None,
+            ))
+            .await
+            .unwrap();
+        svc.db
+            .upsert_document(make_test_doc_with_upstream(
+                "260616-1615-techne-spec",
+                "spec",
+                "1/3",
+                Some("240610-1030-on-sihankor-canon"),
+            ))
+            .await
+            .unwrap();
+
+        let req = ChainPlanRequest {
+            doc_id: "260616-1615-techne-spec".to_string(),
+        };
+        let result = svc.governance_chain_plan(Parameters(req)).await;
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["plan_type"], "chain");
+        assert_eq!(parsed["target_doc_id"], "260616-1615-techne-spec");
+        let upstream = parsed["upstream_health"].as_array().unwrap();
+        assert!(
+            upstream.iter().any(
+                |u| u["doc_id"] == "240610-1030-on-sihankor-canon" && u["status"] == "ratified"
+            ),
+            "result was: {}",
+            result
+        );
+        let ops = parsed["operation_order"].as_array().unwrap();
+        assert!(
+            ops.iter().any(|o| o["phase"] == "advance_target"
+                && o["affected_docs"]
+                    .as_array()
+                    .map(|a| a.iter().any(|d| d == "260616-1615-techne-spec"))
+                    .unwrap_or(false)),
+            "result was: {}",
+            result
+        );
+    }
+
+    /// 验证 code_audit_plan 对搜索命中的文档输出声明到代码 checkpoint 映射
+    #[tokio::test]
+    async fn test_code_audit_plan_basic() {
+        let svc = make_service();
+        svc.db
+            .upsert_document(make_test_doc_with_upstream(
+                "260616-1615-techne-spec",
+                "spec",
+                "1/3",
+                None,
+            ))
+            .await
+            .unwrap();
+        svc.db
+            .upsert_document(make_test_doc_with_upstream(
+                "260616-1700-techne-orchestration-proposal",
+                "proposal",
+                "1/3",
+                Some("260616-1615-techne-spec"),
+            ))
+            .await
+            .unwrap();
+
+        let req = CodeAuditPlanRequest {
+            concept_hint: "techne".to_string(),
+        };
+        let result = svc.code_audit_plan(Parameters(req)).await;
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["plan_type"], "audit");
+        assert_eq!(parsed["concept"], "techne");
+        let involved = parsed["involved_docs"].as_array().unwrap();
+        assert!(
+            involved.len() >= 2,
+            "expected at least 2 docs, result was: {}",
+            result
+        );
+        let checkpoints = parsed["checkpoints"].as_array().unwrap();
+        assert!(
+            !checkpoints.is_empty(),
+            "expected checkpoints to be non-empty"
+        );
+        assert!(
+            checkpoints
+                .iter()
+                .any(|c| c["code_checkpoint"].as_str().unwrap().contains("validator")),
+            "expected spec checkpoint to mention validator"
+        );
+    }
+
+    /// 验证 next_stage 辅助函数的四种 stage 行为
+    #[test]
+    fn test_next_stage_helper() {
+        use crate::core::models::Stage;
+        assert_eq!(next_stage(&Stage::Propose), Some("2/3".to_string()));
+        assert_eq!(next_stage(&Stage::Resolve), Some("3/3".to_string()));
+        assert_eq!(next_stage(&Stage::Ratify), None);
+        assert_eq!(next_stage(&Stage::Deprecated), None);
+        assert_eq!(next_stage(&Stage::Superseded("next-id".to_string())), None);
+    }
+
+    /// 验证 priority_rank 排序权重
+    #[test]
+    fn test_priority_rank_ordering() {
+        assert!(priority_rank("critical") > priority_rank("warning"));
+        assert!(priority_rank("warning") > priority_rank("info"));
+        assert_eq!(priority_rank("unknown"), 0);
     }
 }
