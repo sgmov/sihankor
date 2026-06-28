@@ -1,5 +1,6 @@
 pub mod database;
 pub mod glossary;
+pub mod governance_check;
 pub mod indexer;
 pub mod kanban;
 pub mod metrics;

@@ -4,18 +4,49 @@ use walkdir::WalkDir;
 
 use super::database::SihDatabase;
 use super::metrics::MetricEvent;
-use super::models::{DocStatus, Document, ViolationSeverity};
+use super::models::{DocStatus, Document, Violation, ViolationSeverity};
 use super::parser;
 use super::validator::{ValidationConfig, validate_document};
 
 /// 索引结果报告
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct IndexReport {
     pub discovered: usize,
     pub parsed: usize,
     pub indexed: usize,
     pub errors: Vec<(String, String)>,
     pub warnings: Vec<(String, String)>,
+    /// F 级违规明细（per-document，已在 validate_document 中识别）
+    /// 用于 CI 自治理的 strict 模式阻断
+    pub fatal_violations: Vec<ViolationDetail>,
+    /// G 级违规明细（per-document）
+    /// 用于报告但默认不阻断
+    pub guideline_violations: Vec<ViolationDetail>,
+    /// J 级违规计数（per-document）
+    /// 仅计数不阻断，不保留明细（J 语义：静默记录）
+    pub judgment_count: usize,
+}
+
+/// 单条违规的精简表示（CI 报告用，不携带 fix_suggestion 以减体积）
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ViolationDetail {
+    pub doc_id: String,
+    pub rule_id: String,
+    pub severity: String,
+    pub location: String,
+    pub message: String,
+}
+
+impl ViolationDetail {
+    fn from_violation(doc_id: &str, v: &Violation) -> Self {
+        Self {
+            doc_id: doc_id.to_string(),
+            rule_id: v.rule_id.clone(),
+            severity: v.severity.as_str().to_string(),
+            location: v.location.clone(),
+            message: v.message.clone(),
+        }
+    }
 }
 
 /// 发现文档文件
@@ -46,12 +77,22 @@ pub fn discover_documents(docs_dir: &Path) -> Vec<PathBuf> {
     files
 }
 
+/// 索引结果：单篇文档 + 验证违规明细
+///
+/// 返回 `IndexedDoc` 而非直接 `Document`，让调用方（如 `rebuild_index`）能拿到
+/// F/G/J 违规明细用于 CI 自治理阻断与报告。
+#[derive(Debug, Clone)]
+pub struct IndexedDoc {
+    pub doc: Document,
+    pub violations: Vec<Violation>,
+}
+
 /// 索引单篇文档
 pub async fn index_document(
     db: &dyn SihDatabase,
     file_path: &Path,
     validation_config: &ValidationConfig,
-) -> Result<Document, IndexError> {
+) -> Result<IndexedDoc, IndexError> {
     // 解析
     let mut doc = parser::parse_file(file_path).map_err(|e| IndexError::ParseError {
         path: file_path.to_string_lossy().to_string(),
@@ -124,10 +165,16 @@ pub async fn index_document(
         }
     }
 
-    Ok(doc)
+    Ok(IndexedDoc {
+        doc,
+        violations: result.violations,
+    })
 }
 
 /// 全量索引重建
+///
+/// 返回 `IndexReport`，包含 F/G/J 违规明细（per-document），
+/// 调用方可用其构建 CI 报告并按严重度决定退出码。
 pub async fn rebuild_index(
     db: &dyn SihDatabase,
     docs_dir: &Path,
@@ -139,6 +186,9 @@ pub async fn rebuild_index(
         indexed: 0,
         errors: Vec::new(),
         warnings: Vec::new(),
+        fatal_violations: Vec::new(),
+        guideline_violations: Vec::new(),
+        judgment_count: 0,
     };
 
     let files = discover_documents(docs_dir);
@@ -146,14 +196,33 @@ pub async fn rebuild_index(
 
     for file_path in &files {
         match index_document(db, file_path, validation_config).await {
-            Ok(doc) => {
+            Ok(indexed) => {
                 report.parsed += 1;
                 report.indexed += 1;
-                if doc.status == DocStatus::Warning {
+                if indexed.doc.status == DocStatus::Warning {
                     report.warnings.push((
-                        doc.id.clone(),
+                        indexed.doc.id.clone(),
                         "Document has validation warnings".to_string(),
                     ));
+                }
+
+                // 收集 F/G/J 明细到 report
+                for v in &indexed.violations {
+                    match v.severity {
+                        ViolationSeverity::Fatal => {
+                            report
+                                .fatal_violations
+                                .push(ViolationDetail::from_violation(&indexed.doc.id, v));
+                        }
+                        ViolationSeverity::Guideline => {
+                            report
+                                .guideline_violations
+                                .push(ViolationDetail::from_violation(&indexed.doc.id, v));
+                        }
+                        ViolationSeverity::Judgment => {
+                            report.judgment_count += 1;
+                        }
+                    }
                 }
             }
             Err(IndexError::ParseError { path, error }) => {

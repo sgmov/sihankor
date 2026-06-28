@@ -18,3 +18,23 @@ jobs:
       - run: cargo test -- --nocapture
       - run: cargo clippy
       - run: cargo fmt --check
+
+  # SiHankor 自治理：让司衡治理自己的 .sih.md 文档树
+  # 默认 --warn 模式：报告全部问题但不阻断，用于先观测一轮数据再决定是否切 --strict
+  # 见 plan 260628-2030-ci-self-govern 决策
+  self-govern:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: SiHankor self-governance check (--warn)
+        # --warn 模式：报告 F/G/新规则违规但不阻断 CI
+        # 等数据积累并 fix 现网问题后，可改为 --strict 让 F 违规阻断
+        run: cargo run --quiet --bin rebuild_index -- --warn
+      - name: Upload governance report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sihankor-self-govern-report
+          path: .sih/index.db
+          retention-days: 7
