@@ -1,7 +1,7 @@
 ---
 id: 260627-1000-sihankor-terminology-lineage
-stage: 1/3
-upstream: 240610-1030-on-sihankor-canon
+stage: 3/3
+upstream: 260627-1030-sihankor-philosophy
 ---
 
 # 司衡术语血统表

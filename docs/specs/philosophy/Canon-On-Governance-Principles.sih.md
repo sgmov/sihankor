@@ -1,6 +1,6 @@
 ---
 id: 260628-1000-fa-on-governance-principles
-stage: 1/3
+stage: 3/3
 upstream: 260627-1100-dao-on-natural-convergence
 ---
 

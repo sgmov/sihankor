@@ -1,6 +1,6 @@
 ---
 id: 260628-1100-philosophy-arguments
-stage: 1/3
+stage: 3/3
 upstream: 260627-1030-sihankor-philosophy
 ---
 
