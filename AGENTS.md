@@ -35,6 +35,8 @@ flowchart LR
 6. **Squash merge to main.** One linear commit per branch topic. No merge commits.
 7. **Delete branch after merge.** Non-negotiable. Stale branches accumulate noise.
 8. **If you see a branch conflict:** notify the user (moc). Do not resolve conflicts between agent branches without human oversight.
+9. **Before starting work, verify file boundaries.** Run `git diff --stat main...HEAD` and confirm your files don't overlap with other active branches. If another branch is working on the same file, stop and report to the user.
+10. **Commit or stash before switching branches.** Any `git checkout` must be preceded by `git stash` or `git commit`. Never switch branches with a dirty working tree — other sessions may overwrite uncommitted work.
 
 ### Emergency: need to stop work
 
