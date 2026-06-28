@@ -1,0 +1,33 @@
+---
+id: 260628-163000-session-summary
+session_id: mvs_current
+session_role: root
+duration_minutes: ~90
+goal: 清 CI blocking + session health 工具 + DSR-5 准备
+outcome: 全部完成（6 commits，CI 8+8 blocking → 0+0）
+commits: 3c82dfa, aa1dc0d, 06e25e8, cb340ec, e3059f8, 319af1b
+todos_remaining:
+  - DSR-5 跨语言观测窗（分支 dsr5-cross-language 已就绪，等 agent 执行）
+  - 132 G 违规（WARN，策略：不逐条修，作为 DSR-5 输入数据）
+  - sihankor_agent_constraints MCP 工具（单独立项）
+  - fix-g-violations 远程分支清理
+decisions:
+  - session health 四维诊断聚合到 project_brief（brief.rs +90 行）
+  - ratify sih-entry-model + observation-window 到 3/3（消除 referenced_while_propose 误报源）
+  - ratify dsr3-implications + daoist-canon-classification + Document-Conventions（清上游链断裂）
+  - 不降级 --strict blocking→warn（保持数据源完整性）
+  - 不逐条修 132 G 违规（作为 DSR 观测数据保留）
+risks:
+  - 当前 session 的 cache read 仍在累积，需新 session 验证 project_brief 冷启动效果
+  - dsr5-cross-language 分支有未提交的 brief.rs/server/mod.rs 修改（已 stash）
+data_stats:
+  ci_f_before: 0
+  ci_upstream_before: 8
+  ci_stage_before: 8
+  ci_f_after: 0
+  ci_upstream_after: 0
+  ci_stage_after: 0
+  ci_g: 133
+  tests_passing: 182
+  ghost_db_cleanup: 1 (260614-0000-sihankor-type-extension)
+---
