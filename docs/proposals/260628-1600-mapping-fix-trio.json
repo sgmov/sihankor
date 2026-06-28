@@ -1,0 +1,158 @@
+{
+  "meta": {
+    "id": "260628-1600-mapping-fix-trio",
+    "title": "工程映射三连修复",
+    "upstream": "260628-1100-engineering-mapping",
+    "shared_root_cause": "代码在实践中发现了哲学定义/映射链声明的不精确之处，但处理方式是'单方面偏离'而非'通过治理流程校准'",
+    "unified_principle": "诚实声明当前状态，将代码的工程发现通过顺因流程反向同步到哲学层，而不是代码单方面修改规约"
+  },
+  "fixes": [
+    {
+      "id": "fix-1",
+      "chain": "链3",
+      "title": "dao_trace 降级",
+      "problem": {
+        "current_L": "L4（装饰性映射）",
+        "violation": "名实不符",
+        "detail": "DaoTrace 结构体和两处 build_dao_trace（ict.rs:396、grilling.rs:331）产出内容与道层追溯无关。ict 对每条非Pass五法检查硬编码配对道层字符串，grilling 返回固定字符串且 _nature 参数被忽略。二者均声称追溯道/法原则，实际产出静态文本。"
+      },
+      "fix": {
+        "action": "重命名 + 降级 + 职责收缩",
+        "rename": {
+          "struct": "DaoTrace → LawViolationSummary",
+          "field_dao": "dao → laws",
+          "field_trace": "trace → detail",
+          "verification_field": "dao_trace → law_violation_summary",
+          "ict_function": "build_dao_trace() → build_law_violation_summary()"
+        },
+        "grilling_special": "删除 grilling.rs 的 build_dao_trace 方法和 GenerationPlan.dao_trace 字段（GrillingEngine 不做五法检验，返回固定字符串无意义）",
+        "scope_contraction": "降级后 LawViolationSummary 只描述法检结果（哪条法Fail、为什么Fail），不做道层归因。道层归因由工程映射表承担。",
+        "rename_semantic_note": "dao 字段重命名为 laws 不是纯机械操作：当前 dao 字段内容为道层归因字符串（如'道二 + 道三'），重命名后 laws 字段内容需从道层归因变更为法层引用（如'顺因'）。此为语义变更，非简单重命名。",
+        "new_L": "L3",
+        "L_note": "降级是诚实化，不是功能退化。原L4基于虚假声称。"
+      },
+      "propagation": [
+        {"file": "types.rs:238", "from": "DaoTrace { dao, trace }", "to": "LawViolationSummary { laws, detail }"},
+        {"file": "types.rs:211", "from": "dao_trace: Vec<DaoTrace>", "to": "law_violation_summary: Vec<LawViolationSummary>"},
+        {"file": "ict.rs:396", "from": "build_dao_trace()", "to": "build_law_violation_summary()"},
+        {"file": "ict.rs:25,30", "from": "dao_trace", "to": "law_violation_summary"},
+        {"file": "grilling.rs:55", "from": "dao_trace: String", "to": "删除字段"},
+        {"file": "grilling.rs:331", "from": "build_dao_trace(_nature)", "to": "删除方法"},
+        {"file": "grilling.rs:169,185", "from": "调用点", "to": "删除"},
+        {"file": "server/mod.rs:108-130", "from": "verification.dao_trace", "to": "verification.law_violation_summary"},
+        {"file": "governance.rs:428", "from": "\"dao trace\"", "to": "\"law violation summary\""}
+      ]
+    },
+    {
+      "id": "fix-2",
+      "chain": "链12",
+      "title": "J 语义校准",
+      "problem": {
+        "current_L": "L3",
+        "violation": "顺因（G2）：规约先于实现，实现不能单方面修改规约",
+        "detail": "法论§有度第164行定义J（矩）为'精确判定，pass/fail'。代码将J实现为'静默记录'（仅计数不阻断），代码注释（models.rs:224-229、validator.rs:171-175）承认反转并以'代码语义为准'。",
+        "root_cause": "F/G/J原始定义混淆了两个独立维度：判定方式（机械vs人工）与阻断行为（阻断vs标记vs记录）。J的哲学定位落在'机械判定+阻断'格子，但工程实践发现这个格子实际对应F。J在工程中的真实需求落在'机械判定+记录'格子。"
+      },
+      "fix": {
+        "action": "分解维度 + 哲学层校准",
+        "philosophy_change": {
+          "file": "法论 Canon-On-Governance-Principles.sih.md",
+          "section": "§有度 G3",
+          "old_table": {
+            "columns": ["力度", "含义", "适用场景"],
+            "J_row": {"力度": "矩 Judgment", "含义": "精确判定，pass/fail", "适用场景": "可机械判定的合规检查"}
+          },
+          "new_table": {
+            "columns": ["力度", "判定方式", "阻断行为", "适用场景"],
+            "F_row": {"力度": "戒 F", "判定方式": "机械判定", "阻断行为": "阻断（违反即拒绝）", "适用场景": "导致系统性不可维护性的操作"},
+            "G_row": {"力度": "规 G", "判定方式": "混合判定", "阻断行为": "标记（偏离须声明）", "适用场景": "偏离应被看见但不阻断的操作"},
+            "J_row": {"力度": "矩 J", "判定方式": "精确机械判定", "阻断行为": "记录（静默计数，不阻断）", "适用场景": "可机械检查但属风格性判断的操作"}
+          },
+          "calibration_note": "校准2026-06-28：J原定义为'精确判定，pass/fail'。工程实践发现此定义混淆了判定方式与阻断行为。经校准，J的'精确判定'特性保留，但阻断行为从'pass/fail阻断'调整为'静默记录'。校准标准来自G3（有度：力度与风险匹配——J级属低风险风格性检查，应对应低力度静默记录）；校准程序来自G2（顺因：哲学层显式承认并重新定义，代码不单方面修改规约）。"
+        },
+        "code_comment_change": {
+          "models.rs:224-229": {
+            "from": "代码实现选择将其反转为'静默记录'...本实现以代码语义为准，J = 静默记录",
+            "to": "经G3校准：J = 精确机械判定 + 静默记录。判定方式保留机械精确性，阻断行为由'pass/fail'校准为'静默记录'。见法论校准2026-06-28。"
+          },
+          "validator.rs:171-175": "同上"
+        },
+        "sync_targets": [
+          {"file": "SiHankor-Terminology-Lineage.sih.md", "action": "司衡层J定义引用同步更新，道家源出（《离娄》）不变"},
+          {"file": "SiHankor-Reconstruction-Plan.md:578,600,602", "action": "标记为'已通过260628-1600法论校准解决'"},
+          {"file": "R4-engineering-mapping-audit.md", "action": "不动（历史审计记录）"}
+        ],
+        "no_change": [
+          "代码执行逻辑（J级规则仍静默记录）",
+          "现有J级规则（如V-J-01）",
+          "ViolationSeverity枚举名（Judgment保留）"
+        ]
+      }
+    },
+    {
+      "id": "fix-3",
+      "chain": "链2",
+      "title": "映射归位",
+      "problem": {
+        "current_L": "文档侧L2 / 代码侧L5",
+        "violation": "映射错位（非'映射范围虚报'——不是声称了但没做，是映射到了错误的目标）",
+        "detail": "工程映射链2将'道二→意图恢复流程'映射到iCL，声称覆盖文档侧和代码侧。实际iCL只分析文档（.sih.md），不从代码恢复意图。iCL的设计原则是只读文档不读代码——代码侧意图恢复不在iCL的职能范围内，这是知止的正确执行。"
+      },
+      "fix": {
+        "action": "链2收窄为仅文档侧 + 代码侧两个工程对应分别归位",
+        "chain2_new": {
+          "scope": "仅文档侧",
+          "L": "L2",
+          "requirement": "文档生成前意图必须显式化",
+          "implementation": "GrillingEngine四问收敛 + spec-coding规范产出",
+          "deviation": "固定四问模板，非完整意图恢复流程；产出为提示词模板，意图恢复依赖外部Agent执行"
+        },
+        "code_side_attribution": {
+          "name": "行迹读取（iCL）",
+          "dao_basis": "道三（代码自晦，意图必复）",
+          "what": "从行迹记录恢复意图形成过程",
+          "mapping_chain": "链15",
+          "current_L": "L5",
+          "status": "已有映射，不修改。代码侧意图恢复的唯一归位目标是链15（行迹）。"
+        },
+        "fracture_analysis_fix": "断裂分析问题四措辞从'映射范围虚报'改为'映射对象选择错误，代码侧意图恢复不应映射到iCL'"
+      }
+    }
+  ],
+  "fracture_analysis_updates": {
+    "问题三": {
+      "original": "道二代码侧映射缺失：工程映射假设意图恢复覆盖文档与代码两侧，实际仅文档生成侧有实现。修复方式：明确声明代码侧意图恢复为未实现，或在iCL中增加代码分析能力。当前状态是映射范围虚报。",
+      "corrected": "链2代码侧映射错位。原映射将代码侧意图恢复指向iCL，但iCL设计原则为只读文档不读代码。代码侧意图恢复的唯一归位目标是链15（行迹，道三）。修正后链2仅覆盖文档侧。"
+    },
+    "问题四": {
+      "original_dao_trace": "dao_trace装饰性映射。修复方式：要么实现真实的道追溯逻辑，要么移除dao_trace字段及其追溯声称。",
+      "corrected_dao_trace": "dao_trace已降级为law_violation_summary。经260628-1600修复：重命名，职责收缩为描述法检结果不做道层归因，道层归因由工程映射表承担。GrillingEngine的build_dao_trace已删除。L4→L3，诚实化降级。",
+      "original_J": "F/G/J的J语义反转。修复方式：要么修正哲学层J的定义以匹配代码语义，要么修正代码以匹配哲学层定义。",
+      "corrected_J": "J经法论校准。维度拆分后：J=精确机械判定+静默记录。判定方式保留机械精确性，阻断行为由pass/fail校准为静默记录。法论§有度新增校准说明（2026-06-28），代码注释从'以代码语义为准'改为'经G3校准'。"
+    }
+  },
+  "verification": [
+    "cargo build 编译通过（重命名涉及多个文件）",
+    "cargo test 测试通过（重命名可能影响测试中的字段引用）",
+    "grep dao_trace/DaoTrace 在 src/ 下返回零匹配（grilling删除后）",
+    "grep law_violation_summary/LawViolationSummary 在所有受影响文件中一致",
+    "法论§有度力度表新增'判定方式'和'阻断行为'两列",
+    "法论§有度新增校准说明（2026-06-28）",
+    "models.rs和validator.rs的J注释从'以代码语义为准'改为'经G3校准'",
+    "工程映射链2不再声称覆盖代码侧，代码侧归位到链15（行迹）",
+    "工程映射问题三和问题四的措辞同步更新"
+  ],
+  "approval": {
+    "approved_by": "human-governance",
+    "approved_at": "2026-06-28",
+    "decision": "approve",
+    "scope": "fix-1 (dao_trace降级) + fix-2 (J语义G3校准) + fix-3 (链2映射归位)",
+    "conditions": [
+      "fix-3 代码侧唯一归位目标为链15（行迹），不引入CI意图门禁等新机制",
+      "fix-2 校准说明须同时引用G3（判断标准）和G2（程序合规），区分各自角色",
+      "fix-1 rename的dao->laws字段为语义变更，内容从道层归因变更为法层引用",
+      "实施完成后须通过verification清单全部9条验证"
+    ],
+    "implementation_command": "授权实施本JSON文件中描述的三连修复。实施agent须严格按照fixes数组中三个fix的定义执行，不得超出scope引入新机制。实施完成后执行verification清单全部9条验证，全部通过后提交。"
+  }
+}
