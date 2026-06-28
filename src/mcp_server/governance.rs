@@ -2,15 +2,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use rmcp::{ServerHandler, handler::server::wrapper::Parameters, schemars, tool, tool_router};
+use serde::Deserialize;
 
 use crate::core::database::SihDatabase;
 use crate::core::glossary::Glossary;
 use crate::core::indexer;
 use crate::core::metrics::{
-    compute_latest_snapshot_diff, compute_rule_audit, compute_rule_density,
-    compute_tradeoff_coverage, compute_trend_alignment, compute_variance_metric, MetricEvent,
     RuleAuditMetric, RuleDensityMetric, SnapshotDiff, TradeoffCoverageMetric, TrendAlignmentMetric,
-    VarianceMetric,
+    VarianceMetric, compute_latest_snapshot_diff, compute_rule_audit, compute_rule_density,
+    compute_tradeoff_coverage, compute_trend_alignment, compute_variance_metric,
 };
 use crate::core::models::DocStatus;
 use crate::core::orchestrator::PipelineConfig;
@@ -105,6 +105,13 @@ pub struct ProposeAnswer {
     pub content: String,
 }
 
+/// ValidationCompleted 事件的最小反序列化结构，用于从 metrics 表中聚合 fatal_count
+/// 不复用 metrics.rs 内部的同名私有类型，避免破坏模块边界
+#[derive(Debug, Deserialize)]
+struct ValidationCompletedFatalCount {
+    fatal_count: usize,
+}
+
 #[tool_router]
 impl SihankorService {
     pub fn new(db: Arc<dyn SihDatabase>) -> Self {
@@ -114,6 +121,12 @@ impl SihankorService {
             config: PipelineConfig::default(),
             glossary,
         }
+    }
+
+    /// 返回底层数据库引用，供集成测试断言 metrics 写入。
+    /// 生产代码不应使用此方法；MCP 工具通过 self.db 访问。
+    pub fn database(&self) -> &Arc<dyn SihDatabase> {
+        &self.db
     }
 
     /// 验证 .sih.md 文档合规性
@@ -170,8 +183,11 @@ impl SihankorService {
             Ok(Some(doc)) => {
                 let nature = doc.nature.clone();
                 let synthetic_path = std::path::PathBuf::from(format!("docs/{}/doc.md", nature));
-                let violations =
-                    validator::validate_document(&doc, Some(&synthetic_path), &ValidationConfig::default());
+                let violations = validator::validate_document(
+                    &doc,
+                    Some(&synthetic_path),
+                    &ValidationConfig::default(),
+                );
                 format!(
                     "ID: {}\nStage: {}\nTitle: {}\nUpstream: {}\nStatus: {:?}\nIndexed: {}\nContent length: {} chars\nValidation: {} violations",
                     doc.id,
@@ -275,13 +291,29 @@ impl SihankorService {
         };
 
         // ProjectSnapshot 采集：记录到 metrics 表，失败不阻断概览生成
-        let snapshot = MetricEvent::ProjectSnapshot {
-            total_docs: total,
-            total_rules: crate::core::validator::RULE_COUNT,
-            docs_by_stage: by_stage.clone(),
-            docs_by_nature: by_nature.clone(),
-            fatal_violations_total: 0,
-        };
+        // 聚合最近 1000 条 ValidationCompleted 记录中的 fatal_count 之和，
+        // 使 compute_snapshot_diff 的 fatal_violations_delta 能反映真实 Fatal 违规数变化
+        // 使用平铺 JSON 而非 MetricEvent enum 序列化结果写入 metrics 表，
+        // 以与 metrics.rs ProjectSnapshotPayload 反序列化结构匹配
+        let validation_records = self
+            .db
+            .query_metrics("ValidationCompleted", 1000)
+            .await
+            .unwrap_or_default();
+        let fatal_violations_total: usize = validation_records
+            .iter()
+            .filter_map(|r| {
+                serde_json::from_str::<ValidationCompletedFatalCount>(&r.payload_json).ok()
+            })
+            .map(|p| p.fatal_count)
+            .sum();
+        let snapshot = serde_json::json!({
+            "total_docs": total,
+            "total_rules": crate::core::validator::RULE_COUNT,
+            "docs_by_stage": by_stage,
+            "docs_by_nature": by_nature,
+            "fatal_violations_total": fatal_violations_total,
+        });
         if let Ok(payload) = serde_json::to_string(&snapshot) {
             let _ = self.db.record_metric("ProjectSnapshot", &payload).await;
         }
@@ -719,9 +751,7 @@ impl SihankorService {
     }
 
     /// 查询最近两次项目快照差异，检测治理间隙增长信号
-    #[tool(
-        description = "[SiHankor] 查询最近两次项目快照的差异，检测治理间隙增长信号"
-    )]
+    #[tool(description = "[SiHankor] 查询最近两次项目快照的差异，检测治理间隙增长信号")]
     pub async fn snapshot_diff(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let diff = match compute_latest_snapshot_diff(&*self.db).await {
             Ok(d) => d,
@@ -734,18 +764,14 @@ impl SihankorService {
     }
 
     /// 规则审计：统计各治理域和严格度的规则分布
-    #[tool(
-        description = "[SiHankor] 规则审计：统计各治理域的规则数分布与 Fatal 级规则占比"
-    )]
+    #[tool(description = "[SiHankor] 规则审计：统计各治理域的规则数分布与 Fatal 级规则占比")]
     pub fn rule_audit(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let audit = compute_rule_audit();
         format_rule_audit(&audit)
     }
 
     /// 规则密度：统计各 nature 的治理投入密度
-    #[tool(
-        description = "[SiHankor] 规则密度：计算各文档类型的规则密度与治理投入分布"
-    )]
+    #[tool(description = "[SiHankor] 规则密度：计算各文档类型的规则密度与治理投入分布")]
     pub async fn rule_density(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let nature_counts = match self.db.count_by_nature().await {
             Ok(c) => c,
@@ -773,9 +799,7 @@ impl SihankorService {
     }
 
     /// 趋势对齐：计算审查频率-变更频率比值
-    #[tool(
-        description = "[SiHankor] 趋势对齐：计算审查频率与变更频率的比值，评估治理力度适配度"
-    )]
+    #[tool(description = "[SiHankor] 趋势对齐：计算审查频率与变更频率的比值，评估治理力度适配度")]
     pub async fn trend_alignment(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         let validations = match self.db.query_metrics("ValidationCompleted", 100).await {
             Ok(r) => r,
@@ -966,7 +990,12 @@ fn format_rule_density(density: &RuleDensityMetric) -> String {
         density
             .density_by_nature
             .iter()
-            .map(|(n, d)| format!("  {}: {:.2} ({} 条规则 / 该类型文档)", n, d, density.total_rules))
+            .map(|(n, d)| {
+                format!(
+                    "  {}: {:.2} ({} 条规则 / 该类型文档)",
+                    n, d, density.total_rules
+                )
+            })
             .collect::<Vec<_>>()
             .join("\n")
     };
@@ -1446,7 +1475,10 @@ mod tests {
         let svc = make_service();
         let p1 = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":2,"judgment_count":1,"passed":true}"#;
         let p2 = r#"{"doc_id":"d2","nature":"proposal","stage":"1/3","fatal_count":1,"guideline_count":0,"judgment_count":1,"passed":false}"#;
-        svc.db.record_metric("ValidationCompleted", p1).await.unwrap();
+        svc.db
+            .record_metric("ValidationCompleted", p1)
+            .await
+            .unwrap();
         svc.db
             .record_metric("ValidationCompleted", p2)
             .await
@@ -1495,17 +1527,17 @@ mod tests {
         svc.db.record_metric("ProjectSnapshot", s2).await.unwrap();
         let result = svc.snapshot_diff(Parameters(EmptyParams {})).await;
         // 不应返回提示文本，应返回格式化报告
-        assert!(
-            !result.contains("需要至少两次"),
-            "result was: {}",
-            result
-        );
+        assert!(!result.contains("需要至少两次"), "result was: {}", result);
         assert!(
             result.contains("SiHankor Snapshot Diff"),
             "result was: {}",
             result
         );
-        assert!(result.contains("Documents delta:"), "result was: {}", result);
+        assert!(
+            result.contains("Documents delta:"),
+            "result was: {}",
+            result
+        );
         assert!(result.contains("Gap signals:"), "result was: {}", result);
     }
 
@@ -1521,10 +1553,7 @@ mod tests {
                 ("2/3".to_string(), 1),
                 ("3/3".to_string(), 0),
             ],
-            docs_by_nature_delta: vec![
-                ("decision".to_string(), 2),
-                ("spec".to_string(), 0),
-            ],
+            docs_by_nature_delta: vec![("decision".to_string(), 2), ("spec".to_string(), 0)],
             fatal_violations_delta: -1,
             rules_grew: false,
             docs_grew: true,
@@ -1558,26 +1587,32 @@ mod tests {
             avg_fatal_count: 1.0 / 3.0,
             avg_guideline_count: 1.0,
             fatal_count_stddev: (2.0_f64 / 9.0_f64).sqrt(),
-            pass_rate_by_nature: vec![
-                ("proposal".to_string(), 0.0),
-                ("spec".to_string(), 1.0),
-            ],
-            avg_fatal_by_nature: vec![
-                ("proposal".to_string(), 1.0),
-                ("spec".to_string(), 0.0),
-            ],
+            pass_rate_by_nature: vec![("proposal".to_string(), 0.0), ("spec".to_string(), 1.0)],
+            avg_fatal_by_nature: vec![("proposal".to_string(), 1.0), ("spec".to_string(), 0.0)],
             window_start: "2024-01-01T00:00:00Z".to_string(),
             window_end: "2024-01-03T00:00:00Z".to_string(),
         };
         let result = format_variance_metric(&m);
-        assert!(result.contains("Total documents: 3"), "result was: {}", result);
-        assert!(result.contains("Pass rate: 66.67%"), "result was: {}", result);
+        assert!(
+            result.contains("Total documents: 3"),
+            "result was: {}",
+            result
+        );
+        assert!(
+            result.contains("Pass rate: 66.67%"),
+            "result was: {}",
+            result
+        );
         assert!(
             result.contains("Average Fatal violations: 0.33"),
             "result was: {}",
             result
         );
-        assert!(result.contains("产出方差直接度量"), "result was: {}", result);
+        assert!(
+            result.contains("产出方差直接度量"),
+            "result was: {}",
+            result
+        );
         assert!(result.contains("spec: 100.00%"), "result was: {}", result);
         assert!(result.contains("proposal: 0.00%"), "result was: {}", result);
     }
@@ -1652,7 +1687,10 @@ mod tests {
 
         let vc = r#"{"doc_id":"d1","nature":"spec","stage":"1/3","fatal_count":0,"guideline_count":0,"judgment_count":0,"passed":true}"#;
         let ic = r#"{"doc_id":"d1","nature":"spec"}"#;
-        svc.db.record_metric("ValidationCompleted", vc).await.unwrap();
+        svc.db
+            .record_metric("ValidationCompleted", vc)
+            .await
+            .unwrap();
         svc.db.record_metric("IndexCompleted", ic).await.unwrap();
 
         let result = svc.trend_alignment(Parameters(EmptyParams {})).await;

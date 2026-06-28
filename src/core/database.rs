@@ -393,7 +393,7 @@ impl SihDatabase for SqliteBackend {
             .lock()
             .map_err(|_| DatabaseError::NotInitialized)?;
         let mut stmt = conn.prepare(
-            "SELECT id, event_type, payload_json, created_at FROM metrics WHERE event_type = ?1 ORDER BY created_at DESC LIMIT ?2"
+            "SELECT id, event_type, payload_json, created_at FROM metrics WHERE event_type = ?1 ORDER BY created_at DESC, id DESC LIMIT ?2"
         )?;
         let rows = stmt.query_map(params![event_type, limit as i64], |row| {
             Ok(MetricRecord {
