@@ -91,7 +91,10 @@ pub fn generate(root: &Path) -> String {
     }
 
     // 1b. 扫描会话摘要（最新 3 条）
-    let sessions_dir = root.join("docs").join("knowledge").join("session-summaries");
+    let sessions_dir = root
+        .join("docs")
+        .join("knowledge")
+        .join("session-summaries");
     if sessions_dir.is_dir() {
         brief.recent_sessions = collect_recent_sessions(&sessions_dir, 3);
     }
@@ -129,7 +132,10 @@ pub fn generate(root: &Path) -> String {
         .into_iter()
         .filter_entry(|e| {
             let name = e.file_name().to_string_lossy();
-            !matches!(name.as_ref(), "node_modules" | "target" | ".git" | "__pycache__" | ".pytest_cache")
+            !matches!(
+                name.as_ref(),
+                "node_modules" | "target" | ".git" | "__pycache__" | ".pytest_cache"
+            )
         })
         .flatten()
     {
@@ -178,10 +184,7 @@ fn collect_latest_trails(trails_dir: &Path, limit: usize) -> Vec<TrailEntry> {
         .max_depth(1)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path().is_file()
-                && e.path().extension().map(|s| s == "md").unwrap_or(false)
-        })
+        .filter(|e| e.path().is_file() && e.path().extension().map(|s| s == "md").unwrap_or(false))
         .collect();
 
     // 按修改时间倒序
@@ -211,36 +214,21 @@ fn collect_latest_trails(trails_dir: &Path, limit: usize) -> Vec<TrailEntry> {
 }
 
 /// 解析单个 trail 文件，提取元信息
+///
+/// 新格式：纯 Markdown，无 frontmatter。trace_id 从 H1 标题或文件 stem 提取，
+/// created_at 取自文件 mtime（frontmatter 已废弃），anchor_doc / type 留空
+/// （frontmatter 已废弃，body 中可能含文档 id 但需全文搜索才能追溯）。
 fn parse_trail_file(path: &Path, content: &str) -> Option<TrailEntry> {
-    let lines: Vec<&str> = content.lines().collect();
-    let (fm_end, has_fm) = detect_frontmatter(&lines);
-    if !has_fm {
-        return None;
-    }
+    let trace_id = extract_trace_id(path, content);
+    let created_at = file_mtime_string(path).unwrap_or_default();
+    let anchor_doc = String::new();
+    let trail_type = String::new();
 
-    let fm_text = lines[..fm_end].join("\n");
-    let trace_id = get_field(&fm_text, "trace_id")
-        .map(|s| s.trim_matches('"').to_string())
-        .unwrap_or_else(|| {
-            path.file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default()
-        });
-    let created_at = get_field(&fm_text, "created_at")
-        .map(|s| s.trim_matches('"').to_string())
-        .unwrap_or_default();
-    let anchor_doc = get_field(&fm_text, "anchor_doc")
-        .map(|s| s.trim_matches('"').to_string())
-        .unwrap_or_default();
-    let trail_type = get_field(&fm_text, "type")
-        .map(|s| s.trim_matches('"').to_string())
-        .unwrap_or_else(|| "unknown".to_string());
-
-    // 从正文中提取第一行作为摘要
-    let body: String = lines[fm_end..]
-        .iter()
+    // 从正文中提取前 3 行非空内容作为摘要
+    let body: String = content
+        .lines()
         .map(|l| l.trim())
-        .filter(|l| !l.is_empty())
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
         .take(3)
         .collect::<Vec<_>>()
         .join(" ");
@@ -259,6 +247,30 @@ fn parse_trail_file(path: &Path, content: &str) -> Option<TrailEntry> {
     })
 }
 
+/// 从 H1 标题或文件 stem 提取 trace_id
+fn extract_trace_id(path: &Path, content: &str) -> String {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("# ") {
+            return rest.trim().to_string();
+        }
+    }
+    path.file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default()
+}
+
+/// 从文件 mtime 提取 RFC 3339 时间字符串
+fn file_mtime_string(path: &Path) -> Option<String> {
+    let mtime = path.metadata().ok()?.modified().ok()?;
+    let secs = mtime.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    let (y, mo, d, h, mi, s) = epoch_to_ymdhms(secs);
+    Some(format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        y, mo, d, h, mi, s
+    ))
+}
+
 /// 从 session-summaries/ 目录收集最新 N 条会话摘要
 fn collect_recent_sessions(sessions_dir: &Path, limit: usize) -> Vec<SessionEntry> {
     let mut entries: Vec<_> = WalkDir::new(sessions_dir)
@@ -266,13 +278,7 @@ fn collect_recent_sessions(sessions_dir: &Path, limit: usize) -> Vec<SessionEntr
         .max_depth(1)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path().is_file()
-                && e.path()
-                    .extension()
-                    .map(|s| s == "md" || s == "sih.md")
-                    .unwrap_or(false)
-        })
+        .filter(|e| e.path().is_file() && e.path().extension().map(|s| s == "yml").unwrap_or(false))
         .collect();
 
     // 按修改时间倒序
@@ -302,26 +308,59 @@ fn collect_recent_sessions(sessions_dir: &Path, limit: usize) -> Vec<SessionEntr
 }
 
 /// 解析单个 session summary 文件，提取元信息
+///
+/// 新格式：纯 YAML（顶层 key 即字段）。无 frontmatter、无 Markdown 正文。
+/// id / session_role / goal / outcome / commits 等字段直接读取 YAML 顶层。
 fn parse_session_file(path: &Path, content: &str) -> Option<SessionEntry> {
-    let lines: Vec<&str> = content.lines().collect();
-    let (fm_end, has_fm) = detect_frontmatter(&lines);
-    if !has_fm {
-        return None;
-    }
+    use serde_yaml::Value;
 
-    let fm_text = lines[..fm_end].join("\n");
-    let id = path
-        .file_stem()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
+    let value: Value = serde_yaml::from_str(content).ok()?;
+
+    let id = value
+        .get("id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| {
+            path.file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default()
+        });
+
+    let goal = value
+        .get("goal")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let outcome = value
+        .get("outcome")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let commits = value.get("commits").map(yaml_value_to_short_string);
+    let session_id = value
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     Some(SessionEntry {
         id,
-        session_id: get_field(&fm_text, "session_id").map(|s| s.trim_matches('"').to_string()),
-        goal: get_field(&fm_text, "goal").map(|s| s.trim_matches('"').to_string()),
-        outcome: get_field(&fm_text, "outcome").map(|s| s.trim_matches('"').to_string()),
-        commits: get_field(&fm_text, "commits").map(|s| s.trim_matches('"').to_string()),
+        session_id,
+        goal,
+        outcome,
+        commits,
     })
+}
+
+/// 将 YAML 值转为简短字符串（commits 可能是字符串或列表）
+fn yaml_value_to_short_string(v: &serde_yaml::Value) -> String {
+    match v {
+        serde_yaml::Value::String(s) => s.clone(),
+        serde_yaml::Value::Sequence(seq) => seq
+            .iter()
+            .filter_map(|item| item.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
+        serde_yaml::Value::Number(n) => n.to_string(),
+        _ => String::new(),
+    }
 }
 
 /// 会话健康诊断：基于项目级信号检测上下文压力
@@ -365,9 +404,7 @@ fn check_session_health(
 
     if commit_count > 5 {
         // 检查是否有多个 commit 针对同一 goal（以最近 3 条 session goal 为基准）
-        let recent_goals: Vec<&str> = sessions.iter()
-            .filter_map(|s| s.goal.as_deref())
-            .collect();
+        let recent_goals: Vec<&str> = sessions.iter().filter_map(|s| s.goal.as_deref()).collect();
         if recent_goals.len() >= 2 && recent_goals[0] == recent_goals[1] {
             alerts.push(format!(
                 "{} commits with repeated goal '{}' — goal likely achieved, consider closing this task",
@@ -428,7 +465,9 @@ fn git_status(root: &Path) -> Option<(String, bool)> {
         .output()
         .ok()?;
 
-    let dirty = !String::from_utf8_lossy(&status_output.stdout).trim().is_empty();
+    let dirty = !String::from_utf8_lossy(&status_output.stdout)
+        .trim()
+        .is_empty();
 
     Some((branch, dirty))
 }
@@ -461,10 +500,7 @@ fn format_brief(brief: &ProjectBrief) -> String {
     if brief.ci_paths.is_empty() {
         out.push_str("CI: none detected\n");
     } else {
-        out.push_str(&format!(
-            "CI: {} path(s) found\n",
-            brief.ci_paths.len()
-        ));
+        out.push_str(&format!("CI: {} path(s) found\n", brief.ci_paths.len()));
         for p in &brief.ci_paths {
             if let Ok(rel) = p.strip_prefix(&brief.root) {
                 out.push_str(&format!("  - {}\n", rel.display()));
@@ -500,10 +536,7 @@ fn format_brief(brief: &ProjectBrief) -> String {
         for trail in &brief.latest_trails {
             out.push_str(&format!(
                 "- [{}] {} (type: {}, anchor: {})\n",
-                trail.trace_id,
-                trail.summary,
-                trail.trail_type,
-                trail.anchor_doc
+                trail.trace_id, trail.summary, trail.trail_type, trail.anchor_doc
             ));
         }
     }
@@ -512,7 +545,9 @@ fn format_brief(brief: &ProjectBrief) -> String {
     // 最新会话摘要
     out.push_str("### Recent Sessions\n");
     if brief.recent_sessions.is_empty() {
-        out.push_str("Sessions: none recorded (use sihankor_session_summary before ending a session)\n");
+        out.push_str(
+            "Sessions: none recorded (use sihankor_session_summary before ending a session)\n",
+        );
     } else {
         for s in &brief.recent_sessions {
             let goal = s.goal.as_deref().unwrap_or("(no goal)");
@@ -682,11 +717,86 @@ mod tests {
     fn test_generate_contains_session_health_section() {
         // generate() returns a String - check it contains the Session Health section
         let output = generate(Path::new("."));
-        assert!(output.contains("### Session Health"), "Output should contain Session Health section");
+        assert!(
+            output.contains("### Session Health"),
+            "Output should contain Session Health section"
+        );
         // Session Health section: either "All signals normal." OR "⚠" warning
         let has_normal = output.contains("All signals normal.");
         let has_warning = output.contains("⚠");
-        assert!(has_normal || has_warning, "Should show normal status or ⚠ warning. Output:\n{}", output);
+        assert!(
+            has_normal || has_warning,
+            "Should show normal status or ⚠ warning. Output:\n{}",
+            output
+        );
+    }
+
+    #[test]
+    fn test_parse_session_file_yml() {
+        // 新格式：纯 YAML，无 frontmatter
+        let dir = make_temp_dir();
+        let session_path = dir.path().join("session.yml");
+        let content = r#"
+id: 260628-2316-session-summary
+session_role: root
+duration_minutes: "~80"
+goal: 调研 Cache Read
+outcome: 全部完成
+commits: [abc123, def456]
+risks:
+  - "无重大风险"
+"#;
+        std::fs::write(&session_path, content).unwrap();
+
+        let entry = parse_session_file(&session_path, content).unwrap();
+        assert_eq!(entry.id, "260628-2316-session-summary");
+        assert_eq!(entry.goal.as_deref(), Some("调研 Cache Read"));
+        assert_eq!(entry.outcome.as_deref(), Some("全部完成"));
+        assert!(entry.commits.as_deref().unwrap().contains("abc123"));
+    }
+
+    #[test]
+    fn test_parse_trail_file_md() {
+        // 新格式：纯 Markdown，无 frontmatter
+        let dir = make_temp_dir();
+        let trail_path = dir.path().join("trail-123.md");
+        let content = "# trail-123\n\n_2026-06-28 16:25:16_\n\n## 转折\n\nfd 项目零 .sih.md 文档\n\n## 理由\n\n扫描 fd 仓库发现 0 个 .sih.md 文件\n\n## 后果\n\nfd 的 ProjectSnapshot 在司衡 DB 中归零\n";
+        std::fs::write(&trail_path, content).unwrap();
+
+        let entry = parse_trail_file(&trail_path, content).unwrap();
+        assert_eq!(entry.trace_id, "trail-123");
+        // created_at 应从 mtime 提取（具体值取决于测试运行时）
+        assert!(!entry.created_at.is_empty());
+        // anchor_doc 和 trail_type 已废弃，留空
+        assert!(entry.anchor_doc.is_empty());
+        assert!(entry.trail_type.is_empty());
+        // summary 来自 body
+        assert!(entry.summary.contains("fd"));
+    }
+
+    #[test]
+    fn test_collect_recent_sessions_filters_yml_only() {
+        // 验证 collect_recent_sessions 只接受 .yml 文件
+        let dir = make_temp_dir();
+        let sessions_dir = dir.path().join("sessions");
+        std::fs::create_dir_all(&sessions_dir).unwrap();
+        // 写入 .yml 文件（应被接受）
+        std::fs::write(
+            sessions_dir.join("session.yml"),
+            "id: test\ngoal: g\noutcome: o\ncommits: c\n",
+        )
+        .unwrap();
+        // 写入 .sih.md 文件（应被拒绝）
+        std::fs::write(
+            sessions_dir.join("legacy.sih.md"),
+            "---\nid: legacy\n---\n# Body\n",
+        )
+        .unwrap();
+        // 写入 .md 文件（应被拒绝）
+        std::fs::write(sessions_dir.join("markdown.md"), "# Body\n").unwrap();
+
+        let sessions = collect_recent_sessions(&sessions_dir, 10);
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].id, "test");
     }
 }
-

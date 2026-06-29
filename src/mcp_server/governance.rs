@@ -470,7 +470,7 @@ impl SihankorService {
             turning_point,
             rationale,
             consequences,
-            agents_involved,
+            agents_involved: _,
         }): Parameters<TrailRecord>,
     ) -> String {
         use chrono::Local;
@@ -481,17 +481,11 @@ impl SihankorService {
         let trail_id = now.format("%H%M%S").to_string();
         let date = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-        // 构造 trail 文档内容
+        // 构造 trail 文档内容（纯 Markdown，无 frontmatter）
+        // 元数据 anchor_doc / type / agents_involved 不写入文件；如需追溯，从 body 内容推断
         let mut content = String::new();
-        content.push_str("---\n");
-        content.push_str(&format!("trace_id: \"trail-{}\"\n", trail_id));
-        content.push_str(&format!("created_at: \"{}\"\n", date));
-        content.push_str(&format!("anchor_doc: \"{}\"\n", anchor_doc));
-        content.push_str(&format!("type: \"{}\"\n", r#type));
-        if let Some(ref agent) = agents_involved {
-            content.push_str(&format!("agents_involved: \"{}\"\n", agent));
-        }
-        content.push_str("---\n\n");
+        content.push_str(&format!("# trail-{}\n\n", trail_id));
+        content.push_str(&format!("_{}_\n\n", date));
         content.push_str(&format!("## 转折\n\n{}\n\n", turning_point));
         content.push_str(&format!("## 理由\n\n{}\n\n", rationale));
         content.push_str(&format!("## 后果\n\n{}\n", consequences));
@@ -503,7 +497,7 @@ impl SihankorService {
             return format!("错误：无法创建 trails 目录: {}", e);
         }
 
-        let filename = trails_dir.join(format!("trail-{}.sih.md", trail_id));
+        let filename = trails_dir.join(format!("trail-{}.md", trail_id));
         match fs::File::create(&filename) {
             Ok(mut file) => {
                 if let Err(e) = file.write_all(content.as_bytes()) {
@@ -512,12 +506,10 @@ impl SihankorService {
                     format!(
                         "行迹已记录：{}\n\
                          anchor_doc: {}\n\
-                         type: {}\n\
-                         文件: {}",
+                         type: {}",
                         filename.display(),
                         anchor_doc,
                         r#type,
-                        chrono::Local::now().format("%H:%M:%S"),
                     )
                 }
             }

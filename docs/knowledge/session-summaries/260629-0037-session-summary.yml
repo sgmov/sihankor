@@ -1,0 +1,28 @@
+id: 260629-0037-session-summary
+session_role: branch
+duration_minutes: ~30
+goal: DSR-5 跨语言观测窗验证（ugrep C++）
+outcome: 全部完成（4 步流程 + 测试 + push）
+commits: [1c5b8be]
+todos_remaining:
+  - "dsr5-cross-language 分支 squash merge 到 main 后再删除分支（per 分支协议 step 6/7）"
+  - "DSR-5 note 2/3 → 3/3 ratify（待用户决策窗口）"
+  - "V-G-06 增强：加 file 维度（定位 61 行 emoji 分布在哪些文件）"
+  - "DSR-6 / DSR-7 / DSR-8 候选方向（已在 note 中记录）"
+decisions:
+  - "选 ugrep 而非 ag：3 候选 (fselect/ugrep/ag) 中 fselect 是 Rust 被排除，ag 只有 3 .md + 0 预测触达信号不足，ugrep 异语言 + 异作者 + 26 .md + 82 预测触达"
+  - "沿用 DSR-4 隔离 DB 模式：SIHANKOR_DB_PATH=/tmp/dsr5-ugrep-index.db 避免污染主 DB"
+  - "5 列表拆 4 列：V-G-04 上限 4 列（虽 AGENTS.md 写 3 列，validator 实际为 4），bat/fd 合并单元格保留对比"
+  - "em-dash 全量替换为 冒号：validator C02 强约束，47 → 0 errors"
+  - "分支 rebase 优先：dsr5-cross-language 基于旧 main 开，需要 rebase 后才能 force push"
+risks:
+  - "26 C07 warnings（误报）：validator 把 markdown 表格行误判为 ASCII art，DSR-4 review note 也有相同 warning，是已知 false positive"
+  - "跨语言迁移摩擦低于同语言只是 N=2 样本（ripgrep / ugrep），需更多 DSR 才能归纳"
+  - "V-G-06 触达集中度 100% 来自单项目（ugrep），未来可能随样本增加而稀释"
+data_stats:
+  files_added: 2
+  insertions: 270
+  format_errors_before: 47
+  format_errors_after: 0
+  tests_passing: "182/182"
+  observations_collected: "5_dimensions"

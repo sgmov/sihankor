@@ -1,0 +1,23 @@
+id: 260628-2316-session-summary
+session_role: root
+duration_minutes: ~80
+goal: 调研 Cache Read 26M token 来源 + 实现 session summary 机制
+outcome: 全部完成（3 个 commit，session summary 机制首次启用）
+commits: [14760b6, fc4c61d, c6a98a1]
+todos_remaining:
+  - "Ratify DSR-4 note（260628-2200-dsr4-ripgrep-review 和 260628-1730-dsr4-review 已 stage 3/3，但需 ratify 流程闭环）"
+  - "A: DSR-5 异语言项目（等用户决策）"
+  - "评估 `mavis session compress` 是否对当前 session 有效"
+decisions:
+  - "V-G-04 阈值从 >3 调到 >4：法论四列表是合法语义结构，483→70 G04 违规大幅下降（清掉 100+ 假阳性）"
+  - "新增 session_summary nature：知识库新增第六类文档，补充 trail/brief 之外的会话终结产物"
+  - "新增 V-G-SS01 规则：会话摘要新鲜度检查（>24h warn），不阻断"
+  - "拒絕把司衡哲学移出 system prompt：核实后哲学本来就不在 persona 里，AGENTS.md 已按 workspace 按需加载，无改动基础"
+risks:
+  - "181 turns 历史仍在 cache 中，session summary 不直接降低本 session 的 cache read"
+  - "当前 session 中已使用 18.8M cache read tokens，新 session 才能彻底清零"
+data_stats:
+  cache_read_total_session: 18881570
+  cost_session: "$1.52"
+  violations_cleared: "~400 G04 false positives"
+  tests_passing: "171/181"

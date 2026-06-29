@@ -1,0 +1,14 @@
+id: 260629-0145-session-summary
+session_role: branch
+duration_minutes: ~10
+goal: push 366acd2 到 origin 并把"并行 session 下的 commit 防差错"沉淀为 session summary 经验
+outcome: push 完成；本 session summary 写入两条 commit hygiene 检查经验
+commits:
+  - "366acd2 (main) feat: rebuild_index stale-prune pass (ratify proposal 260629-0131)"
+todos_remaining: []
+decisions:
+  - "不改 AGENTS.md：并行 session 的 git 操作是执行环境层面的问题，agent 控制不了；规则收紧只会增加治理噪音但不解决根本"
+  - "仅记录两条可执行的 commit hygiene 检查作为经验沉淀，由各 agent 自律"
+  - "经验 #1：commit 前 `git branch --show-current` 确认在自己分支上"
+  - "经验 #2：commit 后 `git log -1 --format='%s'` 确认 commit message 是自己的"
+risks: []
