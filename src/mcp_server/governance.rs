@@ -28,6 +28,7 @@ pub struct SihankorService {
     db: Arc<dyn SihDatabase>,
     config: PipelineConfig,
     glossary: Option<Glossary>,
+    project_root: PathBuf,
 }
 
 #[derive(Debug, schemars::JsonSchema, serde::Deserialize)]
@@ -146,12 +147,24 @@ pub struct TrailRecord {
 
 #[tool_router]
 impl SihankorService {
-    pub fn new(db: Arc<dyn SihDatabase>) -> Self {
-        let glossary = Glossary::load(std::path::Path::new("glossary/zh.yml")).ok();
+    pub fn new(db: Arc<dyn SihDatabase>, project_root: PathBuf) -> Self {
+        let glossary = Glossary::load(&project_root.join("glossary").join("zh.yml")).ok();
         Self {
+            config: PipelineConfig::with_root(&project_root),
             db,
-            config: PipelineConfig::default(),
             glossary,
+            project_root,
+        }
+    }
+
+    /// 将用户传入的相对路径解析为相对于 project_root 的路径。
+    /// 绝对路径原样返回。
+    fn resolve_path(&self, path: &str) -> PathBuf {
+        let p = PathBuf::from(path);
+        if p.is_absolute() {
+            p
+        } else {
+            self.project_root.join(&p)
         }
     }
 
@@ -169,7 +182,7 @@ impl SihankorService {
         &self,
         Parameters(ValidateRequest { path }): Parameters<ValidateRequest>,
     ) -> String {
-        let file_path = PathBuf::from(&path);
+        let file_path = self.resolve_path(&path);
         match parser::parse_file(&file_path) {
             Ok(doc) => {
                 let result = validator::validate_document(
@@ -378,10 +391,7 @@ impl SihankorService {
     pub async fn sihankor_project_brief(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         use crate::observe::generate_project_brief;
 
-        let root = std::path::Path::new(&self.config.docs_dir)
-            .parent()
-            .map(|p| p.as_ref())
-            .unwrap_or_else(|| std::path::Path::new("."));
+        let root = self.project_root.as_path();
 
         generate_project_brief(root)
     }
@@ -393,10 +403,7 @@ impl SihankorService {
     pub async fn sihankor_trail_context(&self, Parameters(_): Parameters<EmptyParams>) -> String {
         use crate::observe::collect_trails;
 
-        let root = std::path::Path::new(&self.config.docs_dir)
-            .parent()
-            .map(|p| p.as_ref())
-            .unwrap_or_else(|| std::path::Path::new("."));
+        let root = self.project_root.as_path();
 
         let trails = collect_trails(root, 5);
         if trails.is_empty() {
@@ -490,15 +497,7 @@ impl SihankorService {
         content.push_str(&format!("## 后果\n\n{}\n", consequences));
 
         // 写入 knowledge/trails/
-        let trails_dir = std::path::PathBuf::from(&self.config.docs_dir)
-            .parent()
-            .map(|p| p.join("knowledge").join("trails"))
-            .unwrap_or_else(|| {
-                PathBuf::from(&self.config.docs_dir)
-                    .parent()
-                    .map(|p| p.join("knowledge").join("trails"))
-                    .unwrap_or_else(|| PathBuf::from("knowledge/trails"))
-            });
+        let trails_dir = self.project_root.join("knowledge").join("trails");
 
         if let Err(e) = fs::create_dir_all(&trails_dir) {
             return format!("错误：无法创建 trails 目录: {}", e);
@@ -541,7 +540,7 @@ impl SihankorService {
             Ok(Some(doc)) => doc,
             Ok(None) => {
                 // 尝试按路径解析
-                let file_path = PathBuf::from(&target);
+                let file_path = self.resolve_path(&target);
                 match parser::parse_file(&file_path) {
                     Ok(mut doc) => {
                         // 路径解析的文档需补 nature
@@ -580,7 +579,7 @@ impl SihankorService {
         let doc = match self.db.get_document(&target).await {
             Ok(Some(doc)) => doc,
             Ok(None) => {
-                let file_path = PathBuf::from(&target);
+                let file_path = self.resolve_path(&target);
                 match parser::parse_file(&file_path) {
                     Ok(mut doc) => {
                         doc.nature = validator::infer_nature(&file_path)
@@ -624,7 +623,7 @@ impl SihankorService {
         let doc = match self.db.get_document(&target).await {
             Ok(Some(doc)) => doc,
             Ok(None) => {
-                let file_path = PathBuf::from(&target);
+                let file_path = self.resolve_path(&target);
                 match parser::parse_file(&file_path) {
                     Ok(mut doc) => {
                         doc.nature = validator::infer_nature(&file_path)
@@ -669,7 +668,7 @@ impl SihankorService {
         let doc = match self.db.get_document(&target).await {
             Ok(Some(doc)) => doc,
             Ok(None) => {
-                let file_path = PathBuf::from(&target);
+                let file_path = self.resolve_path(&target);
                 match parser::parse_file(&file_path) {
                     Ok(mut doc) => {
                         doc.nature = validator::infer_nature(&file_path)
@@ -805,11 +804,7 @@ impl SihankorService {
         description = "[SiHankor] Suggest next action: based on project state and document stages, recommends what to advance next"
     )]
     pub async fn suggest_next_action(&self, Parameters(_): Parameters<EmptyParams>) -> String {
-        let project_root = std::path::PathBuf::from(&self.config.docs_dir)
-            .parent()
-            .map(|p| p.to_path_buf())
-            .unwrap_or_default();
-        let state = ProjectState::load(&project_root).unwrap_or_default();
+        let state = ProjectState::load(&self.project_root).unwrap_or_default();
         let suggestions = project_state::suggest_next_action(&state, self.db.as_ref());
         let result = serde_json::json!({
             "current_stage": state.current_stage,
@@ -2152,7 +2147,7 @@ mod tests {
 
     fn make_service() -> SihankorService {
         let db = SqliteBackend::open_in_memory().unwrap();
-        SihankorService::new(Arc::new(db))
+        SihankorService::new(Arc::new(db), PathBuf::from("."))
     }
 
     fn make_test_doc(id: &str, nature: &str, stage: &str) -> Document {

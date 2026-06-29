@@ -16,12 +16,13 @@
 use rmcp::handler::server::wrapper::Parameters;
 use sihankor::core::database::SqliteBackend;
 use sihankor::mcp_server::governance::{EmptyParams, SihankorService};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 /// 创建最小可用的 in-memory 测试服务
 fn make_service() -> SihankorService {
     let db = SqliteBackend::open_in_memory().unwrap();
-    SihankorService::new(Arc::new(db))
+    SihankorService::new(Arc::new(db), PathBuf::from("."))
 }
 
 /// 从最近一条 ProjectSnapshot 记录中读取 fatal_violations_total 字段

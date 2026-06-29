@@ -23,6 +23,17 @@ impl Default for PipelineConfig {
     }
 }
 
+impl PipelineConfig {
+    /// 以显式项目根目录构造配置，所有路径解析为绝对路径，不依赖 cwd。
+    pub fn with_root(root: &Path) -> Self {
+        Self {
+            docs_dir: root.join("docs").to_string_lossy().into_owned(),
+            db_path: root.join(".sih/index.db").to_string_lossy().into_owned(),
+            validation: ValidationConfig::default(),
+        }
+    }
+}
+
 /// 管道执行报告
 #[derive(Debug, Clone)]
 pub struct PipelineReport {

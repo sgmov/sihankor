@@ -1,7 +1,9 @@
 {
-  "servers": {
+  "mcpServers": {
     "sihankor": {
-      "command": "/Users/moc/projects/SiHankor/sihankor/target/release/sihankor"
+      "command": "/Users/moc/projects/SiHankor/sihankor/target/release/sihankor",
+      "args": ["--project-root", "/Users/moc/projects/SiHankor/sihankor"],
+      "cwd": "/Users/moc/projects/SiHankor/sihankor"
     }
   }
 }
