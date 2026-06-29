@@ -1,6 +1,7 @@
 ---
-id: 260628-231631-session-summary
-session_id: mvs_1cca3b35226b499ab3de2b80fd9f2dae
+id: 260628-2316-session-summary
+stage: 3/3
+session_id: 260628-2316-session-summary
 session_role: root
 duration_minutes: ~80
 goal: 调研 Cache Read 26M token 来源 + 实现 session summary 机制

@@ -1,6 +1,7 @@
 ---
-id: 260628-163000-session-summary
-session_id: mvs_current
+id: 260628-1630-session-summary
+stage: 3/3
+session_id: 260628-1630-session-summary
 session_role: root
 duration_minutes: ~90
 goal: 清 CI blocking + session health 工具 + DSR-5 准备

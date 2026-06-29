@@ -440,9 +440,10 @@ fn validate_frontmatter(
     }
 
     // V-F-04: upstream 必填性由 nature 决定
-    // note (knowledge/notes/) 无 upstream；proposal 在 proposals/ 有 upstream
+    // note (knowledge/notes/)、trail、session_summary 无 upstream；
+    // proposal 在 proposals/ 有 upstream
     let nature = file_path.and_then(|p| infer_nature(p));
-    let upstream_required = !matches!(nature, Some("note"));
+    let upstream_required = !matches!(nature, Some("note" | "trail" | "session_summary"));
     if upstream_required && doc.upstream.is_none() {
         result.violations.push(Violation {
             rule_id: "V-F-04".to_string(),
@@ -1073,7 +1074,8 @@ mod tests {
     fn test_g04_table_too_wide() {
         let mut doc = make_test_doc("260613-1800-test", "1/3", None);
         // 5 columns triggers V-G-04 (max is 4); 4 columns is now OK
-        doc.content = "| a | b | c | d | e |\n|---|---|---|---|---|\n| 1 | 2 | 3 | 4 | 5 |".to_string();
+        doc.content =
+            "| a | b | c | d | e |\n|---|---|---|---|---|\n| 1 | 2 | 3 | 4 | 5 |".to_string();
         let result = validate_content(&doc);
         let g04 = result.violations.iter().find(|v| v.rule_id == "V-G-04");
         assert!(g04.is_some());

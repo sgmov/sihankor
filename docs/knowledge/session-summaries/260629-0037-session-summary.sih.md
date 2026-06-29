@@ -1,6 +1,7 @@
 ---
-id: 260629-003717-session-summary
-session_id: dsr5-cross-language
+id: 260629-0037-session-summary
+stage: 3/3
+session_id: 260629-0037-session-summary
 session_role: branch
 duration_minutes: ~30
 goal: DSR-5 跨语言观测窗验证（ugrep C++）
